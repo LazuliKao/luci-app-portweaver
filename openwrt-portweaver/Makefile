@@ -1,0 +1,58 @@
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=portweaver
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=1
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/LazuliKao/PortWeaver.git
+PKG_SOURCE_VERSION:=HEAD
+PKG_MIRROR_HASH:=skip
+
+PKG_LICENSE:=MIT
+PKG_LICENSE_FILES:=LICENSE
+PKG_MAINTAINER:=LazuliKao
+
+PKG_BUILD_DEPENDS:=zig/host
+PKG_BUILD_PARALLEL:=1
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/portweaver
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Port forwarding and NAT traversal tool
+  URL:=https://github.com/LazuliKao/PortWeaver
+  DEPENDS:=+libuci +kmod-ipt-nat +iptables-mod-ipopt
+endef
+
+define Package/portweaver/description
+  PortWeaver is a flexible port forwarding and NAT traversal tool
+  for OpenWrt, with UCI configuration support.
+endef
+
+define Build/Compile
+	cd $(PKG_BUILD_DIR) && \
+	zig build \
+		-Dtarget=$(ARCH)-linux-musl \
+		-Doptimize=ReleaseSafe \
+		-Dcpu=$(CPU_TYPE) \
+		--prefix $(PKG_INSTALL_DIR)
+endef
+
+define Package/portweaver/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/PortWeaver $(1)/usr/bin/portweaver
+	
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DATA) ./files/portweaver.config $(1)/etc/config/portweaver
+	
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/portweaver.init $(1)/etc/init.d/portweaver
+endef
+
+define Package/portweaver/conffiles
+/etc/config/portweaver
+endef
+
+$(eval $(call BuildPackage,portweaver))

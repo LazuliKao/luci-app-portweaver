@@ -1,0 +1,11 @@
+{
+	"luci-app-portweaver": {
+		"description": "Grant UCI access for LuCI PortWeaver app",
+		"read": {
+			"uci": ["portweaver"]
+		},
+		"write": {
+			"uci": ["portweaver"]
+		}
+	}
+}

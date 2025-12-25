@@ -1,0 +1,25 @@
+# Build artifacts
+*.ipk
+*.tar.gz
+*.tar.xz
+bin/
+build_dir/
+staging_dir/
+tmp/
+logs/
+
+# Zig
+zig-cache/
+zig-out/
+.zig-cache/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
