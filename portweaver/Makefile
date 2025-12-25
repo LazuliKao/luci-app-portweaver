@@ -7,7 +7,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/LazuliKao/PortWeaver.git
 PKG_SOURCE_VERSION:=HEAD
-PKG_MIRROR_HASH:=skip
+PKG_MIRROR_HASH=104552175f6409837f92beda963e98bad51e6f26520360d432f3fa07cc7034aa
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
@@ -32,8 +32,14 @@ define Package/portweaver/description
 endef
 
 define Build/Compile
+	# Download and setup Zig
+	mkdir -p $(PKG_BUILD_DIR)/zig-tmp
+	cd $(PKG_BUILD_DIR)/zig-tmp && \
+		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-linux-x86_64-0.15.2.tar.xz && \
+		tar xf zig.tar.xz
+	# Build with Zig
 	cd $(PKG_BUILD_DIR) && \
-	zig build \
+	$(PKG_BUILD_DIR)/zig-tmp/zig-linux-x86_64-0.15.2/zig build \
 		-Dtarget=$(ARCH)-linux-musl \
 		-Doptimize=ReleaseSafe \
 		-Dcpu=$(CPU_TYPE) \
