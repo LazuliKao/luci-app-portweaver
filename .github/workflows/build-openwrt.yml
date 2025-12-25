@@ -75,7 +75,7 @@ jobs:
       - name: Build with OpenWrt SDK
         uses: openwrt/gh-action-sdk@main
         env:
-          EXTRA_FEEDS: src-link custom-feed ${{ github.workspace }}/custom-feed
+          EXTRA_FEEDS: src-link custom-feed /feed/custom-feed
           PACKAGES: portweaver luci-app-portweaver
           # V: s
         with:
