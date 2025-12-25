@@ -11,34 +11,49 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-env:
-  OPENWRT_VERSION: '24.10.5'
-  UPLOAD_RELEASE: true
-
 jobs:
   build:
-    name: Build ${{ matrix.arch }}
+    name: ${{ matrix.target }}/${{ matrix.subtarget }} (${{ matrix.version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - arch: x86_64
-            sdk_url_path: x86/64
-          - arch: aarch64_cortex-a53
-            sdk_url_path: bcm27xx/bcm2710
-          - arch: aarch64_cortex-a72
-            sdk_url_path: bcm27xx/bcm2711
-          - arch: arm_cortex-a7_neon-vhfpv4
-            sdk_url_path: bcm27xx/bcm2709
-          - arch: mipsel_24kc
-            sdk_url_path: ramips/mt7621
-          - arch: mips_24kc
-            sdk_url_path: ath79/generic
-          - arch: arm_cortex-a9
-            sdk_url_path: bcm53xx/generic
-          - arch: aarch64_generic
-            sdk_url_path: armsr/armv8
+          # Release builds
+          - version: '24.10.5'
+            target: x86
+            subtarget: 64
+          - version: '24.10.5'
+            target: bcm27xx
+            subtarget: bcm2710
+          - version: '24.10.5'
+            target: bcm27xx
+            subtarget: bcm2711
+          - version: '24.10.5'
+            target: bcm27xx
+            subtarget: bcm2709
+          - version: '24.10.5'
+            target: ramips
+            subtarget: mt7621
+          - version: '24.10.5'
+            target: ath79
+            subtarget: generic
+          - version: '24.10.5'
+            target: bcm53xx
+            subtarget: generic
+          - version: '24.10.5'
+            target: armsr
+            subtarget: armv8
+          # SNAPSHOT builds
+          - version: 'SNAPSHOT'
+            target: x86
+            subtarget: 64
+          - version: 'SNAPSHOT'
+            target: bcm27xx
+            subtarget: bcm2710
+          - version: 'SNAPSHOT'
+            target: bcm27xx
+            subtarget: bcm2711
 
     steps:
       - name: Checkout
@@ -46,207 +61,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Environment
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential clang flex bison g++ gawk \
-            gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
-            python3-setuptools rsync swig unzip zlib1g-dev file wget curl zstd
-
-      - name: Download OpenWrt SDK
-        id: sdk
-        run: |
-          SDK_URL="https://downloads.openwrt.org/releases/${{ env.OPENWRT_VERSION }}/targets/${{ matrix.sdk_url_path }}"
-          SDK_FILE=$(curl -fsSL "${SDK_URL}/sha256sums" | awk '{print $2}' | sed 's/^\*//' | grep -E '^openwrt-sdk-.*\.(tar\.zst|tar\.xz)$' | head -n 1)
-          
-          if [ -z "$SDK_FILE" ]; then
-            echo "Error: SDK file not found for ${{ matrix.arch }}"
-            exit 1
-          fi
-          
-          echo "Downloading ${SDK_FILE}..."
-          wget -q "${SDK_URL}/${SDK_FILE}"
-          case "${SDK_FILE}" in
-            *.tar.xz)
-              tar -xJf "${SDK_FILE}"
-              ;;
-            *.tar.zst)
-              zstd -dc "${SDK_FILE}" | tar -xf -
-              ;;
-            *)
-              echo "Error: Unknown SDK archive format: ${SDK_FILE}"
-              exit 1
-              ;;
-          esac
-          SDK_DIR=$(ls -d openwrt-sdk-* | head -n 1)
-          echo "sdk_dir=${SDK_DIR}" >> $GITHUB_OUTPUT
-          echo "SDK extracted to ${SDK_DIR}"
-
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
           version: 0.15.2
 
-      - name: Prepare SDK
+      - name: Prepare custom feed
         run: |
-          cd ${{ steps.sdk.outputs.sdk_dir }}
-          
-          # Update feeds
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          
-          # Copy packages
-          mkdir -p package/network/portweaver
-          mkdir -p package/luci/applications/luci-app-portweaver
-          
-          cp -r ../openwrt-portweaver/* package/network/portweaver/
-          cp -r ../luci-app-portweaver/* package/luci/applications/luci-app-portweaver/
+          mkdir -p custom-feed
+          cp -r openwrt-portweaver custom-feed/portweaver
+          cp -r luci-app-portweaver custom-feed/luci-app-portweaver
 
-      - name: Build PortWeaver Package
-        id: build
-        run: |
-          cd ${{ steps.sdk.outputs.sdk_dir }}
-          
-          # Configure
-          make defconfig
-          
-          # Build portweaver
-          echo "Building portweaver..."
-          make package/portweaver/compile V=s -j$(nproc) || make package/portweaver/compile V=s -j1
-          
-          # Build luci-app-portweaver
-          echo "Building luci-app-portweaver..."
-          make package/luci-app-portweaver/compile V=s -j$(nproc) || make package/luci-app-portweaver/compile V=s -j1
-          
-          # Find built packages
-          BIN_DIR="bin/packages/${{ matrix.arch }}"
-          PORTWEAVER_PKG=$(find ${BIN_DIR} -name "portweaver*.ipk" 2>/dev/null | head -n 1)
-          LUCI_PKG=$(find ${BIN_DIR} -name "luci-app-portweaver*.ipk" 2>/dev/null | head -n 1)
-          
-          if [ -z "$PORTWEAVER_PKG" ] && [ -z "$LUCI_PKG" ]; then
-            echo "Error: No packages found"
-            exit 1
-          fi
-          
-          echo "portweaver_pkg=${PORTWEAVER_PKG}" >> $GITHUB_OUTPUT
-          echo "luci_pkg=${LUCI_PKG}" >> $GITHUB_OUTPUT
-          
-          ls -lh ${BIN_DIR}/**/*.ipk || true
+      - name: Build with OpenWrt SDK
+        uses: openwrt/gh-action-sdk@main
+        env:
+          FEEDNAME: custom-feed
+          PACKAGES: portweaver luci-app-portweaver
+          V: s
+        with:
+          target: ${{ matrix.target }}
+          subtarget: ${{ matrix.subtarget }}
+          version: ${{ matrix.version }}
 
-      - name: Organize Artifacts
+      - name: List built packages
         run: |
-          mkdir -p artifacts/${{ matrix.arch }}
-          cd ${{ steps.sdk.outputs.sdk_dir }}
-          
-          if [ -n "${{ steps.build.outputs.portweaver_pkg }}" ]; then
-            cp ${{ steps.build.outputs.portweaver_pkg }} ../artifacts/${{ matrix.arch }}/
-          fi
-          
-          if [ -n "${{ steps.build.outputs.luci_pkg }}" ]; then
-            cp ${{ steps.build.outputs.luci_pkg }} ../artifacts/${{ matrix.arch }}/
-          fi
-          
-          cd ../artifacts/${{ matrix.arch }}
-          ls -lh
+          ls -lh openwrt/bin/packages/*/custom-feed/ || true
+          ls -lh openwrt/bin/packages/*/luci/ || true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: portweaver-${{ matrix.arch }}
-          path: artifacts/${{ matrix.arch }}/*.ipk
-          if-no-files-found: error
-
-  build-snapshot:
-    name: Build ${{ matrix.arch }} (SNAPSHOT)
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            sdk_url_path: x86/64
-          - arch: aarch64_cortex-a53
-            sdk_url_path: bcm27xx/bcm2710
-          - arch: aarch64_cortex-a72
-            sdk_url_path: bcm27xx/bcm2711
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Environment
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential clang flex bison g++ gawk \
-            gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
-            python3-setuptools rsync swig unzip zlib1g-dev file wget curl zstd
-
-      - name: Download OpenWrt SDK (SNAPSHOT)
-        id: sdk
-        run: |
-          SDK_URL="https://downloads.openwrt.org/snapshots/targets/${{ matrix.sdk_url_path }}"
-          SDK_FILE=$(curl -fsSL "${SDK_URL}/sha256sums" | awk '{print $2}' | sed 's/^\*//' | grep -E '^openwrt-sdk-.*\.(tar\.zst|tar\.xz)$' | head -n 1)
-          
-          if [ -z "$SDK_FILE" ]; then
-            echo "Error: SDK file not found"
-            exit 1
-          fi
-          
-          echo "Downloading ${SDK_FILE}..."
-          wget -q "${SDK_URL}/${SDK_FILE}"
-          case "${SDK_FILE}" in
-            *.tar.xz)
-              tar -xJf "${SDK_FILE}"
-              ;;
-            *.tar.zst)
-              zstd -dc "${SDK_FILE}" | tar -xf -
-              ;;
-            *)
-              echo "Error: Unknown SDK archive format: ${SDK_FILE}"
-              exit 1
-              ;;
-          esac
-          SDK_DIR=$(ls -d openwrt-sdk-* | head -n 1)
-          echo "sdk_dir=${SDK_DIR}" >> $GITHUB_OUTPUT
-
-      - name: Install Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.15.2
-
-      - name: Prepare SDK
-        run: |
-          cd ${{ steps.sdk.outputs.sdk_dir }}
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          mkdir -p package/network/portweaver
-          mkdir -p package/luci/applications/luci-app-portweaver
-          cp -r ../openwrt-portweaver/* package/network/portweaver/
-          cp -r ../luci-app-portweaver/* package/luci/applications/luci-app-portweaver/
-
-      - name: Build Packages
-        run: |
-          cd ${{ steps.sdk.outputs.sdk_dir }}
-          make defconfig
-          make package/portweaver/compile V=s -j$(nproc) || make package/portweaver/compile V=s -j1
-          make package/luci-app-portweaver/compile V=s -j$(nproc) || make package/luci-app-portweaver/compile V=s -j1
-          
-          mkdir -p ../artifacts-snapshot/${{ matrix.arch }}
-          find bin/packages -name "*.ipk" -exec cp {} ../artifacts-snapshot/${{ matrix.arch }}/ \;
-          find bin/packages -name "*.apk" -exec cp {} ../artifacts-snapshot/${{ matrix.arch }}/ \; || true
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: portweaver-snapshot-${{ matrix.arch }}
+          name: portweaver-${{ matrix.version }}-${{ matrix.target }}-${{ matrix.subtarget }}
           path: |
-            artifacts-snapshot/${{ matrix.arch }}/*.ipk
-            artifacts-snapshot/${{ matrix.arch }}/*.apk
-          if-no-files-found: warn
+            openwrt/bin/packages/*/custom-feed/*.ipk
+            openwrt/bin/packages/*/luci/*.ipk
+          if-no-files-found: error
 
   release:
     name: Create Release
-    needs: [build, build-snapshot]
+    needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     
@@ -264,13 +117,8 @@ jobs:
       - name: Organize Release Files
         run: |
           mkdir -p release
-          cd all-artifacts
-          for dir in portweaver-*; do
-            if [ -d "$dir" ]; then
-              cp -r "$dir"/* ../release/ 2>/dev/null || true
-            fi
-          done
-          cd ../release
+          find all-artifacts -name "*.ipk" -exec cp {} release/ \;
+          cd release
           ls -lh
 
       - name: Generate Release Info
@@ -280,15 +128,14 @@ jobs:
           echo "tag=v$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: env.UPLOAD_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release_info.outputs.tag }}
-          name: OpenWrt PortWeaver ${{ steps.release_info.outputs.date }}
+          name: PortWeaver ${{ steps.release_info.outputs.date }}
           body: |
             ## PortWeaver OpenWrt Packages
             
-            Built with OpenWrt SDK ${{ env.OPENWRT_VERSION }} and SNAPSHOT
+            Built with OpenWrt SDK (24.10.5 and SNAPSHOT)
             
             ### Installation
             ```bash
@@ -296,18 +143,16 @@ jobs:
             opkg install luci-app-portweaver_*.ipk
             ```
             
-            ### Architectures
+            ### Supported Architectures
             - x86_64
-            - aarch64 (Raspberry Pi 3/4, ARM64)
-            - arm_cortex-a7 (Raspberry Pi 2)
-            - mipsel_24kc (MT7621)
-            - mips_24kc (AR71xx/AR9xxx)
-            - And more...
+            - bcm27xx (Raspberry Pi series)
+            - ramips/mt7621 (MT7621 routers)
+            - ath79 (AR71xx/AR9xxx routers)
+            - bcm53xx
+            - armsr/armv8
             
             Built on: ${{ steps.release_info.outputs.date }}
-          files: |
-            release/*.ipk
-            release/*.apk
+          files: release/*.ipk
           draft: false
           prerelease: false
         env:
