@@ -4,8 +4,8 @@ This repository contains OpenWrt packages for [PortWeaver](https://github.com/La
 
 ## Packages
 
-- **openwrt-portweaver** - Core PortWeaver binary package
-- **luci-app-portweaver** - LuCI web interface for PortWeaver
+- **openwrt-portweaver/** - Core PortWeaver binary package
+- **luci-app-portweaver/** - LuCI web interface for PortWeaver
 
 ## Installation
 
@@ -44,9 +44,9 @@ cd openwrt-sdk-*
 
 2. Copy packages to SDK:
 ```bash
-git clone https://github.com/YOUR_USERNAME/portweaver-openwrt.git
-cp -r portweaver-openwrt/openwrt-portweaver package/network/portweaver
-cp -r portweaver-openwrt/luci-app-portweaver package/luci/applications/luci-app-portweaver
+git clone https://github.com/LazuliKao/luci-app-portweaver.git
+cp -r luci-app-portweaver/openwrt-portweaver package/network/portweaver
+cp -r luci-app-portweaver/luci-app-portweaver package/luci/applications/luci-app-portweaver
 ```
 
 3. Update feeds and build:
@@ -144,21 +144,23 @@ The interface allows you to:
 
 ## Development
 
-### Structure
+### Repository Structure
+
+This repository is part of the PortWeaver project and contains two OpenWrt packages:
 
 ```
-.
+luci-app-portweaver/
 ├── .github/
 │   └── workflows/
-│       └── build-openwrt.yml    # GitHub Actions workflow
-├── openwrt-portweaver/
-│   ├── Makefile                  # OpenWrt package Makefile
+│       └── build-openwrt.yml         # GitHub Actions workflow
+├── openwrt-portweaver/               # Core PortWeaver package
+│   ├── Makefile                      # OpenWrt package Makefile
 │   ├── files/
-│   │   ├── portweaver.config     # Default UCI config
-│   │   └── portweaver.init       # Init script
+│   │   ├── portweaver.config         # Default UCI config
+│   │   └── portweaver.init           # Init script
 │   └── README.md
-└── luci-app-portweaver/
-    ├── Makefile                  # LuCI package Makefile
+└── luci-app-portweaver/              # LuCI web interface package
+    ├── Makefile                      # LuCI package Makefile
     ├── htdocs/
     │   └── luci-static/
     │       └── resources/
@@ -179,7 +181,7 @@ The interface allows you to:
     │                   └── luci-app-portweaver.json
     ├── po/
     │   └── templates/
-    │       └── portweaver.pot    # Translation template
+    │       └── portweaver.pot        # Translation template
     └── README.md
 ```
 
@@ -202,13 +204,13 @@ MIT License - see [LICENSE](LICENSE) file
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Credits
+## Related Projects
 
-- [PortWeaver](https://github.com/LazuliKao/PortWeaver) - Original project by LazuliKao
+- **[PortWeaver](https://github.com/LazuliKao/PortWeaver)** - Core PortWeaver project (Zig implementation)
 - Built with [Zig](https://ziglang.org/)
 
 ## Support
 
 For issues related to:
 - **PortWeaver core functionality**: [PortWeaver Issues](https://github.com/LazuliKao/PortWeaver/issues)
-- **OpenWrt packaging**: Open an issue in this repository
+- **OpenWrt packaging and LuCI interface**: [Open an issue](../../issues) in this repository
