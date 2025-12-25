@@ -11,6 +11,6 @@ PKG_RELEASE:=1
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=LazuliKao
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
