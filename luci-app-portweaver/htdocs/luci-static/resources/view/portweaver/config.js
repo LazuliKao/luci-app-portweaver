@@ -28,6 +28,16 @@ return view.extend({
 		o.datatype = 'string';
 		o.placeholder = 'My Project';
 
+		o = s.option(form.DynamicList, 'src_zone', _('Source Zones'));
+		o.rmempty = true;
+		o.datatype = 'string';
+		o.placeholder = 'wan';
+
+		o = s.option(form.DynamicList, 'dest_zone', _('Destination Zones'));
+		o.rmempty = true;
+		o.datatype = 'string';
+		o.placeholder = 'lan';
+
 		o = s.option(form.ListValue, 'family', _('Address Family'));
 		o.value('any', _('IPv4 and IPv6'));
 		o.value('ipv4', 'IPv4');
