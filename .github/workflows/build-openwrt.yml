@@ -77,7 +77,7 @@ jobs:
         env:
           FEEDNAME: custom-feed
           PACKAGES: portweaver luci-app-portweaver
-          V: s
+          # V: s
         with:
           target: ${{ matrix.target }}
           subtarget: ${{ matrix.subtarget }}
