@@ -72,7 +72,7 @@ jobs:
           echo "SDK extracted to ${SDK_DIR}"
 
       - name: Install Zig
-        uses: https://codeberg.org/mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@v2
         with:
           version: 0.15.2
 
@@ -188,7 +188,7 @@ jobs:
           echo "sdk_dir=${SDK_DIR}" >> $GITHUB_OUTPUT
 
       - name: Install Zig
-        uses: https://codeberg.org/mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@v2
         with:
           version: 0.15.2
 
