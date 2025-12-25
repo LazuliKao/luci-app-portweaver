@@ -66,16 +66,10 @@ jobs:
         with:
           version: 0.15.2
 
-      - name: Prepare custom feed
-        run: |
-          mkdir -p custom-feed
-          cp -r openwrt-portweaver custom-feed/portweaver
-          cp -r luci-app-portweaver custom-feed/luci-app-portweaver
-
       - name: Build with OpenWrt SDK
         uses: openwrt/gh-action-sdk@main
         env:
-          EXTRA_FEEDS: src-link custom-feed /feed/custom-feed
+          EXTRA_FEEDS: src-link custom /feed
           PACKAGES: portweaver luci-app-portweaver
           # V: s
         with:
