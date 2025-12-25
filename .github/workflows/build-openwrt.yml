@@ -51,13 +51,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison g++ gawk \
             gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
-            python3-setuptools rsync swig unzip zlib1g-dev file wget curl
+            python3-setuptools rsync swig unzip zlib1g-dev file wget curl zstd
 
       - name: Download OpenWrt SDK
         id: sdk
         run: |
           SDK_URL="https://downloads.openwrt.org/releases/${{ env.OPENWRT_VERSION }}/targets/${{ matrix.sdk_url_path }}"
-          SDK_FILE=$(curl -s ${SDK_URL}/ | grep -oP 'openwrt-sdk-[^"]+\.tar\.xz' | head -n 1)
+          SDK_FILE=$(curl -fsSL "${SDK_URL}/sha256sums" | awk '{print $2}' | sed 's/^\*//' | grep -E '^openwrt-sdk-.*\.(tar\.zst|tar\.xz)$' | head -n 1)
           
           if [ -z "$SDK_FILE" ]; then
             echo "Error: SDK file not found for ${{ matrix.arch }}"
@@ -66,7 +66,18 @@ jobs:
           
           echo "Downloading ${SDK_FILE}..."
           wget -q "${SDK_URL}/${SDK_FILE}"
-          tar -xJf ${SDK_FILE}
+          case "${SDK_FILE}" in
+            *.tar.xz)
+              tar -xJf "${SDK_FILE}"
+              ;;
+            *.tar.zst)
+              zstd -dc "${SDK_FILE}" | tar -xf -
+              ;;
+            *)
+              echo "Error: Unknown SDK archive format: ${SDK_FILE}"
+              exit 1
+              ;;
+          esac
           SDK_DIR=$(ls -d openwrt-sdk-* | head -n 1)
           echo "sdk_dir=${SDK_DIR}" >> $GITHUB_OUTPUT
           echo "SDK extracted to ${SDK_DIR}"
@@ -168,13 +179,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison g++ gawk \
             gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
-            python3-setuptools rsync swig unzip zlib1g-dev file wget curl
+            python3-setuptools rsync swig unzip zlib1g-dev file wget curl zstd
 
       - name: Download OpenWrt SDK (SNAPSHOT)
         id: sdk
         run: |
           SDK_URL="https://downloads.openwrt.org/snapshots/targets/${{ matrix.sdk_url_path }}"
-          SDK_FILE=$(curl -s ${SDK_URL}/ | grep -oP 'openwrt-sdk-[^"]+\.tar\.xz' | head -n 1)
+          SDK_FILE=$(curl -fsSL "${SDK_URL}/sha256sums" | awk '{print $2}' | sed 's/^\*//' | grep -E '^openwrt-sdk-.*\.(tar\.zst|tar\.xz)$' | head -n 1)
           
           if [ -z "$SDK_FILE" ]; then
             echo "Error: SDK file not found"
@@ -183,7 +194,18 @@ jobs:
           
           echo "Downloading ${SDK_FILE}..."
           wget -q "${SDK_URL}/${SDK_FILE}"
-          tar -xJf ${SDK_FILE}
+          case "${SDK_FILE}" in
+            *.tar.xz)
+              tar -xJf "${SDK_FILE}"
+              ;;
+            *.tar.zst)
+              zstd -dc "${SDK_FILE}" | tar -xf -
+              ;;
+            *)
+              echo "Error: Unknown SDK archive format: ${SDK_FILE}"
+              exit 1
+              ;;
+          esac
           SDK_DIR=$(ls -d openwrt-sdk-* | head -n 1)
           echo "sdk_dir=${SDK_DIR}" >> $GITHUB_OUTPUT
 
@@ -211,12 +233,15 @@ jobs:
           
           mkdir -p ../artifacts-snapshot/${{ matrix.arch }}
           find bin/packages -name "*.ipk" -exec cp {} ../artifacts-snapshot/${{ matrix.arch }}/ \;
+          find bin/packages -name "*.apk" -exec cp {} ../artifacts-snapshot/${{ matrix.arch }}/ \; || true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: portweaver-snapshot-${{ matrix.arch }}
-          path: artifacts-snapshot/${{ matrix.arch }}/*.ipk
+          path: |
+            artifacts-snapshot/${{ matrix.arch }}/*.ipk
+            artifacts-snapshot/${{ matrix.arch }}/*.apk
           if-no-files-found: warn
 
   release:
@@ -280,7 +305,9 @@ jobs:
             - And more...
             
             Built on: ${{ steps.release_info.outputs.date }}
-          files: release/*.ipk
+          files: |
+            release/*.ipk
+            release/*.apk
           draft: false
           prerelease: false
         env:
