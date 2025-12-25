@@ -23,37 +23,76 @@ jobs:
           - version: '24.10.5'
             target: x86
             subtarget: 64
+            arch: x86_64
           - version: '24.10.5'
             target: bcm27xx
             subtarget: bcm2710
+            arch: arm_cortex-a53_neon-vfpv4
           - version: '24.10.5'
             target: bcm27xx
             subtarget: bcm2711
+            arch: arm_cortex-a53_neon-vfpv4
           - version: '24.10.5'
             target: bcm27xx
             subtarget: bcm2709
+            arch: arm_cortex-a7_neon-vfpv4
           - version: '24.10.5'
             target: ramips
             subtarget: mt7621
+            arch: mipsel_24kc
           - version: '24.10.5'
             target: ath79
             subtarget: generic
+            arch: mips_24kc
           - version: '24.10.5'
             target: bcm53xx
             subtarget: generic
+            arch: arm_cortex-a9
           - version: '24.10.5'
             target: armsr
             subtarget: armv8
+            arch: aarch64_generic
+          - version: '24.10.5'
+            target: mvebu
+            subtarget: cortexa53
+            arch: aarch64_cortex-a53
+          - version: '24.10.5'
+            target: ipq806x
+            subtarget: generic
+            arch: arm_cortex-a15_neon-vfpv4
+          - version: '24.10.5'
+            target: mediatek
+            subtarget: mt7622
+            arch: aarch64_cortex-a53
+          - version: '24.10.5'
+            target: rockchip
+            subtarget: armv8
+            arch: aarch64_generic
           # SNAPSHOT builds
           - version: 'SNAPSHOT'
             target: x86
             subtarget: 64
+            arch: x86_64
           - version: 'SNAPSHOT'
             target: bcm27xx
             subtarget: bcm2710
+            arch: arm_cortex-a53_neon-vfpv4
           - version: 'SNAPSHOT'
             target: bcm27xx
             subtarget: bcm2711
+            arch: arm_cortex-a53_neon-vfpv4
+          - version: 'SNAPSHOT'
+            target: mvebu
+            subtarget: cortexa53
+            arch: aarch64_cortex-a53
+          - version: 'SNAPSHOT'
+            target: mediatek
+            subtarget: mt7622
+            arch: aarch64_cortex-a53
+          - version: 'SNAPSHOT'
+            target: rockchip
+            subtarget: armv8
+            arch: aarch64_generic
 
     steps:
       - name: Checkout
@@ -71,11 +110,8 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
-          # V: s
-        with:
-          target: ${{ matrix.target }}
-          subtarget: ${{ matrix.subtarget }}
-          version: ${{ matrix.version }}
+          ARCH: ${{ matrix.arch }}
+          V: s
 
       - name: List built packages
         run: |
