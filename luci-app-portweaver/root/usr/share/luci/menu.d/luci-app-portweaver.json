@@ -1,5 +1,5 @@
 {
-	"admin/services/portweaver": {
+	"admin/network/portweaver": {
 		"title": "PortWeaver",
 		"order": 60,
 		"action": {
