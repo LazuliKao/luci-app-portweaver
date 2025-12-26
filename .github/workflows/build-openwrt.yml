@@ -26,14 +26,6 @@ jobs:
             arch: x86_64
           - version: '24.10.5'
             target: bcm27xx
-            subtarget: bcm2710
-            arch: arm_cortex-a53_neon-vfpv4
-          - version: '24.10.5'
-            target: bcm27xx
-            subtarget: bcm2711
-            arch: arm_cortex-a53_neon-vfpv4
-          - version: '24.10.5'
-            target: bcm27xx
             subtarget: bcm2709
             arch: arm_cortex-a7_neon-vfpv4
           - version: '24.10.5'
@@ -61,10 +53,6 @@ jobs:
             subtarget: generic
             arch: arm_cortex-a15_neon-vfpv4
           - version: '24.10.5'
-            target: mediatek
-            subtarget: mt7622
-            arch: aarch64_cortex-a53
-          - version: '24.10.5'
             target: rockchip
             subtarget: armv8
             arch: aarch64_generic
@@ -74,20 +62,8 @@ jobs:
             subtarget: 64
             arch: x86_64
           - version: 'SNAPSHOT'
-            target: bcm27xx
-            subtarget: bcm2710
-            arch: arm_cortex-a53_neon-vfpv4
-          - version: 'SNAPSHOT'
-            target: bcm27xx
-            subtarget: bcm2711
-            arch: arm_cortex-a53_neon-vfpv4
-          - version: 'SNAPSHOT'
             target: mvebu
             subtarget: cortexa53
-            arch: aarch64_cortex-a53
-          - version: 'SNAPSHOT'
-            target: mediatek
-            subtarget: mt7622
             arch: aarch64_cortex-a53
           - version: 'SNAPSHOT'
             target: rockchip
@@ -111,20 +87,23 @@ jobs:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
           ARCH: ${{ matrix.arch }}
-          V: s
+          # V: s
 
       - name: List built packages
         run: |
-          ls -lh openwrt/bin/packages/*/custom-feed/ || true
-          ls -lh openwrt/bin/packages/*/luci/ || true
+          echo "=== Listing bin directory ==="
+          find bin -type f \( -name "*.ipk" -o -name "*.apk" \) || true
+          ls -lhR bin/ || true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: portweaver-${{ matrix.version }}-${{ matrix.target }}-${{ matrix.subtarget }}
           path: |
-            openwrt/bin/packages/*/custom-feed/*.ipk
-            openwrt/bin/packages/*/luci/*.ipk
+            bin/packages/*/custom/*.ipk
+            bin/packages/*/custom/*.apk
+            bin/targets/*/*/*.ipk
+            bin/targets/*/*/*.apk
           if-no-files-found: error
 
   release:
@@ -147,7 +126,7 @@ jobs:
       - name: Organize Release Files
         run: |
           mkdir -p release
-          find all-artifacts -name "*.ipk" -exec cp {} release/ \;
+          find all-artifacts \( -name "*.ipk" -o -name "*.apk" \) -exec cp {} release/ \;
           cd release
           ls -lh
 
@@ -171,6 +150,9 @@ jobs:
             ```bash
             opkg install portweaver_*.ipk
             opkg install luci-app-portweaver_*.ipk
+            # For APK format (newer OpenWrt versions):
+            apk add portweaver_*.apk
+            apk add luci-app-portweaver_*.apk
             ```
             
             ### Supported Architectures
@@ -182,7 +164,9 @@ jobs:
             - armsr/armv8
             
             Built on: ${{ steps.release_info.outputs.date }}
-          files: release/*.ipk
+          files: |
+            release/*.ipk
+            release/*.apk
           draft: false
           prerelease: false
         env:

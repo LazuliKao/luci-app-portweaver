@@ -42,6 +42,7 @@ define Build/Compile
 	$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
 		-Dtarget=$(ARCH)-linux-musl \
 		-Doptimize=ReleaseSafe \
+		$(if $(CPU_TYPE),-Dcpu=$(CPU_TYPE)) \
 		--prefix $(PKG_INSTALL_DIR)
 endef
 
