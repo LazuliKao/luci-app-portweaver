@@ -18,6 +18,10 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
+# Zig configuration
+ZIG := $(STAGING_DIR_HOST)/bin/zig
+ZIG_TARGET := $(subst openwrt-,,$(GNU_TARGET_NAME))
+
 define Package/portweaver
   SECTION:=net
   CATEGORY:=Network
@@ -32,18 +36,24 @@ define Package/portweaver/description
 endef
 
 define Build/Compile
-	# Download and setup Zig
-	mkdir -p $(PKG_BUILD_DIR)/zig-tmp
-	cd $(PKG_BUILD_DIR)/zig-tmp && \
+	# Check if Zig is available, download if not
+	@if [ ! -f "$(ZIG)" ]; then \
+		echo "Zig not found, downloading..."; \
+		mkdir -p $(PKG_BUILD_DIR)/zig-tmp; \
+		cd $(PKG_BUILD_DIR)/zig-tmp && \
 		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
-		tar xf zig.tar.xz
-	# Build with Zig
+		tar xf zig.tar.xz && \
+		ZIG_BIN=$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig; \
+	else \
+		ZIG_BIN=$(ZIG); \
+	fi; \
 	cd $(PKG_BUILD_DIR) && \
-	$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
-		-Dtarget=$(ARCH)-linux-musl \
-		-Doptimize=ReleaseSafe \
-		$(if $(CPU_TYPE),-Dcpu=$(CPU_TYPE)) \
-		--prefix $(PKG_INSTALL_DIR)
+	$$ZIG_BIN build \
+		-Dtarget=$(ZIG_TARGET) \
+		-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
+		--release=small \
+		--sysroot=$(STAGING_DIR_TARGET) \
+		--prefix=$(PKG_INSTALL_DIR)/usr
 endef
 
 define Package/portweaver/install

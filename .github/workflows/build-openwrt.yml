@@ -2,74 +2,44 @@ name: Build OpenWrt Packages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
     paths:
-      - 'openwrt-portweaver/**'
-      - 'luci-app-portweaver/**'
-      - '.github/workflows/build-openwrt.yml'
+      - "openwrt-portweaver/**"
+      - "luci-app-portweaver/**"
+      - ".github/workflows/build-openwrt.yml"
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
-    name: ${{ matrix.target }}/${{ matrix.subtarget }} (${{ matrix.version }})
+    name: ${{ matrix.arch }} (${{ matrix.openwrt_version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Release builds
-          - version: '24.10.5'
-            target: x86
-            subtarget: 64
-            arch: x86_64
-          - version: '24.10.5'
-            target: bcm27xx
-            subtarget: bcm2709
-            arch: arm_cortex-a7_neon-vfpv4
-          - version: '24.10.5'
-            target: ramips
-            subtarget: mt7621
-            arch: mipsel_24kc
-          - version: '24.10.5'
-            target: ath79
-            subtarget: generic
-            arch: mips_24kc
-          - version: '24.10.5'
-            target: bcm53xx
-            subtarget: generic
-            arch: arm_cortex-a9
-          - version: '24.10.5'
-            target: armsr
-            subtarget: armv8
-            arch: aarch64_generic
-          - version: '24.10.5'
-            target: mvebu
-            subtarget: cortexa53
-            arch: aarch64_cortex-a53
-          - version: '24.10.5'
-            target: ipq806x
-            subtarget: generic
-            arch: arm_cortex-a15_neon-vfpv4
-          - version: '24.10.5'
-            target: rockchip
-            subtarget: armv8
-            arch: aarch64_generic
-          # SNAPSHOT builds
-          - version: 'SNAPSHOT'
-            target: x86
-            subtarget: 64
-            arch: x86_64
-          - version: 'SNAPSHOT'
-            target: mvebu
-            subtarget: cortexa53
-            arch: aarch64_cortex-a53
-          - version: 'SNAPSHOT'
-            target: rockchip
-            subtarget: armv8
-            arch: aarch64_generic
-
+        arch:
+          - x86_64
+          - aarch64_generic
+          - aarch64_cortex-a53
+          - aarch64_cortex-a72
+          - arm_cortex-a5_vfpv4
+          - arm_cortex-a7
+          - arm_cortex-a7_neon-vfpv4
+          - arm_cortex-a8_vfpv3
+          - arm_cortex-a9
+          - arm_cortex-a9_neon
+          - arm_cortex-a9_vfpv3-d16
+          - arm_cortex-a15_neon-vfpv4
+          - mips_24kc
+          - mips_4kec
+          - mips_mips32
+          - mipsel_24kc
+          - mipsel_74kc
+          - mipsel_mips32
+        openwrt_version:
+          - "24.10.5"
+          - "SNAPSHOT"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -87,7 +57,7 @@ jobs:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
           ARCH: ${{ matrix.arch }}
-          # V: s
+          V: s
 
       - name: List built packages
         run: |
@@ -98,7 +68,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: portweaver-${{ matrix.version }}-${{ matrix.target }}-${{ matrix.subtarget }}
+          name: portweaver-${{ matrix.arch }}-${{ matrix.openwrt_version }}
           path: |
             bin/packages/*/custom/*.ipk
             bin/packages/*/custom/*.apk
@@ -111,7 +81,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -143,9 +113,9 @@ jobs:
           name: PortWeaver ${{ steps.release_info.outputs.date }}
           body: |
             ## PortWeaver OpenWrt Packages
-            
+
             Built with OpenWrt SDK (24.10.5 and SNAPSHOT)
-            
+
             ### Installation
             ```bash
             opkg install portweaver_*.ipk
@@ -154,7 +124,7 @@ jobs:
             apk add portweaver_*.apk
             apk add luci-app-portweaver_*.apk
             ```
-            
+
             ### Supported Architectures
             - x86_64
             - bcm27xx (Raspberry Pi series)
@@ -162,7 +132,7 @@ jobs:
             - ath79 (AR71xx/AR9xxx routers)
             - bcm53xx
             - armsr/armv8
-            
+
             Built on: ${{ steps.release_info.outputs.date }}
           files: |
             release/*.ipk
