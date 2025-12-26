@@ -5,7 +5,7 @@ PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/LazuliKao/PortWeaver.git
+PKG_SOURCE_URL:=https://github.com/LazuliKao/portweaver.git
 PKG_SOURCE_VERSION:=HEAD
 PKG_MIRROR_HASH=104552175f6409837f92beda963e98bad51e6f26520360d432f3fa07cc7034aa
 
@@ -26,7 +26,7 @@ define Package/portweaver
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Port forwarding and NAT traversal tool
-  URL:=https://github.com/LazuliKao/PortWeaver
+  URL:=https://github.com/LazuliKao/portweaver
   DEPENDS:=+libuci +kmod-ipt-nat +iptables-mod-ipopt
 endef
 
@@ -59,7 +59,7 @@ endef
 
 define Package/portweaver/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/PortWeaver $(1)/usr/bin/portweaver
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/portweaver $(1)/usr/bin/portweaver
 	
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/portweaver.config $(1)/etc/config/portweaver
