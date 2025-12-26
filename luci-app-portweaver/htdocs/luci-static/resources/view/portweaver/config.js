@@ -190,10 +190,6 @@ return view.extend({
 		o.datatype = 'port';
 		o.placeholder = '8080';
 
-		o = s.option(form.Flag, 'reuseaddr', _('Reuse Address'));
-		o.modalonly = true;
-		o.default = '1';
-
 		o = s.option(form.Value, 'target_address', _('Target Address'));
 		o.modalonly = true;
 		o.rmempty = false;
@@ -223,6 +219,15 @@ return view.extend({
 		o = s.option(form.Flag, 'add_firewall_forward', _('Add Firewall Forward'));
 		o.modalonly = true;
 		o.default = '1';
+
+		o = s.option(form.Flag, 'enable_app_forward', _('Enable App Level Forward'));
+		o.modalonly = true;
+		o.default = '0';
+
+		o = s.option(form.Flag, 'reuseaddr', _('Reuse Address'));
+		o.modalonly = true;
+		o.default = '1';
+		o.depends('enable_app_forward', '1');
 
 		return m.render();
 	}
