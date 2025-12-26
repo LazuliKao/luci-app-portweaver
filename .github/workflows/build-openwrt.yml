@@ -50,7 +50,7 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
-          ARCH: ${{ matrix.arch }}
+          ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
           V: s
 
       - name: List built packages
