@@ -42,18 +42,19 @@ define Build/Compile
 		mkdir -p $(PKG_BUILD_DIR)/zig-tmp; \
 		cd $(PKG_BUILD_DIR)/zig-tmp && \
 		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
-		tar xf zig.tar.xz && \
-		ZIG_BIN=$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig; \
+		tar xf zig.tar.xz; \
+		cd $(PKG_BUILD_DIR) && \
+		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
+			-Dtarget=$(ZIG_TARGET) \
+			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
+			--release=small \
 	else \
-		ZIG_BIN=$(ZIG); \
-	fi; \
-	cd $(PKG_BUILD_DIR) && \
-	$$ZIG_BIN build \
-		-Dtarget=$(ZIG_TARGET) \
-		-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
-		--release=small \
-		--sysroot=$(STAGING_DIR_TARGET) \
-		--prefix=$(PKG_INSTALL_DIR)/usr
+		cd $(PKG_BUILD_DIR) && \
+		$(ZIG) build \
+			-Dtarget=$(ZIG_TARGET) \
+			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
+			--release=small \
+	fi
 endef
 
 define Package/portweaver/install

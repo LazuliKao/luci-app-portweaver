@@ -2,13 +2,7 @@ name: Build OpenWrt Packages
 
 on:
   push:
-    branches: [main, master]
-    paths:
-      - "openwrt-portweaver/**"
-      - "luci-app-portweaver/**"
-      - ".github/workflows/build-openwrt.yml"
   pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -80,7 +74,7 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main')
 
     steps:
       - name: Checkout
