@@ -57,6 +57,19 @@ define Build/Compile
 	fi
 endef
 
+define Build/Install
+	$(INSTALL_DIR) $(PKG_INSTALL_DIR)/bin
+	@if [ -f "$(PKG_BUILD_DIR)/zig-out/bin/portweaver" ]; then \
+		$(INSTALL_BIN) $(PKG_BUILD_DIR)/zig-out/bin/portweaver $(PKG_INSTALL_DIR)/bin/portweaver; \
+	elif [ -f "$(ZIG)" ]; then \
+		cd $(PKG_BUILD_DIR) && $(ZIG) build install -Dtarget=$(ZIG_TARGET) -Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) --prefix=$(PKG_INSTALL_DIR) --release=small; \
+	elif [ -d "$(PKG_BUILD_DIR)/zig-tmp" ]; then \
+		cd $(PKG_BUILD_DIR) && $(PKG_BUILD_DIR)/zig-tmp/zig-*/zig build install -Dtarget=$(ZIG_TARGET) -Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) --prefix=$(PKG_INSTALL_DIR) --release=small; \
+	else \
+		echo "Error: built binary not found and Zig install not available"; false; \
+	fi
+endef
+
 define Package/portweaver/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/portweaver $(1)/usr/bin/portweaver
