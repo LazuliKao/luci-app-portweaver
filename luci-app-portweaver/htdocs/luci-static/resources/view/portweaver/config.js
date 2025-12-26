@@ -19,6 +19,13 @@ return view.extend({
 		m = new form.Map('portweaver', _('PortWeaver'),
 			_('Port forwarding and NAT traversal configuration'));
 
+		// Global settings section
+		s = m.section(form.NamedSection, 'global', 'global', _('Global Settings'));
+
+		o = s.option(form.Flag, 'enabled', _('Enable PortWeaver'));
+		o.default = '1';
+		o.rmempty = false;
+
 		// Port forwarding rules section
 		s = m.section(form.GridSection, 'project', _('Port Forwarding Projects'),
 			_('Configure port forwarding projects for PortWeaver'));
@@ -30,6 +37,11 @@ return view.extend({
 		s.sectiontitle = function(section_id) {
 			return uci.get('portweaver', section_id, 'remark') || _('Unnamed project');
 		};
+
+		o = s.option(form.Flag, 'enabled', _('Enabled'));
+		o.modalonly = false;
+		o.default = '1';
+		o.editable = true;
 
 		// Preview column
 		o = s.option(form.DummyValue, '_preview', _('Overview'));
@@ -132,6 +144,10 @@ return view.extend({
 		};
 		o.datatype = 'string';
 		o.placeholder = 'My Project';
+
+		o = s.option(form.Flag, 'enabled', _('Enabled'));
+		o.modalonly = true;
+		o.default = '1';
 
 		o = s.option(widgets.ZoneSelect, 'src_zone', _('Source Zones'));
 		o.modalonly = true;
