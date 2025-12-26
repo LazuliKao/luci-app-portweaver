@@ -47,13 +47,13 @@ define Build/Compile
 		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
-			--release=small \
+			--release=small; \
 	else \
 		cd $(PKG_BUILD_DIR) && \
 		$(ZIG) build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
-			--release=small \
+			--release=small; \
 	fi
 endef
 
