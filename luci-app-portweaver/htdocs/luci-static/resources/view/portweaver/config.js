@@ -125,6 +125,11 @@ return view.extend({
 		o = s.option(form.Value, 'remark', _('Remark'));
 		o.modalonly = true;
 		o.rmempty = false;
+		o.validate = function(section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('This field is required');
+			return true;
+		};
 		o.datatype = 'string';
 		o.placeholder = 'My Project';
 
@@ -161,6 +166,11 @@ return view.extend({
 		o = s.option(form.Value, 'listen_port', _('Listen Port'));
 		o.modalonly = true;
 		o.rmempty = false;
+		o.validate = function(section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('This field is required');
+			return true;
+		};
 		o.datatype = 'port';
 		o.placeholder = '8080';
 
@@ -171,12 +181,22 @@ return view.extend({
 		o = s.option(form.Value, 'target_address', _('Target Address'));
 		o.modalonly = true;
 		o.rmempty = false;
+		o.validate = function(section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('This field is required');
+			return true;
+		};
 		o.datatype = 'host';
 		o.placeholder = '192.168.1.100';
 
 		o = s.option(form.Value, 'target_port', _('Target Port'));
 		o.modalonly = true;
 		o.rmempty = false;
+		o.validate = function(section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('This field is required');
+			return true;
+		};
 		o.datatype = 'port';
 		o.placeholder = '80';
 
