@@ -4,13 +4,62 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-permissions: 
+permissions:
   contents: write
   actions: read
 jobs:
+  pre-build:
+    name: Pre-build Setup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build with OpenWrt SDK
+        id: build_openwrt
+        uses: LazuliKao/gh-action-sdk@main
+        continue-on-error: true
+        env:
+          FEEDNAME: custom
+          PACKAGES: portweaver luci-app-portweaver
+          ARCH: x86_64-24.10.5
+      - name: Update Hash if build failed
+        if: ${{ steps.build_openwrt.outcome == 'failure' }}
+        continue-on-error: true 
+        run: |
+          if [ -f "portweaver.correct_hash" ]; then
+            echo "Found portweaver.correct_hash file."
+          else
+            echo "ERROR: portweaver.correct_hash file not found!" >&2
+            exit 1
+          fi
+          CORRECT_HASH=$(cat portweaver.correct_hash)
+          if [[ ! "$CORRECT_HASH" =~ ^[a-f0-9]{64}$ ]]; then
+            echo "ERROR: Failed to extract valid SHA256 hash" >&2
+            exit 1
+          fi
+          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile"
+          sed -i "s/PKG_MIRROR_HASH:=[a-f0-9]\{64\}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
+          git add portweaver/Makefile
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "Update PKG_MIRROR_HASH to $CORRECT_HASH"
+          git push origin HEAD:main
+      - name: Re-run Build with OpenWrt SDK
+        if: ${{ steps.build_openwrt.outcome == 'failure' }}
+        uses: openwrt/gh-action-sdk@main
+        env:
+          FEEDNAME: custom
+          PACKAGES: portweaver luci-app-portweaver
+          ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          V: s
+
   build:
     name: ${{ matrix.arch }} (${{ matrix.openwrt_version }})
     runs-on: ubuntu-latest
+    needs: pre-build
     strategy:
       fail-fast: false
       matrix:
@@ -48,12 +97,13 @@ jobs:
       #     version: 0.15.2
 
       - name: Build with OpenWrt SDK
+        id: build_openwrt
         uses: openwrt/gh-action-sdk@main
+        continue-on-error: true
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
           ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
-          V: s
 
       - name: List built packages
         run: |
