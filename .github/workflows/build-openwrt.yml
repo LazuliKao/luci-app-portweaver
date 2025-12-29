@@ -59,7 +59,7 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
-          ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          ARCH: x86_64-24.10.5
           V: s
 
   build:
