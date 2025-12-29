@@ -41,12 +41,18 @@ jobs:
             exit 1
           fi
           echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile"
-          sed -i "s/PKG_MIRROR_HASH:=[a-f0-9]\{64\}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
-          git add portweaver/Makefile
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "Update PKG_MIRROR_HASH to $CORRECT_HASH"
-          git push origin HEAD:main
+          # Use extended regex so {64} doesn't require backslashes and works reliably
+          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
+          # Only commit/push if the file actually changed
+          if git diff --quiet --exit-code portweaver/Makefile; then
+            echo "No change in portweaver/Makefile; skipping commit."
+          else
+            git add portweaver/Makefile
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "Update PKG_MIRROR_HASH to $CORRECT_HASH"
+            git push origin HEAD:main
+          fi
       - name: Re-run Build with OpenWrt SDK
         if: ${{ steps.build_openwrt.outcome == 'failure' }}
         uses: openwrt/gh-action-sdk@main
