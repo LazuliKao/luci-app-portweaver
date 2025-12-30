@@ -108,7 +108,6 @@ jobs:
       - name: Build with OpenWrt SDK
         id: build_openwrt
         uses: openwrt/gh-action-sdk@main
-        continue-on-error: true
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver

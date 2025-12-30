@@ -47,6 +47,7 @@ define Build/Compile
 		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
+			-Duci=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	else \
@@ -54,6 +55,7 @@ define Build/Compile
 		$(ZIG) build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
+			-Duci=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	fi
