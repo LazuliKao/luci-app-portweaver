@@ -150,7 +150,31 @@ jobs:
       - name: Organize Release Files
         run: |
           mkdir -p release
-          find all-artifacts \( -name "*.ipk" -o -name "*.apk" \) -exec cp {} release/ \;
+          for artifact_dir in all-artifacts/portweaver-*; do
+            if [ -d "$artifact_dir" ]; then
+              # Extract arch and version from directory name (e.g., portweaver-mipsel_74kc-SNAPSHOT)
+              arch_version=$(basename "$artifact_dir" | sed 's/^portweaver-//')
+              
+              # Find and copy files with renamed names
+              find "$artifact_dir" \( -name "*.ipk" -o -name "*.apk" \) | while read file; do
+                filename=$(basename "$file")
+                # Extract package name, version, and extension
+                if [[ "$filename" =~ ^(.+)-([0-9]+\.[0-9]+\.[0-9]+-r[0-9]+)\.(ipk|apk)$ ]]; then
+                  pkgname="${BASH_REMATCH[1]}"
+                  version="${BASH_REMATCH[2]}"
+                  ext="${BASH_REMATCH[3]}"
+                  newname="${pkgname}_${version}_${arch_version}.${ext}"
+                  cp "$file" "release/$newname"
+                  echo "Copied: $filename -> $newname"
+                else
+                  # Fallback: just append arch_version before extension
+                  newname="${filename%.*}_${arch_version}.${filename##*.}"
+                  cp "$file" "release/$newname"
+                  echo "Copied: $filename -> $newname"
+                fi
+              done
+            fi
+          done
           cd release
           ls -lh
 
