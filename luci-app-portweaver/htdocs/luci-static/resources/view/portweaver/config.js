@@ -4,20 +4,108 @@
 'require uci';
 'require firewall as fwmodel';
 'require tools.widgets as widgets';
+'require rpc';
+'require poll';
+
+var callPortWeaverStatus = rpc.declare({
+	object: 'portweaver',
+	method: 'get_status',
+	expect: { }
+});
+
+var callPortWeaverListProjects = rpc.declare({
+	object: 'portweaver',
+	method: 'list_projects',
+	expect: { projects: [] }
+});
+
+var callPortWeaverSetEnabled = rpc.declare({
+	object: 'portweaver',
+	method: 'set_enabled',
+	expect: { }
+});
 
 return view.extend({
 	load: function () {
 		return Promise.all([
 			uci.load('portweaver'),
-			uci.load('firewall')
+			uci.load('firewall'),
+			callPortWeaverStatus().then(function(res) {
+				console.log('ubus get_status response:', res);
+				return res;
+			}).catch(function(err) {
+				console.warn('ubus get_status failed:', err);
+				return {};
+			}),
+			callPortWeaverListProjects().then(function(res) {
+				console.log('ubus list_projects response:', res);
+				return res || { projects: [] };
+			}).catch(function(err) {
+				console.warn('ubus list_projects failed:', err);
+				return { projects: [] };
+			})
 		]);
 	},
 
 	render: function (data) {
 		var m, s, o;
+		var globalStatus = data[2] || {};
+		var projectStatuses = data[3] ? (data[3].projects || []) : [];
+
+		var formatBytes = function (bytes) {
+			if (bytes < 1024) return bytes + ' B';
+			if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KiB';
+			if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MiB';
+			return (bytes / 1073741824).toFixed(2) + ' GiB';
+		};
+
+		var formatUptime = function (seconds) {
+			var days = Math.floor(seconds / 86400);
+			var hours = Math.floor((seconds % 86400) / 3600);
+			var mins = Math.floor((seconds % 3600) / 60);
+			if (days > 0) return days + 'd ' + hours + 'h';
+			if (hours > 0) return hours + 'h ' + mins + 'm';
+			return mins + 'm';
+		};
 
 		m = new form.Map('portweaver', _('PortWeaver'),
 			_('Port forwarding and NAT traversal configuration'));
+
+		// Setup auto-refresh
+		poll.add(function() {
+			return Promise.all([
+				callPortWeaverStatus(),
+				callPortWeaverListProjects()
+			]).then(function(results) {
+				globalStatus = results[0] || {};
+				projectStatuses = results[1] ? (results[1].projects || []) : [];
+				
+				// Update DOM elements
+				var statusElem = document.getElementById('status-value');
+				var statusColors = { 'running': 'green', 'stopped': 'red', 'degraded': 'orange' };
+				if (statusElem) {
+					statusElem.textContent = globalStatus.status || '-';
+					statusElem.style.color = statusColors[globalStatus.status] || 'gray';
+				}
+				
+				var elem = document.getElementById('total-projects-value');
+				if (elem) elem.textContent = globalStatus.total_projects || 0;
+				
+				elem = document.getElementById('active-sessions-value');
+				if (elem) elem.textContent = globalStatus.active_sessions || 0;
+				
+				elem = document.getElementById('uptime-value');
+				if (elem) elem.textContent = formatUptime(globalStatus.uptime || 0);
+				
+				elem = document.getElementById('traffic-in-value');
+				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_in || 0);
+				
+				elem = document.getElementById('traffic-out-value');
+				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_out || 0);
+			}).catch(function(err) {
+				console.warn('Auto-refresh failed:', err);
+			});
+		}, 3);
 
 		// Global settings section
 		s = m.section(form.NamedSection, 'global', 'global', _('Global Settings'));
@@ -25,6 +113,47 @@ return view.extend({
 		o = s.option(form.Flag, 'enabled', _('Enable PortWeaver'));
 		o.default = '1';
 		o.rmempty = false;
+
+		// Runtime status display
+		o = s.option(form.DummyValue, '_runtime_status', _('Runtime Status'));
+		o.rawhtml = true;
+		o.cfgvalue = function() {
+			var statusColor = {
+				'running': '#28a745',
+				'stopped': '#dc3545',
+				'degraded': '#ffc107'
+			}[globalStatus.status] || '#6c757d';
+
+			return E('div', { 'style': 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;' }, [
+				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Status')),
+					E('strong', { 
+						'style': 'color: ' + statusColor + '; font-size: 1.1em; font-weight: 600;', 
+						'id': 'status-value' 
+					}, globalStatus.status || '-')
+				]),
+				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Total Projects')),
+					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'total-projects-value' }, globalStatus.total_projects || 0)
+				]),
+				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Active Sessions')),
+					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'active-sessions-value' }, globalStatus.active_sessions || 0)
+				]),
+				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Uptime')),
+					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'uptime-value' }, formatUptime(globalStatus.uptime || 0))
+				]),
+				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Traffic In')),
+					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'traffic-in-value' }, formatBytes(globalStatus.total_bytes_in || 0))
+				]),
+				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Traffic Out')),
+					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'traffic-out-value' }, formatBytes(globalStatus.total_bytes_out || 0))
+				])
+			]);
+		};
 
 		// Port forwarding rules section
 		s = m.section(form.GridSection, 'project', _('Port Forwarding Projects'),
@@ -37,6 +166,112 @@ return view.extend({
 
 		s.sectiontitle = function (section_id) {
 			return uci.get('portweaver', section_id, 'remark') || _('Unnamed project');
+		};
+
+		// Runtime status indicator column (leftmost)
+		o = s.option(form.DummyValue, '_runtime_status', _('Status'));
+		o.modalonly = false;
+		o.textvalue = function (section_id) {
+			// Find runtime status for this section
+			var idx = -1;
+			var sections = uci.sections('portweaver', 'project');
+			for (var i = 0; i < sections.length; i++) {
+				if (sections[i]['.name'] === section_id) {
+					idx = i;
+					break;
+				}
+			}
+
+			var status = null;
+			if (idx >= 0 && projectStatuses && projectStatuses[idx]) {
+				status = projectStatuses[idx];
+			}
+
+			if (!status) {
+				return E('span', { 'style': 'color: gray;' }, _('N/A'));
+			}
+
+			var statusColor = (status.status === 'running') ? 'green' : 'red';
+			var formatBytes = function (bytes) {
+				if (bytes < 1024) return bytes + ' B';
+				if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+				return (bytes / 1048576).toFixed(1) + ' MB';
+			};
+
+			return E('div', {}, [
+				E('div', {}, [
+					E('span', { 'class': 'ifacebadge', 'style': 'background-color: ' + statusColor + ';' }, [
+						E('strong', {}, status.status || 'unknown')
+					])
+				]),
+				E('small', {}, [
+					_('Sessions: ') + (status.active_sessions || 0),
+					E('br'),
+					'↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)
+				])
+			]);
+		};
+
+		// Runtime toggle column
+		o = s.option(form.Button, '_runtime_toggle', _('Toggle'));
+		o.modalonly = false;
+		o.inputtitle = function (section_id) {
+			var idx = -1;
+			var sections = uci.sections('portweaver', 'project');
+			for (var i = 0; i < sections.length; i++) {
+				if (sections[i]['.name'] === section_id) {
+					idx = i;
+					break;
+				}
+			}
+
+			var status = null;
+			if (idx >= 0 && projectStatuses && projectStatuses[idx]) {
+				status = projectStatuses[idx];
+			}
+
+			return (status && status.enabled) ? _('Disable') : _('Enable');
+		};
+		o.onclick = function (ev, section_id) {
+			var idx = -1;
+			var sections = uci.sections('portweaver', 'project');
+			for (var i = 0; i < sections.length; i++) {
+				if (sections[i]['.name'] === section_id) {
+					idx = i;
+					break;
+				}
+			}
+
+			if (idx < 0) {
+				ui.addNotification(null, E('p', _('Could not determine project index')), 'error');
+				return;
+			}
+
+			var status = null;
+			if (projectStatuses && projectStatuses[idx]) {
+				status = projectStatuses[idx];
+			}
+
+			var newEnabled = !(status && status.enabled);
+
+			return callPortWeaverSetEnabled({
+				id: idx,
+				enabled: newEnabled
+			}).then(function (res) {
+				ui.addNotification(null, E('p', _('Runtime state updated to: ') + (newEnabled ? _('enabled') : _('disabled'))), 'info');
+				// Refresh status immediately
+				return Promise.all([
+					callPortWeaverStatus(),
+					callPortWeaverListProjects()
+				]).then(function (results) {
+					globalStatus = results[0] || {};
+					projectStatuses = results[1] ? (results[1].projects || []) : [];
+					// Force UI refresh
+					location.reload();
+				});
+			}).catch(function (err) {
+				ui.addNotification(null, E('p', _('Failed to toggle runtime state: ') + (err.message || err)), 'error');
+			});
 		};
 
 		o = s.option(form.Flag, 'enabled', _('Enabled'));

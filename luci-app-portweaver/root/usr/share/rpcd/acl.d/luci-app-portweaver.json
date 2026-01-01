@@ -1,11 +1,17 @@
 {
 	"luci-app-portweaver": {
-		"description": "Grant UCI access for LuCI PortWeaver app",
+		"description": "Grant UCI and ubus access for LuCI PortWeaver app",
 		"read": {
-			"uci": ["portweaver"]
+			"uci": ["portweaver"],
+			"ubus": {
+				"portweaver": ["get_status", "list_projects"]
+			}
 		},
 		"write": {
-			"uci": ["portweaver"]
+			"uci": ["portweaver"],
+			"ubus": {
+				"portweaver": ["set_enabled"]
+			}
 		}
 	}
 }
