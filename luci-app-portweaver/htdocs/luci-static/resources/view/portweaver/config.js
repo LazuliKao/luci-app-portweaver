@@ -16,7 +16,7 @@ var callPortWeaverStatus = rpc.declare({
 var callPortWeaverListProjects = rpc.declare({
 	object: 'portweaver',
 	method: 'list_projects',
-	expect: { projects: [] }
+	expect: { }
 });
 
 var callPortWeaverSetEnabled = rpc.declare({
@@ -78,7 +78,7 @@ return view.extend({
 				callPortWeaverListProjects()
 			]).then(function(results) {
 				globalStatus = results[0] || {};
-				projectStatuses = results[1] ? (results[1].projects || []) : [];
+				projectStatuses = (results[1] && results[1].projects) ? results[1].projects : [];
 				
 				// Update DOM elements
 				var statusElem = document.getElementById('status-value');
@@ -91,8 +91,8 @@ return view.extend({
 				var elem = document.getElementById('total-projects-value');
 				if (elem) elem.textContent = globalStatus.total_projects || 0;
 				
-				elem = document.getElementById('active-sessions-value');
-				if (elem) elem.textContent = globalStatus.active_sessions || 0;
+				elem = document.getElementById('active-ports-value');
+				if (elem) elem.textContent = globalStatus.active_ports || 0;
 				
 				elem = document.getElementById('uptime-value');
 				if (elem) elem.textContent = formatUptime(globalStatus.uptime || 0);
@@ -137,8 +137,8 @@ return view.extend({
 					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'total-projects-value' }, globalStatus.total_projects || 0)
 				]),
 				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
-					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Active Sessions')),
-					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'active-sessions-value' }, globalStatus.active_sessions || 0)
+					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Active Ports')),
+					E('strong', { 'style': 'font-size: 1.1em; font-weight: 600;', 'id': 'active-ports-value' }, globalStatus.active_ports || 0)
 				]),
 				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
 					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Uptime')),
@@ -205,7 +205,7 @@ return view.extend({
 					])
 				]),
 				E('small', {}, [
-					_('Sessions: ') + (status.active_sessions || 0),
+					_('Ports: ') + (status.active_ports || 0),
 					E('br'),
 					'↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)
 				])
@@ -265,7 +265,7 @@ return view.extend({
 					callPortWeaverListProjects()
 				]).then(function (results) {
 					globalStatus = results[0] || {};
-					projectStatuses = results[1] ? (results[1].projects || []) : [];
+					projectStatuses = (results[1] && results[1].projects) ? results[1].projects : [];
 					// Force UI refresh
 					location.reload();
 				});
@@ -594,6 +594,13 @@ return view.extend({
 		o = s.option(form.Flag, 'enable_app_forward', _('Enable App Level Forward'));
 		o.modalonly = true;
 		o.default = '0';
+
+		o = s.option(form.Flag, 'enable_stats', _('Enable Statistics'), 
+			_('Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. ' +
+			  'NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward.'));
+		o.modalonly = true;
+		o.default = '0';
+		o.depends('enable_app_forward', '1');
 
 		o = s.option(form.Flag, 'reuseaddr', _('Reuse Address'));
 		o.modalonly = true;
