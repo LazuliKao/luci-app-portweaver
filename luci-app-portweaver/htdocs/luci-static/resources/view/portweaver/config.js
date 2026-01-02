@@ -126,6 +126,41 @@ return view.extend({
 
 				elem = document.getElementById('traffic-out-value');
 				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_out || 0);
+
+			// Update per-project status DOMs so bytes/ports reflect real-time changes
+			(function () {
+				var sections = uci.sections('portweaver', 'project') || [];
+				for (var i = 0; i < sections.length; i++) {
+					var sid = sections[i]['.name'];
+					var sts = projectStatuses[i] || null;
+
+					var badge = document.getElementById('project-status-badge-' + sid);
+					if (badge) {
+						var startupFailed = sts && sts.startup_status === 'failed';
+						badge.textContent = startupFailed ? 'failed' : (sts && sts.status) ? sts.status : 'unknown';
+						badge.style.backgroundColor = startupFailed ? '#dc3545' : ((sts && sts.status === 'running') ? 'green' : 'red');
+						if (startupFailed && sts.error_code !== undefined && sts.error_code !== 0) {
+							badge.title = getErrorMessage(sts.error_code);
+							badge.style.cursor = 'help';
+						} else {
+							badge.title = '';
+							badge.style.cursor = '';
+						}
+					}
+
+					var portsElem = document.getElementById('project-status-ports-' + sid);
+					if (portsElem) portsElem.textContent = 'Ports: ' + ((sts && sts.active_ports) || 0);
+
+					var bytesElem = document.getElementById('project-status-bytes-' + sid);
+					if (bytesElem) {
+						if (sts && (sts.bytes_in !== undefined || sts.bytes_out !== undefined)) {
+							bytesElem.textContent = '↓ ' + formatBytes(sts.bytes_in || 0) + ' ↑ ' + formatBytes(sts.bytes_out || 0);
+						} else {
+							bytesElem.textContent = '';
+						}
+					}
+				}
+			})();
 			}).catch(function (err) {
 				console.warn('Auto-refresh failed:', err);
 			});
@@ -211,8 +246,11 @@ return view.extend({
 				status = projectStatuses[idx];
 			}
 
+			// Provide a container with stable IDs so we can update it from the poll callback
 			if (!status) {
-				return E('span', { 'style': 'color: gray;' }, _('N/A'));
+				return E('div', { 'id': 'project-status-' + section_id }, [
+					E('span', { 'style': 'color: gray;' }, _('N/A'))
+				]);
 			}
 
 			var statusColor = (status.status === 'running') ? 'green' : 'red';
@@ -231,7 +269,8 @@ return view.extend({
 
 			var statusBadgeAttrs = {
 				'class': 'ifacebadge',
-				'style': 'background-color: ' + (startupFailed ? '#dc3545' : statusColor) + ';'
+				'style': 'background-color: ' + (startupFailed ? '#dc3545' : statusColor) + ';',
+				'id': 'project-status-badge-' + section_id
 			};
 			if (errorMessage) {
 				statusBadgeAttrs.title = errorMessage;
@@ -254,18 +293,20 @@ return view.extend({
 				);
 			} else {
 				let elements = [
-					_('Ports: ') + (status.active_ports || 0),
+					E('span', { 'id': 'project-status-ports-' + section_id }, _('Ports: ') + (status.active_ports || 0)),
 					E('br')
 				];
-				if (status.bytes_in && status.bytes_out) {
-					elements.push('↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0));
+				if (status.bytes_in !== undefined || status.bytes_out !== undefined) {
+					elements.push(E('span', { 'id': 'project-status-bytes-' + section_id }, '↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)));
+				} else {
+					elements.push(E('span', { 'id': 'project-status-bytes-' + section_id }, ''));
 				}
 				statusElements.push(
 					E('small', {}, elements)
 				);
 			}
 
-			return E('div', {}, statusElements);
+			return E('div', { 'id': 'project-status-' + section_id }, statusElements);
 		};
 
 		// Runtime toggle column
