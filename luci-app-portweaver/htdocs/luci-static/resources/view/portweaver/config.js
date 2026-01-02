@@ -253,12 +253,15 @@ return view.extend({
 					])
 				);
 			} else {
+				let elements = [
+					_('Ports: ') + (status.active_ports || 0),
+					E('br')
+				];
+				if (status.bytes_in && status.bytes_out) {
+					elements.push('↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0));
+				}
 				statusElements.push(
-					E('small', {}, [
-						_('Ports: ') + (status.active_ports || 0),
-						E('br'),
-						'↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)
-					])
+					E('small', {}, elements)
 				);
 			}
 
