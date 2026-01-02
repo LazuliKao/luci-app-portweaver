@@ -76,7 +76,18 @@ return view.extend({
 				'-3': 'Address or port already in use (EADDRINUSE)',
 				'-4': 'Permission denied - unable to bind to port (EACCES)',
 				'-5': 'Invalid address format',
-				'-99': 'Unknown error'
+				'-98': 'Address already in use',
+				'-91': "Protocol wrong type for socket",
+				'-92': "Protocol not available",
+				'-93': "Protocol not supported",
+				'-94': "Socket type not supported",
+				'-95': "Operation not supported on transport endpoint",
+				'-96': "Protocol family not supported",
+				'-97': "Address family not supported by protocol",
+				'-98': "Address already in use",
+				'-99': "Cannot assign requested address",
+				'-100': "Network is down",
+				'-101': "Network is unreachable",
 			};
 			return messages[String(error_code)] || 'Unknown error (code: ' + error_code + ')';
 		};
