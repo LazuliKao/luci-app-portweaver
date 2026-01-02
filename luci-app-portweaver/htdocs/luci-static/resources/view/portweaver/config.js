@@ -10,19 +10,19 @@
 var callPortWeaverStatus = rpc.declare({
 	object: 'portweaver',
 	method: 'get_status',
-	expect: { }
+	expect: {}
 });
 
 var callPortWeaverListProjects = rpc.declare({
 	object: 'portweaver',
 	method: 'list_projects',
-	expect: { }
+	expect: {}
 });
 
 var callPortWeaverSetEnabled = rpc.declare({
 	object: 'portweaver',
 	method: 'set_enabled',
-	expect: { }
+	expect: {}
 });
 
 return view.extend({
@@ -30,17 +30,17 @@ return view.extend({
 		return Promise.all([
 			uci.load('portweaver'),
 			uci.load('firewall'),
-			callPortWeaverStatus().then(function(res) {
+			callPortWeaverStatus().then(function (res) {
 				console.log('ubus get_status response:', res);
 				return res;
-			}).catch(function(err) {
+			}).catch(function (err) {
 				console.warn('ubus get_status failed:', err);
 				return {};
 			}),
-			callPortWeaverListProjects().then(function(res) {
+			callPortWeaverListProjects().then(function (res) {
 				console.log('ubus list_projects response:', res);
 				return res || { projects: [] };
-			}).catch(function(err) {
+			}).catch(function (err) {
 				console.warn('ubus list_projects failed:', err);
 				return { projects: [] };
 			})
@@ -68,18 +68,31 @@ return view.extend({
 			return mins + 'm';
 		};
 
+		var getErrorMessage = function (error_code) {
+			var messages = {
+				0: 'OK',
+				'-1': 'Memory allocation failed',
+				'-2': 'Failed to bind to port',
+				'-3': 'Address or port already in use (EADDRINUSE)',
+				'-4': 'Permission denied - unable to bind to port (EACCES)',
+				'-5': 'Invalid address format',
+				'-99': 'Unknown error'
+			};
+			return messages[String(error_code)] || 'Unknown error (code: ' + error_code + ')';
+		};
+
 		m = new form.Map('portweaver', _('PortWeaver'),
 			_('Port forwarding and NAT traversal configuration'));
 
 		// Setup auto-refresh
-		poll.add(function() {
+		poll.add(function () {
 			return Promise.all([
 				callPortWeaverStatus(),
 				callPortWeaverListProjects()
-			]).then(function(results) {
+			]).then(function (results) {
 				globalStatus = results[0] || {};
 				projectStatuses = (results[1] && results[1].projects) ? results[1].projects : [];
-				
+
 				// Update DOM elements
 				var statusElem = document.getElementById('status-value');
 				var statusColors = { 'running': 'green', 'stopped': 'red', 'degraded': 'orange' };
@@ -87,22 +100,22 @@ return view.extend({
 					statusElem.textContent = globalStatus.status || '-';
 					statusElem.style.color = statusColors[globalStatus.status] || 'gray';
 				}
-				
+
 				var elem = document.getElementById('total-projects-value');
 				if (elem) elem.textContent = globalStatus.total_projects || 0;
-				
+
 				elem = document.getElementById('active-ports-value');
 				if (elem) elem.textContent = globalStatus.active_ports || 0;
-				
+
 				elem = document.getElementById('uptime-value');
 				if (elem) elem.textContent = formatUptime(globalStatus.uptime || 0);
-				
+
 				elem = document.getElementById('traffic-in-value');
 				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_in || 0);
-				
+
 				elem = document.getElementById('traffic-out-value');
 				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_out || 0);
-			}).catch(function(err) {
+			}).catch(function (err) {
 				console.warn('Auto-refresh failed:', err);
 			});
 		}, 3);
@@ -117,7 +130,7 @@ return view.extend({
 		// Runtime status display
 		o = s.option(form.DummyValue, '_runtime_status', _('Runtime Status'));
 		o.rawhtml = true;
-		o.cfgvalue = function() {
+		o.cfgvalue = function () {
 			var statusColor = {
 				'running': '#28a745',
 				'stopped': '#dc3545',
@@ -127,9 +140,9 @@ return view.extend({
 			return E('div', { 'style': 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;' }, [
 				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
 					E('div', { 'style': 'font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;' }, _('Status')),
-					E('strong', { 
-						'style': 'color: ' + statusColor + '; font-size: 1.1em; font-weight: 600;', 
-						'id': 'status-value' 
+					E('strong', {
+						'style': 'color: ' + statusColor + '; font-size: 1.1em; font-weight: 600;',
+						'id': 'status-value'
 					}, globalStatus.status || '-')
 				]),
 				E('div', { 'style': 'border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;' }, [
@@ -198,18 +211,47 @@ return view.extend({
 				return (bytes / 1048576).toFixed(1) + ' MB';
 			};
 
-			return E('div', {}, [
+			// Check startup status and error code
+			var startupFailed = status.startup_status === 'failed';
+			var errorMessage = null;
+			if (startupFailed && status.error_code !== undefined && status.error_code !== 0) {
+				errorMessage = getErrorMessage(status.error_code);
+			}
+
+			var statusBadgeAttrs = {
+				'class': 'ifacebadge',
+				'style': 'background-color: ' + (startupFailed ? '#dc3545' : statusColor) + ';'
+			};
+			if (errorMessage) {
+				statusBadgeAttrs.title = errorMessage;
+				statusBadgeAttrs.style += ' cursor: help;';
+			}
+
+			var statusElements = [
 				E('div', {}, [
-					E('span', { 'class': 'ifacebadge', 'style': 'background-color: ' + statusColor + ';' }, [
-						E('strong', {}, status.status || 'unknown')
+					E('span', statusBadgeAttrs, [
+						E('strong', {}, startupFailed ? 'failed' : (status.status || 'unknown'))
 					])
-				]),
-				E('small', {}, [
-					_('Ports: ') + (status.active_ports || 0),
-					E('br'),
-					'↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)
 				])
-			]);
+			];
+
+			if (errorMessage) {
+				statusElements.push(
+					E('small', { 'style': 'color: #dc3545; margin-top: 0.3em;' }, [
+						'⚠ ' + errorMessage
+					])
+				);
+			} else {
+				statusElements.push(
+					E('small', {}, [
+						_('Ports: ') + (status.active_ports || 0),
+						E('br'),
+						'↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)
+					])
+				);
+			}
+
+			return E('div', {}, statusElements);
 		};
 
 		// Runtime toggle column
@@ -587,25 +629,27 @@ return view.extend({
 		o.modalonly = true;
 		o.default = '1';
 
-		o = s.option(form.Flag, 'add_firewall_forward', _('Add Firewall Forward'));
-		o.modalonly = true;
-		o.default = '1';
-
 		o = s.option(form.Flag, 'enable_app_forward', _('Enable App Level Forward'));
 		o.modalonly = true;
 		o.default = '0';
-
-		o = s.option(form.Flag, 'enable_stats', _('Enable Statistics'), 
-			_('Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. ' +
-			  'NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward.'));
-		o.modalonly = true;
-		o.default = '0';
-		o.depends('enable_app_forward', '1');
 
 		o = s.option(form.Flag, 'reuseaddr', _('Reuse Address'));
 		o.modalonly = true;
 		o.default = '1';
 		o.depends('enable_app_forward', '1');
+
+		o = s.option(form.Flag, 'enable_stats', _('Enable Statistics'),
+			_('Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. ' +
+				'NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward.'));
+		o.modalonly = true;
+		o.default = '0';
+		o.depends('enable_app_forward', '1');
+
+		o = s.option(form.Flag, 'add_firewall_forward', _('Add Firewall Forward'));
+		o.modalonly = true;
+		o.default = '1';
+		o.depends({ 'enable_app_forward': "0" });
+		o.depends({ 'enable_app_forward': "1", 'enable_stats': '0' });
 
 		return m.render();
 	}
