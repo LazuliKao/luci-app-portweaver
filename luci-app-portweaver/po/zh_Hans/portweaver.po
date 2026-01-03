@@ -1,0 +1,234 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-portweaver 1.0\n"
+"POT-Creation-Date: 2026-01-03 00:00+0000\n"
+"PO-Revision-Date: 2026-01-03 00:00+0000\n"
+"Last-Translator: PortWeaver Translator <translator@example.com>\n"
+"Language-Team: Chinese <translator@example.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "PortWeaver"
+msgstr "PortWeaver"
+
+msgid "Port forwarding and NAT traversal configuration"
+msgstr "端口转发和 NAT 穿透配置"
+
+msgid "Port Forwarding Projects"
+msgstr "端口转发项目"
+
+msgid "Configure port forwarding projects for PortWeaver"
+msgstr "为 PortWeaver 配置端口转发项目"
+
+msgid "Remark"
+msgstr "备注"
+
+msgid "Address Family"
+msgstr "地址族"
+
+msgid "IPv4 and IPv6"
+msgstr "IPv4 和 IPv6"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "TCP and UDP"
+msgstr "TCP 和 UDP"
+
+msgid "Listen Port"
+msgstr "监听端口"
+
+msgid "Reuse Address"
+msgstr "重用地址"
+
+msgid "Target Address"
+msgstr "目标地址"
+
+msgid "Target Port"
+msgstr "目标端口"
+
+msgid "Open Firewall Port"
+msgstr "打开防火墙端口"
+
+msgid "Add Firewall Forward"
+msgstr "添加防火墙转发"
+
+# Additional UI strings from the LuCI view
+msgid "N/A"
+msgstr "无"
+
+msgid "Ports: "
+msgstr "端口："
+
+msgid "Global Settings"
+msgstr "全局设置"
+
+msgid "Enable PortWeaver"
+msgstr "启用 PortWeaver"
+
+msgid "Runtime Status"
+msgstr "运行时状态"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Total Projects"
+msgstr "项目总数"
+
+msgid "Active Ports"
+msgstr "活动端口"
+
+msgid "Uptime"
+msgstr "运行时间"
+
+msgid "Traffic In"
+msgstr "入流量"
+
+msgid "Traffic Out"
+msgstr "出流量"
+
+msgid "Could not determine project index"
+msgstr "无法确定项目索引"
+
+msgid "Runtime state updated to: "
+msgstr "运行时状态已更新为："
+
+msgid "enabled"
+msgstr "已启用"
+
+msgid "disabled"
+msgstr "已禁用"
+
+msgid "Failed to toggle runtime state: "
+msgstr "切换运行时状态失败："
+
+msgid "Unnamed project"
+msgstr "未命名项目"
+
+msgid "Toggle"
+msgstr "切换"
+
+msgid "Disable"
+msgstr "禁用"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Enabled"
+msgstr "已启用"
+
+msgid "Overview"
+msgstr "概览"
+
+msgid "Incoming "
+msgstr "入站 "
+
+msgid " protocol "
+msgstr " 协议 "
+
+msgid "any zone"
+msgstr "任意区域"
+
+msgid "From "
+msgstr "来自 "
+
+msgid "Multi-Port"
+msgstr "多端口"
+
+msgid " - "
+msgstr " - "
+
+msgid " mapping(s)"
+msgstr " 个映射"
+
+msgid "e.g. "
+msgstr "例如 "
+
+msgid "Port "
+msgstr "端口 "
+
+msgid "Forward"
+msgstr "转发"
+
+msgid " to "
+msgstr " 到 "
+
+msgid "IP "
+msgstr "IP "
+
+msgid " port "
+msgstr " 端口 "
+
+msgid "This field is required"
+msgstr "此字段为必填项"
+
+msgid "Source Zones"
+msgstr "源区域"
+
+msgid "Destination Zones"
+msgstr "目标区域"
+
+msgid "Target Address"
+msgstr "目标地址"
+
+msgid "This field is required in single port mode"
+msgstr "在单端口模式下此字段为必填项"
+
+msgid "Use Port Mappings Mode"
+msgstr "使用端口映射模式"
+
+msgid "Enable to configure multiple port mappings or port ranges. Disable for single port mode."
+msgstr "启用以配置多个端口映射或端口范围。禁用为单端口模式。"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "Port Mappings"
+msgstr "端口映射"
+
+msgid "Format: listen_port[:target_port][/protocol]. Examples: \"8080-8090:80-90/udp\", \"8080-8090/udp\" (shorthand, target defaults to same range), \"443:8443/tcp\", \"80\" (defaults to tcp, target_port same as listen_port)"
+msgstr "格式：listen_port[:target_port][/protocol]。示例：\"8080-8090:80-90/udp\"、\"8080-8090/udp\"（简写，目标默认与监听相同）、\"443:8443/tcp\"、\"80\"（默认 tcp，target_port 与 listen_port 相同）"
+
+msgid "Invalid format: too many \"/\" separators"
+msgstr "格式无效：包含过多“/”分隔符"
+
+msgid "Protocol cannot be empty"
+msgstr "协议不能为空"
+
+msgid "Protocol must be tcp, udp, or both"
+msgstr "协议必须为 tcp、udp 或 both"
+
+msgid "Port specification required"
+msgstr "需要端口说明"
+
+msgid "Invalid format: too many \":\" separators"
+msgstr "格式无效：包含过多“:”分隔符"
+
+msgid "Invalid listen port specification. Must be a port number (1-65535) or range (e.g., \"8080-8090\")"
+msgstr "监听端口格式无效。必须是端口号（1-65535）或范围（例如“8080-8090”）"
+
+msgid "Invalid target port specification. Must be a port number (1-65535) or range (e.g., \"80-90\")"
+msgstr "目标端口格式无效。必须是端口号（1-65535）或范围（例如“80-90”）"
+
+msgid "When listen port is a range, target port must also be a range of the same size"
+msgstr "当监听端口为范围时，目标端口也必须为相同大小的范围"
+
+msgid "Invalid range specification"
+msgstr "范围格式无效"
+
+msgid "Port range size mismatch: the listen and target ranges must have the same size"
+msgstr "端口范围大小不匹配：监听和目标范围必须具有相同大小"
+
+msgid "When target port is a range, listen port must also be a range of the same size"
+msgstr "当目标端口为范围时，监听端口也必须为相同大小的范围"
+
+msgid "Enable App Level Forward"
+msgstr "启用应用级转发"
+
+msgid "Enable Statistics"
+msgstr "启用统计"
+
+msgid "Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. Requires kernel support for atomic 128-bit operations; fallback disables statistics for older kernels."
+msgstr "收集流量统计（bytes_in/bytes_out），使用零成本的原子计数器。需要内核支持 128 位原子操作；在较旧内核上将回退并禁用统计。"
