@@ -6,6 +6,7 @@
 'require tools.widgets as widgets';
 'require rpc';
 'require poll';
+'require ui';
 
 var callPortWeaverStatus = rpc.declare({
 	object: 'portweaver',
@@ -22,6 +23,7 @@ var callPortWeaverListProjects = rpc.declare({
 var callPortWeaverSetEnabled = rpc.declare({
 	object: 'portweaver',
 	method: 'set_enabled',
+	params: ['id', 'enabled'],
 	expect: {}
 });
 
@@ -31,14 +33,12 @@ return view.extend({
 			uci.load('portweaver'),
 			uci.load('firewall'),
 			callPortWeaverStatus().then(function (res) {
-				console.log('ubus get_status response:', res);
 				return res;
 			}).catch(function (err) {
 				console.warn('ubus get_status failed:', err);
 				return {};
 			}),
 			callPortWeaverListProjects().then(function (res) {
-				console.log('ubus list_projects response:', res);
 				return res || { projects: [] };
 			}).catch(function (err) {
 				console.warn('ubus list_projects failed:', err);
@@ -58,16 +58,15 @@ return view.extend({
 			if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MiB';
 			return (bytes / 1073741824).toFixed(2) + ' GiB';
 		};
-
 		var formatUptime = function (seconds) {
-			var days = Math.floor(seconds / 86400);
-			var hours = Math.floor((seconds % 86400) / 3600);
-			var mins = Math.floor((seconds % 3600) / 60);
+			let days = Math.floor(seconds / 86400);
+			let hours = Math.floor((seconds % 86400) / 3600);
+			let mins = Math.floor((seconds % 3600) / 60);
+			let sec = seconds % 60;
 			if (days > 0) return days + 'd ' + hours + 'h';
 			if (hours > 0) return hours + 'h ' + mins + 'm';
-			return mins + 'm';
+			return mins + 'm' + sec + 's';
 		};
-
 		var getErrorMessage = function (error_code) {
 			var messages = {
 				0: 'OK',
@@ -92,6 +91,59 @@ return view.extend({
 			return messages[String(error_code)] || 'Unknown error (code: ' + error_code + ')';
 		};
 
+		function renderStatusElements(status, section_id) {
+			if (!status) {
+				return [
+					E('span', { 'style': 'color: gray;' }, _('N/A'))
+				]
+			}
+			var startupFailed = status.startup_status === 'failed';
+			var statusColor = (status.status === 'running' && !startupFailed) ? 'green' : '#dc3545';
+			var errorMessage = null;
+			if (startupFailed && status.error_code !== undefined && status.error_code !== 0) {
+				errorMessage = getErrorMessage(status.error_code);
+			}
+
+			var statusBadgeAttrs = {
+				'class': 'ifacebadge',
+			};
+			if (errorMessage) {
+				statusBadgeAttrs.title = errorMessage;
+				statusBadgeAttrs.style += ' cursor: help;';
+			}
+
+			var statusElements = [
+				E('div', {}, [
+					E('span', statusBadgeAttrs, [
+						E('strong', {
+							style: 'font-size: 1em; font-weight: 600; color: ' + statusColor + ';'
+						}, startupFailed ? 'failed' : (status.status || 'unknown'))
+					])
+				])
+			];
+
+			if (errorMessage && status.status !== 'stopped') {
+				statusElements.push(
+					E('small', { 'style': 'color: #dc3545; margin-top: 0.3em;' }, [
+						'⚠ ' + errorMessage
+					])
+				);
+			} else {
+				let elements = [];
+				if (status.active_ports > 0) {
+					elements.push(E('span', {}, _('Ports: ') + (status.active_ports || 0)));
+					elements.push(E('br'));
+				}
+				if (status.bytes_in && status.bytes_out) {
+					elements.push(E('span', {}, '↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)));
+				}
+				statusElements.push(
+					E('small', {}, elements)
+				);
+			}
+
+			return statusElements;
+		}
 		m = new form.Map('portweaver', _('PortWeaver'),
 			_('Port forwarding and NAT traversal configuration'));
 
@@ -127,40 +179,19 @@ return view.extend({
 				elem = document.getElementById('traffic-out-value');
 				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_out || 0);
 
-			// Update per-project status DOMs so bytes/ports reflect real-time changes
-			(function () {
-				var sections = uci.sections('portweaver', 'project') || [];
-				for (var i = 0; i < sections.length; i++) {
-					var sid = sections[i]['.name'];
-					var sts = projectStatuses[i] || null;
-
-					var badge = document.getElementById('project-status-badge-' + sid);
-					if (badge) {
-						var startupFailed = sts && sts.startup_status === 'failed';
-						badge.textContent = startupFailed ? 'failed' : (sts && sts.status) ? sts.status : 'unknown';
-						badge.style.backgroundColor = startupFailed ? '#dc3545' : ((sts && sts.status === 'running') ? 'green' : 'red');
-						if (startupFailed && sts.error_code !== undefined && sts.error_code !== 0) {
-							badge.title = getErrorMessage(sts.error_code);
-							badge.style.cursor = 'help';
-						} else {
-							badge.title = '';
-							badge.style.cursor = '';
-						}
+				// Update per-project status DOMs so bytes/ports reflect real-time changes
+				(function () {
+					var sections = uci.sections('portweaver', 'project') || [];
+					for (var i = 0; i < sections.length; i++) {
+						var section_id = sections[i]['.name'];
+						var status = projectStatuses[i] || null;
+						var section = document.getElementById('project-status-' + section_id);
+						if (!section) continue;
+						// Re-render status elements
+						var newStatusElements = renderStatusElements(status, section_id);
+						section.replaceWith(E('div', { 'id': 'project-status-' + section_id }, newStatusElements));
 					}
-
-					var portsElem = document.getElementById('project-status-ports-' + sid);
-					if (portsElem) portsElem.textContent = 'Ports: ' + ((sts && sts.active_ports) || 0);
-
-					var bytesElem = document.getElementById('project-status-bytes-' + sid);
-					if (bytesElem) {
-						if (sts && (sts.bytes_in !== undefined || sts.bytes_out !== undefined)) {
-							bytesElem.textContent = '↓ ' + formatBytes(sts.bytes_in || 0) + ' ↑ ' + formatBytes(sts.bytes_out || 0);
-						} else {
-							bytesElem.textContent = '';
-						}
-					}
-				}
-			})();
+				})();
 			}).catch(function (err) {
 				console.warn('Auto-refresh failed:', err);
 			});
@@ -214,6 +245,34 @@ return view.extend({
 			]);
 		};
 
+		// Helper to toggle runtime enable via RPC (used by per-row buttons)
+		var runtimeToggle = function (section_id) {
+			var idx = -1;
+			var sections = uci.sections('portweaver', 'project');
+			for (var i = 0; i < sections.length; i++) {
+				if (sections[i]['.name'] === section_id) { idx = i; break; }
+			}
+			if (idx < 0) {
+				ui.addNotification(null, E('p', _('Could not determine project index')), 'error');
+				return;
+			}
+			var status = null;
+			if (projectStatuses && projectStatuses[idx]) status = projectStatuses[idx];
+			var newEnabled = !(status && status.enabled);
+			return callPortWeaverSetEnabled(idx, newEnabled).then(function (res) {
+				ui.addNotification(null, E('p', _('Runtime state updated to: ') + (newEnabled ? _('enabled') : _('disabled'))), 'info');
+				return Promise.all([callPortWeaverStatus(), callPortWeaverListProjects()]).then(function (results) {
+					globalStatus = results[0] || {};
+					projectStatuses = (results[1] && results[1].projects) ? results[1].projects : [];
+					location.reload();
+				});
+			}).catch(function (err) {
+				ui.addNotification(null, E('p', _('Failed to toggle runtime state: ') + (err.message || err)), 'error');
+			});
+		};
+		// Expose for inline onclick handlers
+		window.portweaverToggle = runtimeToggle;
+
 		// Port forwarding rules section
 		s = m.section(form.GridSection, 'project', _('Port Forwarding Projects'),
 			_('Configure port forwarding projects for PortWeaver'));
@@ -247,71 +306,13 @@ return view.extend({
 			}
 
 			// Provide a container with stable IDs so we can update it from the poll callback
-			if (!status) {
-				return E('div', { 'id': 'project-status-' + section_id }, [
-					E('span', { 'style': 'color: gray;' }, _('N/A'))
-				]);
-			}
-
-			var statusColor = (status.status === 'running') ? 'green' : 'red';
-			var formatBytes = function (bytes) {
-				if (bytes < 1024) return bytes + ' B';
-				if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-				return (bytes / 1048576).toFixed(1) + ' MB';
-			};
-
-			// Check startup status and error code
-			var startupFailed = status.startup_status === 'failed';
-			var errorMessage = null;
-			if (startupFailed && status.error_code !== undefined && status.error_code !== 0) {
-				errorMessage = getErrorMessage(status.error_code);
-			}
-
-			var statusBadgeAttrs = {
-				'class': 'ifacebadge',
-				'style': 'background-color: ' + (startupFailed ? '#dc3545' : statusColor) + ';',
-				'id': 'project-status-badge-' + section_id
-			};
-			if (errorMessage) {
-				statusBadgeAttrs.title = errorMessage;
-				statusBadgeAttrs.style += ' cursor: help;';
-			}
-
-			var statusElements = [
-				E('div', {}, [
-					E('span', statusBadgeAttrs, [
-						E('strong', {}, startupFailed ? 'failed' : (status.status || 'unknown'))
-					])
-				])
-			];
-
-			if (errorMessage) {
-				statusElements.push(
-					E('small', { 'style': 'color: #dc3545; margin-top: 0.3em;' }, [
-						'⚠ ' + errorMessage
-					])
-				);
-			} else {
-				let elements = [
-					E('span', { 'id': 'project-status-ports-' + section_id }, _('Ports: ') + (status.active_ports || 0)),
-					E('br')
-				];
-				if (status.bytes_in !== undefined || status.bytes_out !== undefined) {
-					elements.push(E('span', { 'id': 'project-status-bytes-' + section_id }, '↓ ' + formatBytes(status.bytes_in || 0) + ' ↑ ' + formatBytes(status.bytes_out || 0)));
-				} else {
-					elements.push(E('span', { 'id': 'project-status-bytes-' + section_id }, ''));
-				}
-				statusElements.push(
-					E('small', {}, elements)
-				);
-			}
-
-			return E('div', { 'id': 'project-status-' + section_id }, statusElements);
+			return E('div', { 'id': 'project-status-' + section_id }, renderStatusElements(status, section_id));
 		};
 
-		// Runtime toggle column
+		// Runtime toggle column - properly renders action buttons
 		o = s.option(form.Button, '_runtime_toggle', _('Toggle'));
 		o.modalonly = false;
+		o.editable = true;
 		o.inputtitle = function (section_id) {
 			var idx = -1;
 			var sections = uci.sections('portweaver', 'project');
@@ -321,54 +322,11 @@ return view.extend({
 					break;
 				}
 			}
-
-			var status = null;
-			if (idx >= 0 && projectStatuses && projectStatuses[idx]) {
-				status = projectStatuses[idx];
-			}
-
+			var status = (idx >= 0 && projectStatuses && projectStatuses[idx]) ? projectStatuses[idx] : null;
 			return (status && status.enabled) ? _('Disable') : _('Enable');
 		};
 		o.onclick = function (ev, section_id) {
-			var idx = -1;
-			var sections = uci.sections('portweaver', 'project');
-			for (var i = 0; i < sections.length; i++) {
-				if (sections[i]['.name'] === section_id) {
-					idx = i;
-					break;
-				}
-			}
-
-			if (idx < 0) {
-				ui.addNotification(null, E('p', _('Could not determine project index')), 'error');
-				return;
-			}
-
-			var status = null;
-			if (projectStatuses && projectStatuses[idx]) {
-				status = projectStatuses[idx];
-			}
-
-			var newEnabled = !(status && status.enabled);
-
-			return callPortWeaverSetEnabled({
-				id: idx,
-				enabled: newEnabled
-			}).then(function (res) {
-				ui.addNotification(null, E('p', _('Runtime state updated to: ') + (newEnabled ? _('enabled') : _('disabled'))), 'info');
-				// Refresh status immediately
-				return Promise.all([
-					callPortWeaverStatus(),
-					callPortWeaverListProjects()
-				]).then(function (results) {
-					globalStatus = results[0] || {};
-					projectStatuses = (results[1] && results[1].projects) ? results[1].projects : [];
-					// Force UI refresh
-					location.reload();
-				});
-			}).catch(function (err) {
-				ui.addNotification(null, E('p', _('Failed to toggle runtime state: ') + (err.message || err)), 'error');
-			});
+			return window.portweaverToggle(section_id);
 		};
 
 		o = s.option(form.Flag, 'enabled', _('Enabled'));
