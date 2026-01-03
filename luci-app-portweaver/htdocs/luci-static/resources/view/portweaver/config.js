@@ -91,6 +91,19 @@ return view.extend({
 			return messages[String(error_code)] || 'Unknown error (code: ' + error_code + ')';
 		};
 
+		var getProjectIndex = function (section_id) {
+			var sections = uci.sections('portweaver', 'project');
+			for (var i = 0; i < sections.length; i++) {
+				if (sections[i]['.name'] === section_id) return i;
+			}
+			return -1;
+		};
+
+		var getProjectStatus = function (section_id) {
+			var idx = getProjectIndex(section_id);
+			return (idx >= 0 && projectStatuses && projectStatuses[idx]) ? projectStatuses[idx] : null;
+		};
+
 		function renderStatusElements(status, section_id) {
 			if (!status) {
 				return [
@@ -149,6 +162,11 @@ return view.extend({
 
 		// Setup auto-refresh
 		poll.add(function () {
+			var updateText = function (id, value) {
+				var elem = document.getElementById(id);
+				if (elem) elem.textContent = value;
+			};
+
 			return Promise.all([
 				callPortWeaverStatus(),
 				callPortWeaverListProjects()
@@ -164,27 +182,18 @@ return view.extend({
 					statusElem.style.color = statusColors[globalStatus.status] || 'gray';
 				}
 
-				var elem = document.getElementById('total-projects-value');
-				if (elem) elem.textContent = globalStatus.total_projects || 0;
-
-				elem = document.getElementById('active-ports-value');
-				if (elem) elem.textContent = globalStatus.active_ports || 0;
-
-				elem = document.getElementById('uptime-value');
-				if (elem) elem.textContent = formatUptime(globalStatus.uptime || 0);
-
-				elem = document.getElementById('traffic-in-value');
-				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_in || 0);
-
-				elem = document.getElementById('traffic-out-value');
-				if (elem) elem.textContent = formatBytes(globalStatus.total_bytes_out || 0);
+				updateText('total-projects-value', globalStatus.total_projects || 0);
+				updateText('active-ports-value', globalStatus.active_ports || 0);
+				updateText('uptime-value', formatUptime(globalStatus.uptime || 0));
+				updateText('traffic-in-value', formatBytes(globalStatus.total_bytes_in || 0));
+				updateText('traffic-out-value', formatBytes(globalStatus.total_bytes_out || 0));
 
 				// Update per-project status DOMs so bytes/ports reflect real-time changes
 				(function () {
 					var sections = uci.sections('portweaver', 'project') || [];
 					for (var i = 0; i < sections.length; i++) {
 						var section_id = sections[i]['.name'];
-						var status = projectStatuses[i] || null;
+						var status = getProjectStatus(section_id);
 						var section = document.getElementById('project-status-' + section_id);
 						if (!section) continue;
 						// Re-render status elements
@@ -247,17 +256,12 @@ return view.extend({
 
 		// Helper to toggle runtime enable via RPC (used by per-row buttons)
 		var runtimeToggle = function (section_id) {
-			var idx = -1;
-			var sections = uci.sections('portweaver', 'project');
-			for (var i = 0; i < sections.length; i++) {
-				if (sections[i]['.name'] === section_id) { idx = i; break; }
-			}
+			var idx = getProjectIndex(section_id);
 			if (idx < 0) {
 				ui.addNotification(null, E('p', _('Could not determine project index')), 'error');
 				return;
 			}
-			var status = null;
-			if (projectStatuses && projectStatuses[idx]) status = projectStatuses[idx];
+			var status = getProjectStatus(section_id);
 			var newEnabled = !(status && status.enabled);
 			return callPortWeaverSetEnabled(idx, newEnabled).then(function (res) {
 				ui.addNotification(null, E('p', _('Runtime state updated to: ') + (newEnabled ? _('enabled') : _('disabled'))), 'info');
@@ -280,7 +284,6 @@ return view.extend({
 		s.addremove = true;
 		s.sortable = true;
 		s.cloneable = true;
-		s.cloneable = true;
 
 		s.sectiontitle = function (section_id) {
 			return uci.get('portweaver', section_id, 'remark') || _('Unnamed project');
@@ -290,20 +293,7 @@ return view.extend({
 		o = s.option(form.DummyValue, '_runtime_status', _('Status'));
 		o.modalonly = false;
 		o.textvalue = function (section_id) {
-			// Find runtime status for this section
-			var idx = -1;
-			var sections = uci.sections('portweaver', 'project');
-			for (var i = 0; i < sections.length; i++) {
-				if (sections[i]['.name'] === section_id) {
-					idx = i;
-					break;
-				}
-			}
-
-			var status = null;
-			if (idx >= 0 && projectStatuses && projectStatuses[idx]) {
-				status = projectStatuses[idx];
-			}
+			var status = getProjectStatus(section_id);
 
 			// Provide a container with stable IDs so we can update it from the poll callback
 			return E('div', { 'id': 'project-status-' + section_id }, renderStatusElements(status, section_id));
@@ -314,15 +304,7 @@ return view.extend({
 		o.modalonly = false;
 		o.editable = true;
 		o.inputtitle = function (section_id) {
-			var idx = -1;
-			var sections = uci.sections('portweaver', 'project');
-			for (var i = 0; i < sections.length; i++) {
-				if (sections[i]['.name'] === section_id) {
-					idx = i;
-					break;
-				}
-			}
-			var status = (idx >= 0 && projectStatuses && projectStatuses[idx]) ? projectStatuses[idx] : null;
+			var status = getProjectStatus(section_id);
 			return (status && status.enabled) ? _('Disable') : _('Enable');
 		};
 		o.onclick = function (ev, section_id) {
