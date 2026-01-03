@@ -23,7 +23,7 @@ jobs:
         continue-on-error: true
         env:
           FEEDNAME: custom
-          PACKAGES: portweaver luci-app-portweaver luci-i18n-portweaver-zh-cn
+          PACKAGES: portweaver luci-app-portweaver
           ARCH: x86_64-24.10.5
       - name: Update Hash if build failed
         if: ${{ steps.build_openwrt.outcome == 'failure' }}
@@ -110,7 +110,7 @@ jobs:
         uses: openwrt/gh-action-sdk@main
         env:
           FEEDNAME: custom
-          PACKAGES: portweaver luci-app-portweaver luci-i18n-portweaver-zh-cn
+          PACKAGES: portweaver luci-app-portweaver
           ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
 
       - name: List built packages
