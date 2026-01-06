@@ -48,6 +48,7 @@ define Build/Compile
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
 			-Duci=true \
+			-Dubus=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	else \
@@ -56,6 +57,7 @@ define Build/Compile
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
 			-Duci=true \
+			-Dubus=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	fi
