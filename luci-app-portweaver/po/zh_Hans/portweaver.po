@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-portweaver 1.0\n"
 "POT-Creation-Date: 2026-01-03 00:00+0000\n"
-"PO-Revision-Date: 2026-01-03 00:00+0000\n"
+"PO-Revision-Date: 2026-01-13 00:00+0000\n"
 "Last-Translator: PortWeaver Translator <translator@example.com>\n"
 "Language-Team: Chinese <translator@example.com>\n"
 "Language: zh_CN\n"
@@ -16,52 +16,6 @@ msgstr "PortWeaver"
 msgid "Port forwarding and NAT traversal configuration"
 msgstr "端口转发和 NAT 穿透配置"
 
-msgid "Port Forwarding Projects"
-msgstr "端口转发项目"
-
-msgid "Configure port forwarding projects for PortWeaver"
-msgstr "为 PortWeaver 配置端口转发项目"
-
-msgid "Remark"
-msgstr "备注"
-
-msgid "Address Family"
-msgstr "地址族"
-
-msgid "IPv4 and IPv6"
-msgstr "IPv4 和 IPv6"
-
-msgid "Protocol"
-msgstr "协议"
-
-msgid "TCP and UDP"
-msgstr "TCP 和 UDP"
-
-msgid "Listen Port"
-msgstr "监听端口"
-
-msgid "Reuse Address"
-msgstr "重用地址"
-
-msgid "Target Address"
-msgstr "目标地址"
-
-msgid "Target Port"
-msgstr "目标端口"
-
-msgid "Open Firewall Port"
-msgstr "打开防火墙端口"
-
-msgid "Add Firewall Forward"
-msgstr "添加防火墙转发"
-
-# Additional UI strings from the LuCI view
-msgid "N/A"
-msgstr "无"
-
-msgid "Ports: "
-msgstr "端口："
-
 msgid "Global Settings"
 msgstr "全局设置"
 
@@ -70,6 +24,9 @@ msgstr "启用 PortWeaver"
 
 msgid "Runtime Status"
 msgstr "运行时状态"
+
+msgid "N/A"
+msgstr "无"
 
 msgid "Status"
 msgstr "状态"
@@ -104,8 +61,50 @@ msgstr "已禁用"
 msgid "Failed to toggle runtime state: "
 msgstr "切换运行时状态失败："
 
-msgid "Unnamed project"
-msgstr "未命名项目"
+msgid "FRP Node Management"
+msgstr "FRP 节点管理"
+
+msgid "Configure FRP nodes for port forwarding tunneling"
+msgstr "为端口转发隧道配置 FRP 节点"
+
+msgid "Node Name"
+msgstr "节点名称"
+
+msgid "Node name is required"
+msgstr "节点名称为必填项"
+
+msgid "Node name must contain only alphanumeric characters, underscore, or hyphen"
+msgstr "节点名称只能包含字母数字、下划线或连字符"
+
+msgid "FRP Server Address"
+msgstr "FRP 服务器地址"
+
+msgid "Server address is required"
+msgstr "服务器地址为必填项"
+
+msgid "FRP Server Port"
+msgstr "FRP 服务器端口"
+
+msgid "Server port is required"
+msgstr "服务器端口为必填项"
+
+msgid "Port must be between 1 and 65535"
+msgstr "端口必须在 1 到 65535 之间"
+
+msgid "Authentication Token"
+msgstr "认证令牌"
+
+msgid "Unnamed node"
+msgstr "未命名节点"
+
+msgid "Port Forwarding Projects"
+msgstr "端口转发项目"
+
+msgid "Configure port forwarding projects for PortWeaver"
+msgstr "为 PortWeaver 配置端口转发项目"
+
+msgid "Ports: "
+msgstr "端口："
 
 msgid "Toggle"
 msgstr "切换"
@@ -115,6 +114,9 @@ msgstr "禁用"
 
 msgid "Enable"
 msgstr "启用"
+
+msgid "Unnamed project"
+msgstr "未命名项目"
 
 msgid "Enabled"
 msgstr "已启用"
@@ -161,20 +163,26 @@ msgstr "IP "
 msgid " port "
 msgstr " 端口 "
 
+msgid "Remark"
+msgstr "备注"
+
 msgid "This field is required"
 msgstr "此字段为必填项"
 
-msgid "Source Zones"
-msgstr "源区域"
+msgid "Address Family"
+msgstr "地址族"
 
-msgid "Destination Zones"
-msgstr "目标区域"
+msgid "IPv4 and IPv6"
+msgstr "IPv4 和 IPv6"
+
+msgid "IPv4"
+msgstr "IPv4"
+
+msgid "IPv6"
+msgstr "IPv6"
 
 msgid "Target Address"
 msgstr "目标地址"
-
-msgid "This field is required in single port mode"
-msgstr "在单端口模式下此字段为必填项"
 
 msgid "Use Port Mappings Mode"
 msgstr "使用端口映射模式"
@@ -185,14 +193,62 @@ msgstr "启用以配置多个端口映射或端口范围。禁用为单端口模
 msgid "Protocol"
 msgstr "协议"
 
+msgid "TCP and UDP"
+msgstr "TCP 和 UDP"
+
+msgid "TCP"
+msgstr "TCP"
+
+msgid "UDP"
+msgstr "UDP"
+
+msgid "Listen Port"
+msgstr "监听端口"
+
+msgid "This field is required in single port mode"
+msgstr "在单端口模式下此字段为必填项"
+
+msgid "Target Port"
+msgstr "目标端口"
+
+msgid "FRP Tunnels"
+msgstr "FRP 隧道"
+
 msgid "Port Mappings"
 msgstr "端口映射"
 
-msgid "Format: listen_port[:target_port][/protocol]. Examples: \"8080-8090:80-90/udp\", \"8080-8090/udp\" (shorthand, target defaults to same range), \"443:8443/tcp\", \"80\" (defaults to tcp, target_port same as listen_port)"
-msgstr "格式：listen_port[:target_port][/protocol]。示例：\"8080-8090:80-90/udp\"、\"8080-8090/udp\"（简写，目标默认与监听相同）、\"443:8443/tcp\"、\"80\"（默认 tcp，target_port 与 listen_port 相同）"
+msgid "Format: [listen_port][frp_node:port]...:target_port/protocol or listen_port[:target_port][/protocol]. Examples: \"[8080][node1:9888][node2:9999]:80/tcp\" (with FRP), \"8080-8090:80-90/udp\" (port range), \"[8080]:80/tcp\" (single port with FRP), \"443:8443/tcp\" (single port), \"80\" (defaults to tcp, target_port same as listen_port)"
+msgstr "格式：[listen_port][frp_node:port]...:target_port/protocol 或 listen_port[:target_port][/protocol]。示例：\"[8080][node1:9888][node2:9999]:80/tcp\"（带 FRP）、\"8080-8090:80-90/udp\"（端口范围）、\"[8080]:80/tcp\"（单端口带 FRP）、\"443:8443/tcp\"（单端口）、\"80\"（默认 tcp，target_port 与 listen_port 相同）"
+
+msgid "Invalid bracket format: unmatched \"[\" or \"]\"" 
+msgstr "括号格式无效：\"[\"或\"]\"不匹配"
+
+msgid "Invalid FRP node format: \""
+msgstr "FRP 节点格式无效：\""
+
+msgid ". Expected format: \"node_name:port\""
+msgstr "。预期格式：\"node_name:port\""
+
+msgid "Invalid listen port in brackets: \""
+msgstr "括号内监听端口无效：\""
+
+msgid "\". Must be a port number (1-65535) or range (e.g., \"8080-8090\")"
+msgstr "\"。必须是端口号（1-65535）或范围（例如"8080-8090"）"
+
+msgid "Listen port is required"
+msgstr "监听端口为必填项"
+
+msgid "Invalid listen port specification: \""
+msgstr "监听端口格式无效：\""
+
+msgid "Invalid target port specification: \""
+msgstr "目标端口格式无效：\""
+
+msgid ". Must be a port number (1-65535) or range (e.g., \"80-90\")"
+msgstr "\"。必须是端口号（1-65535）或范围（例如"80-90"）"
 
 msgid "Invalid format: too many \"/\" separators"
-msgstr "格式无效：包含过多“/”分隔符"
+msgstr "格式无效：包含过多"/"分隔符"
 
 msgid "Protocol cannot be empty"
 msgstr "协议不能为空"
@@ -204,13 +260,13 @@ msgid "Port specification required"
 msgstr "需要端口说明"
 
 msgid "Invalid format: too many \":\" separators"
-msgstr "格式无效：包含过多“:”分隔符"
+msgstr "格式无效：包含过多":"分隔符"
 
 msgid "Invalid listen port specification. Must be a port number (1-65535) or range (e.g., \"8080-8090\")"
-msgstr "监听端口格式无效。必须是端口号（1-65535）或范围（例如“8080-8090”）"
+msgstr "监听端口格式无效。必须是端口号（1-65535）或范围（例如"8080-8090"）"
 
 msgid "Invalid target port specification. Must be a port number (1-65535) or range (e.g., \"80-90\")"
-msgstr "目标端口格式无效。必须是端口号（1-65535）或范围（例如“80-90”）"
+msgstr "目标端口格式无效。必须是端口号（1-65535）或范围（例如"80-90"）"
 
 msgid "When listen port is a range, target port must also be a range of the same size"
 msgstr "当监听端口为范围时，目标端口也必须为相同大小的范围"
@@ -224,11 +280,26 @@ msgstr "端口范围大小不匹配：监听和目标范围必须具有相同大
 msgid "When target port is a range, listen port must also be a range of the same size"
 msgstr "当目标端口为范围时，监听端口也必须为相同大小的范围"
 
+msgid "Source Zones"
+msgstr "源区域"
+
+msgid "Destination Zones"
+msgstr "目标区域"
+
+msgid "Open Firewall Port"
+msgstr "打开防火墙端口"
+
 msgid "Enable App Level Forward"
 msgstr "启用应用级转发"
+
+msgid "Reuse Address"
+msgstr "重用地址"
 
 msgid "Enable Statistics"
 msgstr "启用统计"
 
-msgid "Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. Requires kernel support for atomic 128-bit operations; fallback disables statistics for older kernels."
-msgstr "收集流量统计（bytes_in/bytes_out），使用零成本的原子计数器。需要内核支持 128 位原子操作；在较旧内核上将回退并禁用统计。"
+msgid "Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward."
+msgstr "收集流量统计（bytes_in/bytes_out），使用零成本的原子计数器。注意：与防火墙转发互斥 - 启用统计将禁用 add_firewall_forward。"
+
+msgid "Add Firewall Forward"
+msgstr "添加防火墙转发"

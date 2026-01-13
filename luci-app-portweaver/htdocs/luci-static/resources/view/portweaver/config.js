@@ -277,10 +277,11 @@ return view.extend({
 		// Expose for inline onclick handlers
 		window.portweaverToggle = runtimeToggle;
 
+
 		// Port forwarding rules section
 		s = m.section(form.GridSection, 'project', _('Port Forwarding Projects'),
 			_('Configure port forwarding projects for PortWeaver'));
-		s.anonymous = false;
+		s.anonymous = true;
 		s.addremove = true;
 		s.sortable = true;
 		s.cloneable = true;
@@ -491,6 +492,181 @@ return view.extend({
 		o.default = 'tcp';
 		o.depends('use_port_mappings', '0');
 
+		// Custom FRP node selector with checkboxes and port inputs
+		var FrpNodeSelector = form.DummyValue.extend({
+			renderWidget: function(section_id, option_index, cfgvalue) {
+				var frp_sections = uci.sections('portweaver', 'frp_node') || [];
+				var current_value = cfgvalue || [];
+				
+				// Parse current values: ["node1:8080", "node2:9000"]
+				if (typeof current_value === 'string') {
+					current_value = current_value.split(/\s+/).filter(function(v) { return v; });
+				}
+				
+				var node_map = {};
+				for (var i = 0; i < current_value.length; i++) {
+					var parts = current_value[i].split(':');
+					var node = parts[0];
+					var port = parts[1] || '';
+					node_map[node] = port;
+				}
+				
+				var widget_id = this.cbid(section_id);
+				var container = E('div', { 'class': 'cbi-value-field' });
+				
+				if (frp_sections.length === 0) {
+					container.appendChild(E('em', { 'style': 'color: #999;' }, _('No FRP nodes configured. Please add FRP nodes first.')));
+				} else {
+					var table = E('table', { 'class': 'table', 'style': 'margin: 0; width: auto;' });
+					
+					for (var i = 0; i < frp_sections.length; i++) {
+						var node_name = frp_sections[i]['name'] || frp_sections[i]['.name'];
+						if (!node_name) continue;
+						
+						var is_checked = node_map.hasOwnProperty(node_name);
+						var port_value = node_map[node_name] || '';
+						
+						var checkbox = E('input', {
+							'type': 'checkbox',
+							'class': 'frp-node-checkbox',
+							'data-widget-id': widget_id,
+							'data-node': node_name,
+							'data-section': section_id,
+							'checked': is_checked ? 'checked' : null,
+							'style': 'margin-right: 8px;'
+						});
+						
+						var port_input = E('input', {
+							'type': 'text',
+							'class': 'frp-node-port',
+							'data-widget-id': widget_id,
+							'data-node': node_name,
+							'data-section': section_id,
+							'value': port_value,
+							'placeholder': _('default port'),
+							'style': 'min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;',
+							'disabled': is_checked ? null : 'disabled'
+						});
+						
+						var updateHandler = function() {
+							var widget_id = this.getAttribute('data-widget-id');
+							var checkboxes = document.querySelectorAll('input.frp-node-checkbox[data-widget-id="' + widget_id + '"]');
+							var values = [];
+							
+							for (var j = 0; j < checkboxes.length; j++) {
+								if (checkboxes[j].checked) {
+									var node = checkboxes[j].getAttribute('data-node');
+									var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + widget_id + '"][data-node="' + node + '"]');
+									var port = port_inp ? port_inp.value.trim() : '';
+									
+									if (port) {
+										// Validate port
+										var p = parseInt(port, 10);
+										if (isNaN(p) || p < 1 || p > 65535) {
+											port_inp.style.setProperty('border-color', 'red', 'important');
+											continue;
+										} else {
+											port_inp.style.borderColor = '';
+										}
+										values.push(node + ':' + port);
+									} else {
+										values.push(node);
+									}
+								}
+							}
+							
+							// Store in hidden input that LuCI can track
+							var hidden = document.querySelector('input[id="' + widget_id + '"]');
+							if (hidden) {
+								hidden.value = values.join(' ');
+							}
+						};
+						
+						checkbox.addEventListener('change', function() {
+							var widget_id = this.getAttribute('data-widget-id');
+							var node = this.getAttribute('data-node');
+							var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + widget_id + '"][data-node="' + node + '"]');
+							if (port_inp) {
+								port_inp.disabled = !this.checked;
+								if (!this.checked) {
+									port_inp.value = '';
+								}
+							}
+							updateHandler.call(this);
+						});
+						
+						port_input.addEventListener('input', updateHandler);
+						port_input.addEventListener('change', updateHandler);
+						
+						var row = E('tr', {}, [
+							E('td', { 'style': 'padding: 4px 8px; border: none;' }, [
+								checkbox,
+								E('label', {
+									'style': 'cursor: pointer; font-weight: normal; margin: 0;'
+								}, node_name)
+							]),
+							E('td', { 'style': 'padding: 4px 8px; border: none;' }, [
+								E('label', { 'style': 'margin-right: 5px; color: #666;' }, _('Port:')),
+								port_input
+							])
+						]);
+						
+						table.appendChild(row);
+					}
+					
+					container.appendChild(table);
+				}
+				
+				// Hidden input with proper ID for form tracking
+				var hidden = E('input', {
+					'type': 'hidden',
+					'id': widget_id,
+					'name': widget_id,
+					'value': current_value.join(' ')
+				});
+				container.appendChild(hidden);
+				
+				var description = E('div', { 'class': 'cbi-value-description' }, 
+					_('Select FRP nodes and optionally specify custom ports. Leave port empty to use default.'));
+				container.appendChild(description);
+				
+				return container;
+			},
+
+			cfgvalue: function(section_id) {
+				var value = uci.get('portweaver', section_id, 'frp_nodes');
+				if (Array.isArray(value)) {
+					return value;
+				} else if (typeof value === 'string') {
+					return value.split(/\s+/).filter(function(v) { return v; });
+				}
+				return [];
+			},
+
+			formvalue: function(section_id) {
+				var widget_id = this.cbid(section_id);
+				var hidden = document.getElementById(widget_id);
+				if (hidden && hidden.value) {
+					return hidden.value.split(/\s+/).filter(function(v) { return v; });
+				}
+				return null;
+			},
+
+			write: function(section_id, formvalue) {
+				if (formvalue && formvalue.length > 0) {
+					return uci.set('portweaver', section_id, 'frp_nodes', formvalue);
+				} else {
+					return uci.unset('portweaver', section_id, 'frp_nodes');
+				}
+			}
+		});
+
+		o = s.option(FrpNodeSelector, 'frp_nodes', _('FRP Tunnels'));
+		o.modalonly = true;
+		o.rmempty = true;
+		o.depends('use_port_mappings', '0');
+		o.depends('enable_app_forward', '1');
+
 		o = s.option(form.Value, 'listen_port', _('Listen Port'));
 		o.modalonly = true;
 		o.datatype = 'port';
@@ -523,8 +699,8 @@ return view.extend({
 		o = s.option(form.DynamicList, 'port_mapping', _('Port Mappings'));
 		o.modalonly = true;
 		o.depends('use_port_mappings', '1');
-		o.placeholder = '8080-8090:80-90/tcp';
-		o.description = _('Format: listen_port[:target_port][/protocol]. Examples: "8080-8090:80-90/udp", "8080-8090/udp" (shorthand, target defaults to same range), "443:8443/tcp", "80" (defaults to tcp, target_port same as listen_port)');
+		o.placeholder = '[8080][node1:9888]:80/tcp';
+		o.description = _('Format: [listen_port][frp_node:port]...:target_port/protocol or listen_port[:target_port][/protocol]. Examples: "[8080][node1:9888][node2:9999]:80/tcp" (with FRP), "8080-8090:80-90/udp" (port range), "[8080]:80/tcp" (single port with FRP), "443:8443/tcp" (single port), "80" (defaults to tcp, target_port same as listen_port)');
 		o.validate = function (section_id, value) {
 			if (!value || value.trim() === '') return true;
 
@@ -550,8 +726,53 @@ return view.extend({
 				return true;
 			}
 
+			// Helper function to validate FRP node:port format
+			function validateFrpNode(spec) {
+				spec = spec.trim();
+				if (!spec) return false;
+				var colon_idx = spec.indexOf(':');
+				if (colon_idx === -1) {
+					// Node name without port
+					return /^[a-zA-Z0-9_-]+$/.test(spec);
+				}
+				var node_name = spec.substring(0, colon_idx).trim();
+				var port_str = spec.substring(colon_idx + 1).trim();
+				if (!node_name || !/^[a-zA-Z0-9_-]+$/.test(node_name)) return false;
+				var port = parseInt(port_str, 10);
+				if (isNaN(port) || port < 1 || port > 65535) return false;
+				return true;
+			}
+
+			// Parse FRP nodes from format: [node1:port1][node2:port2]...
+			var frp_nodes = [];
+			var work_str = value.trim();
+			var listen_port_idx = -1;
+
+			while (work_str.charAt(0) === '[') {
+				var close_idx = work_str.indexOf(']');
+				if (close_idx === -1) {
+					return _('Invalid bracket format: unmatched "[" or "]"');
+				}
+				var content = work_str.substring(1, close_idx).trim();
+				work_str = work_str.substring(close_idx + 1).trim();
+
+				if (content.indexOf(':') !== -1) {
+					// FRP node
+					if (!validateFrpNode(content)) {
+						return _('Invalid FRP node format: "') + content + _('. Expected format: "node_name:port"');
+					}
+					frp_nodes.push(content);
+				} else {
+					// Listen port
+					if (!validatePortSpec(content)) {
+						return _('Invalid listen port in brackets: "') + content + _('". Must be a port number (1-65535) or range (e.g., "8080-8090")');
+					}
+					listen_port_idx = frp_nodes.length; // Mark position of listen port
+				}
+			}
+
 			// Split by '/' to extract protocol
-			var parts = value.split('/');
+			var parts = work_str.split('/');
 			if (parts.length > 2) return _('Invalid format: too many "/" separators');
 
 			// Validate protocol if present
@@ -563,46 +784,49 @@ return view.extend({
 				}
 			}
 
-			// Split by ':' to extract listen_port and target_port
+			// Split by ':' to extract listen_port and target_port (for non-FRP part)
 			var port_part = parts[0].trim();
 			if (!port_part) return _('Port specification required');
 
 			var port_split = port_part.split(':');
 			if (port_split.length > 2) return _('Invalid format: too many ":" separators');
 
-			// Validate listen_port
-			var listenParsed = validatePortSpec(port_split[0]);
-			if (!listenParsed || listenParsed === false) {
-				return _('Invalid listen port specification. Must be a port number (1-65535) or range (e.g., "8080-8090")');
+			var listen_port_str = port_split[0].trim();
+			var target_port_str = port_split.length === 2 ? port_split[1].trim() : null;
+
+			// Validate listen port from non-FRP part or use FRP listen port if available
+			var listenPort = listen_port_str;
+			if (listen_port_idx === -1 && !listen_port_str) {
+				return _('Listen port is required');
+			}
+
+			if (listen_port_str && !validatePortSpec(listen_port_str)) {
+				return _('Invalid listen port specification: "') + listen_port_str + _('. Must be a port number (1-65535) or range (e.g., "8080-8090")');
 			}
 
 			// Validate target_port if present
-			var targetParsed = null;
-			if (port_split.length === 2) {
-				targetParsed = validatePortSpec(port_split[1]);
-				if (!targetParsed || targetParsed === false) {
-					return _('Invalid target port specification. Must be a port number (1-65535) or range (e.g., "80-90")');
-				}
+			if (target_port_str && !validatePortSpec(target_port_str)) {
+				return _('Invalid target port specification: "') + target_port_str + _('. Must be a port number (1-65535) or range (e.g., "80-90")');
 			}
 
-			// If listen is a range, allow implicit target (same range) or validate explicit target range size matches
+			// If listen is a range, ensure target is also a range and sizes match
 			var parseRange = function (spec) {
 				var r = spec.split('-');
 				return { start: parseInt(r[0], 10), end: parseInt(r[1], 10) };
 			};
 
-			var listenIsRange = port_split[0].indexOf('-') !== -1;
-			var targetIsRange = port_split.length === 2 && port_split[1].indexOf('-') !== -1;
+			var listenIsRange = listen_port_str && listen_port_str.indexOf('-') !== -1;
+			var targetIsRange = target_port_str && target_port_str.indexOf('-') !== -1;
 
 			if (listenIsRange) {
-				if (!targetParsed) {
+				if (!target_port_str) {
 					// shorthand: target omitted => implicit same range, acceptable
 				} else {
 					if (!targetIsRange) {
 						return _('When listen port is a range, target port must also be a range of the same size');
 					}
-					var l = parseRange(port_split[0]);
-					var t = parseRange(port_split[1]);
+					var l = parseRange(listen_port_str);
+					var t = parseRange(target_port_str);
 					if (isNaN(l.start) || isNaN(l.end) || isNaN(t.start) || isNaN(t.end)) {
 						return _('Invalid range specification');
 					}
@@ -645,6 +869,63 @@ return view.extend({
 		o.default = '1';
 		o.depends({ 'enable_app_forward': "0" });
 		o.depends({ 'enable_app_forward': "1", 'enable_stats': '0' });
+
+
+		// FRP Node Management section
+		s = m.section(form.GridSection, 'frp_node', _('FRP Node Management'),
+			_('Configure FRP nodes for port forwarding tunneling'));
+		s.anonymous = true;
+		s.addremove = true;
+		s.sortable = true;
+		s.cloneable = true;
+
+		s.sectiontitle = function (section_id) {
+			return uci.get('portweaver', section_id, 'name') || section_id || _('Unnamed node');
+		};
+
+		o = s.option(form.Value, 'name', _('Node Name'));
+		o.modalonly = true;
+		o.rmempty = false;
+		o.datatype = 'string';
+		o.placeholder = 'node1';
+		o.validate = function (section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('Node name is required');
+			if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim()))
+				return _('Node name must contain only alphanumeric characters, underscore, or hyphen');
+			return true;
+		};
+
+		o = s.option(form.Value, 'server', _('FRP Server Address'));
+		o.modalonly = true;
+		o.rmempty = false;
+		o.datatype = 'host';
+		o.placeholder = '1.2.3.4';
+		o.validate = function (section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('Server address is required');
+			return true;
+		};
+
+		o = s.option(form.Value, 'port', _('FRP Server Port'));
+		o.modalonly = true;
+		o.rmempty = false;
+		o.datatype = 'port';
+		o.placeholder = '7000';
+		o.validate = function (section_id, value) {
+			if (!value || String(value).trim() === '')
+				return _('Server port is required');
+			var port = parseInt(value, 10);
+			if (isNaN(port) || port < 1 || port > 65535)
+				return _('Port must be between 1 and 65535');
+			return true;
+		};
+
+		o = s.option(form.Value, 'token', _('Authentication Token'));
+		o.modalonly = true;
+		o.password = true;
+		o.rmempty = true;
+		o.placeholder = 'optional token for authentication';
 
 		return m.render();
 	}
