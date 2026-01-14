@@ -1,0 +1,18 @@
+{
+  "name": "luci-app-portweaver-ui",
+  "version": "1.0.0",
+  "description": "LuCI PortWeaver UI TypeScript source",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rsbuild build",
+    "dev": "rsbuild dev",
+    "preview": "rsbuild preview"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^1.7.2",
+    "@types/node": "^20.0.0",
+    "biome": "^0.3.3",
+    "typescript": "^5.3.0"
+  }
+}
