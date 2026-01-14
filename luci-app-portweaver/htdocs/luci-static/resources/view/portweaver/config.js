@@ -667,6 +667,519 @@ return view.extend({
 		o.depends('use_port_mappings', '0');
 		o.depends('enable_app_forward', '1');
 
+		// Port Mapping Editor with visual components
+		var PortMappingEditor = form.DummyValue.extend({
+			parseMapping: function(str) {
+				if (!str || typeof str !== 'string') return null;
+				
+				str = str.trim();
+				var mapping = {
+					listenPort: '',
+					targetPort: '',
+					frpNodes: [],
+					protocol: 'tcp'
+				};
+
+				// Parse protocol from end: /tcp, /udp, /both
+				var protocolMatch = str.match(/\/([a-z]+)$/);
+				if (protocolMatch) {
+					mapping.protocol = protocolMatch[1].toLowerCase();
+					str = str.substring(0, protocolMatch.index);
+				}
+
+				// Parse FRP nodes: [node1:9888][node2:9999]...
+				var frpMatch = str.match(/^(\[.+?\])+/);
+				if (frpMatch) {
+					var frpStr = frpMatch[0];
+					var nodeMatches = frpStr.match(/\[([^\]]+)\]/g);
+					if (nodeMatches) {
+						nodeMatches.forEach(function(m) {
+							var content = m.substring(1, m.length - 1);
+							if (content.indexOf(':') !== -1 || /^[a-zA-Z0-9_-]+$/.test(content)) {
+								// This is a FRP node, not a port
+								if (content.match(/^\d+(-\d+)?$/) === null) {
+									mapping.frpNodes.push(content);
+								}
+							}
+						});
+					}
+					str = str.substring(frpStr.length);
+				}
+
+				// Parse ports: listen_port or listen_port:target_port
+				var ports = str.split(':');
+				if (ports.length >= 1) {
+					mapping.listenPort = ports[0].trim().replace(/[\[\]]/g, '');
+				}
+				if (ports.length >= 2) {
+					mapping.targetPort = ports[1].trim().replace(/[\[\]]/g, '');
+				}
+
+				return mapping;
+			},
+
+			buildString: function(mapping) {
+				var parts = [];
+
+				// FRP nodes
+				if (mapping.frpNodes && mapping.frpNodes.length > 0) {
+					mapping.frpNodes.forEach(function(node) {
+						parts.push('[' + node + ']');
+					});
+				}
+
+				// Listen port
+				if (mapping.listenPort) {
+					parts.push('[' + mapping.listenPort + ']');
+				}
+
+				// Target port
+				if (mapping.targetPort) {
+					parts.push(mapping.targetPort);
+				}
+
+				// Protocol
+				if (mapping.protocol) {
+					parts.push('/' + mapping.protocol);
+				}
+
+				// Join: FRP nodes + listen port + : + target port + protocol
+				var result = '';
+				var i = 0;
+				
+				// Add FRP nodes if present
+				if (mapping.frpNodes && mapping.frpNodes.length > 0) {
+					mapping.frpNodes.forEach(function(node) {
+						result += '[' + node + ']';
+					});
+				}
+
+				// Add listen port (with brackets if FRP exists)
+				if (mapping.listenPort) {
+					if (mapping.frpNodes && mapping.frpNodes.length > 0) {
+						result += '[' + mapping.listenPort + ']';
+					} else {
+						result += mapping.listenPort;
+					}
+				}
+
+				// Add target port (after colon)
+				if (mapping.targetPort) {
+					result += ':' + mapping.targetPort;
+				}
+
+				// Add protocol
+				if (mapping.protocol) {
+					result += '/' + mapping.protocol;
+				}
+
+				return result;
+			},
+
+			renderWidget: function(section_id, option_index, cfgvalue) {
+				var frp_sections = uci.sections('portweaver', 'frp_node') || [];
+				var current_values = cfgvalue || [];
+				
+				if (typeof current_values === 'string') {
+					current_values = current_values.split(/\s+/).filter(function(v) { return v; });
+				}
+
+				var widget_id = this.cbid(section_id);
+				var self = this;
+				var container = E('div', { 'class': 'cbi-value-field' });
+
+				// Wrapper for all mapping rows
+				var mappings_wrapper = E('div', { 'id': 'portmapping-wrapper-' + section_id });
+
+				// Helper to render a single mapping row
+				var renderMappingRow = function(mapping_str, index) {
+					var mapping = self.parseMapping(mapping_str) || {
+						listenPort: '',
+						targetPort: '',
+						frpNodes: [],
+						protocol: 'tcp'
+					};
+
+					var row_id = 'portmapping-row-' + section_id + '-' + index;
+					var row = E('div', { 'id': row_id, 'class': 'portmapping-row', 'data-index': index, 'style': 'margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;' });
+
+					// Mode toggle button
+					var isTextMode = false;
+					var modeToggleBtn = E('button', {
+						'type': 'button',
+						'class': 'btn btn-xs',
+						'style': 'margin-bottom: 10px; margin-right: 10px;'
+					}, _('Text Edit'));
+
+					// Listen Port Input
+					var listenInput = E('input', {
+						'type': 'text',
+						'class': 'listen-port-input',
+						'data-index': index,
+						'data-section': section_id,
+						'value': mapping.listenPort,
+						'placeholder': _('8080 or 8080-8090'),
+						'style': 'width: 70px; min-width: 50px; margin-right: 10px;'
+					});
+
+					// Target Port Input
+					var targetInput = E('input', {
+						'type': 'text',
+						'class': 'target-port-input',
+						'data-index': index,
+						'data-section': section_id,
+						'value': mapping.targetPort,
+						'placeholder': _('80 or 80-90'),
+						'style': 'width: 70px; min-width: 50px; margin-right: 10px;'
+					});
+
+					// Protocol Select
+					var protocolSelect = E('select', {
+						'class': 'protocol-select',
+						'data-index': index,
+						'data-section': section_id,
+						'style': 'width: 100px; margin-right: 10px;'
+					}, [
+						E('option', { 'value': 'tcp', 'selected': mapping.protocol === 'tcp' ? 'selected' : null }, 'TCP'),
+						E('option', { 'value': 'udp', 'selected': mapping.protocol === 'udp' ? 'selected' : null }, 'UDP'),
+						E('option', { 'value': 'both', 'selected': mapping.protocol === 'both' ? 'selected' : null }, 'Both')
+					]);
+
+					// Text mode input
+					var textModeInput = E('input', {
+						'type': 'text',
+						'class': 'text-mode-input',
+						'value': mapping_str,
+						'placeholder': _('[8080][node1:9888]:80/tcp or 8080:80/tcp'),
+						'style': 'width: 100%; margin-bottom: 10px; padding: 5px;'
+					});
+
+					// FRP Nodes Selection
+					var frpContainer = E('div', { 'class': 'frp-nodes-select', 'style': 'margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px; display: none;' });
+					
+					if (frp_sections.length > 0) {
+						frpContainer.appendChild(E('label', { 'style': 'display: block; margin-bottom: 8px; font-weight: bold;' }, _('FRP Nodes (Optional):')));
+						
+						frp_sections.forEach(function(frp_section) {
+							var node_name = frp_section['name'] || frp_section['.name'];
+							if (!node_name) return;
+
+							var is_checked = mapping.frpNodes.some(function(n) { return n.split(':')[0] === node_name; });
+							var port_value = '';
+							if (is_checked) {
+								var found = mapping.frpNodes.find(function(n) { return n.split(':')[0] === node_name; });
+								if (found) {
+									var parts = found.split(':');
+									port_value = parts.length > 1 ? parts[1] : '';
+								}
+							}
+
+							var checkbox = E('input', {
+								'type': 'checkbox',
+								'class': 'frp-node-checkbox-pm',
+								'data-node': node_name,
+								'data-index': index,
+								'data-section': section_id,
+								'checked': is_checked ? 'checked' : null,
+								'style': 'margin-right: 5px;'
+							});
+
+							var port_input = E('input', {
+								'type': 'text',
+								'class': 'frp-node-port-pm',
+								'data-node': node_name,
+								'data-index': index,
+								'data-section': section_id,
+								'value': port_value,
+								'placeholder': _('default'),
+								'style': 'width: 80px; margin-right: 15px;',
+								'disabled': is_checked ? null : 'disabled'
+							});
+
+							var node_item = E('div', { 'style': 'margin-bottom: 5px;' }, [
+								checkbox,
+								E('label', { 'style': 'margin-right: 10px; cursor: pointer;' }, node_name),
+								E('label', { 'style': 'margin-right: 5px;' }, _('Port:')),
+								port_input
+							]);
+
+							frpContainer.appendChild(node_item);
+						});
+					} else {
+						frpContainer.appendChild(E('em', { 'style': 'color: #999;' }, _('No FRP nodes configured')));
+					}
+
+					// Error message placeholder
+					var errorDiv = E('div', {
+						'class': 'portmapping-error',
+						'data-index': index,
+						'style': 'color: red; margin-top: 8px; min-height: 20px; font-size: 12px;'
+					});
+
+					// Preview
+					var previewDiv = E('div', {
+						'class': 'portmapping-preview',
+						'data-index': index,
+						'style': 'margin-top: 8px; padding: 8px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;'
+					}, _('Preview: ') + self.buildString(mapping));
+
+					// Update functions with proper scope
+					var updatePreview = function() {
+						var listen = listenInput.value.trim();
+						var target = targetInput.value.trim();
+						var protocol = protocolSelect.value;
+						
+						var frpNodes = [];
+						var allFrpCheckboxes = row.querySelectorAll('input.frp-node-checkbox-pm');
+						allFrpCheckboxes.forEach(function(cb) {
+							if (cb.checked) {
+								var node = cb.getAttribute('data-node');
+								var port_inp = row.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
+								var port = port_inp ? port_inp.value.trim() : '';
+								frpNodes.push(port ? node + ':' + port : node);
+							}
+						});
+
+						var temp_mapping = { listenPort: listen, targetPort: target, frpNodes: frpNodes, protocol: protocol };
+						var preview_str = self.buildString(temp_mapping);
+						previewDiv.textContent = _('Preview: ') + preview_str;
+						
+						// Also sync text mode input
+						textModeInput.value = preview_str;
+					};
+
+					var updateHiddenValue = function() {
+						var rows = mappings_wrapper.querySelectorAll('.portmapping-row');
+						var values = [];
+
+						rows.forEach(function(r) {
+							var listen = r.querySelector('.listen-port-input').value.trim();
+							var target = r.querySelector('.target-port-input').value.trim();
+							var protocol = r.querySelector('.protocol-select').value;
+
+							var frpNodes = [];
+							var checkboxes = r.querySelectorAll('input.frp-node-checkbox-pm');
+							checkboxes.forEach(function(cb) {
+								if (cb.checked) {
+									var node = cb.getAttribute('data-node');
+									var port_inp = r.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
+									var port = port_inp ? port_inp.value.trim() : '';
+									frpNodes.push(port ? node + ':' + port : node);
+								}
+							});
+
+							var temp = { listenPort: listen, targetPort: target, frpNodes: frpNodes, protocol: protocol };
+							var str = self.buildString(temp);
+							if (str && listen && target) {
+								values.push(str);
+							}
+						});
+
+						var hidden = document.getElementById('portmapping-hidden-' + section_id);
+						if (hidden) {
+							hidden.value = values.join(' ');
+						}
+					};
+
+					// Attach event listeners to main inputs
+					listenInput.addEventListener('input', function() { updatePreview(); updateHiddenValue(); });
+					listenInput.addEventListener('change', function() { updatePreview(); updateHiddenValue(); });
+					targetInput.addEventListener('input', function() { updatePreview(); updateHiddenValue(); });
+					targetInput.addEventListener('change', function() { updatePreview(); updateHiddenValue(); });
+					protocolSelect.addEventListener('change', function() { updatePreview(); updateHiddenValue(); });
+
+					// Attach event listeners to FRP checkboxes and port inputs
+					setTimeout(function() {
+						var frpCheckboxes = row.querySelectorAll('input.frp-node-checkbox-pm');
+						frpCheckboxes.forEach(function(cb) {
+							cb.addEventListener('change', function() {
+								var node = this.getAttribute('data-node');
+								var port_inp = row.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
+								if (port_inp) {
+									port_inp.disabled = !this.checked;
+									if (!this.checked) {
+										port_inp.value = '';
+									}
+								}
+								updatePreview();
+								updateHiddenValue();
+							});
+						});
+
+						var frpPortInputs = row.querySelectorAll('input.frp-node-port-pm');
+						frpPortInputs.forEach(function(inp) {
+							inp.addEventListener('input', function() {
+								updatePreview();
+								updateHiddenValue();
+							});
+							inp.addEventListener('change', function() {
+								updatePreview();
+								updateHiddenValue();
+							});
+						});
+					}, 0);
+
+					// Text mode handlers
+					textModeInput.addEventListener('input', function() {
+						var parsed = self.parseMapping(this.value);
+						if (parsed) {
+							listenInput.value = parsed.listenPort;
+							targetInput.value = parsed.targetPort;
+							protocolSelect.value = parsed.protocol;
+							
+							// Update FRP checkboxes
+							var allCheckboxes = row.querySelectorAll('input.frp-node-checkbox-pm');
+							allCheckboxes.forEach(function(cb) {
+								var node = cb.getAttribute('data-node');
+								var is_checked = parsed.frpNodes.some(function(n) { return n.split(':')[0] === node; });
+								cb.checked = is_checked;
+								
+								var port_inp = row.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
+								if (port_inp) {
+									port_inp.disabled = !is_checked;
+									if (is_checked) {
+										var found = parsed.frpNodes.find(function(n) { return n.split(':')[0] === node; });
+										if (found) {
+											var parts = found.split(':');
+											port_inp.value = parts.length > 1 ? parts[1] : '';
+										}
+									} else {
+										port_inp.value = '';
+									}
+								}
+							});
+							
+							updateHiddenValue();
+						}
+					});
+
+					// Mode toggle handler
+					modeToggleBtn.addEventListener('click', function(e) {
+						e.preventDefault();
+						isTextMode = !isTextMode;
+						
+						if (isTextMode) {
+							titleRow.style.display = 'none';
+							frpContainer.style.display = 'none';
+							textModeInput.style.display = 'block';
+							previewDiv.style.display = 'none';
+							modeToggleBtn.textContent = _('Visual Edit');
+						} else {
+							titleRow.style.display = 'flex';
+							frpContainer.style.display = 'block';
+							textModeInput.style.display = 'none';
+							previewDiv.style.display = 'block';
+							modeToggleBtn.textContent = _('Text Edit');
+						}
+					});
+
+					// Delete button
+					var deleteBtn = E('button', {
+						'type': 'button',
+						'class': 'btn btn-sm btn-danger',
+						'data-index': index,
+						'data-section': section_id,
+						'style': 'margin-top: 10px; margin-left: 10px;'
+					}, _('Delete'));
+
+					deleteBtn.addEventListener('click', function(e) {
+						e.preventDefault();
+						row.remove();
+						updateHiddenValue();
+					});
+
+					// Assemble row
+					var titleRow = E('div', { 'style': 'display: flex; gap: 10px; align-items: center;' }, [
+						E('label', { 'style': 'min-width: 80px; font-weight: bold;' }, _('Listen Port:')),
+						listenInput,
+						E('label', { 'style': 'min-width: 80px; font-weight: bold;' }, _('Target Port:')),
+						targetInput,
+						E('label', { 'style': 'min-width: 60px; font-weight: bold;' }, _('Protocol:')),
+						protocolSelect
+					]);
+
+					row.appendChild(modeToggleBtn);
+					row.appendChild(deleteBtn);
+					row.appendChild(E('br'));
+					row.appendChild(titleRow);
+					row.appendChild(textModeInput);
+					row.appendChild(frpContainer);
+					row.appendChild(errorDiv);
+					row.appendChild(previewDiv);
+
+					return row;
+				};
+
+				// Render existing mappings
+				for (var i = 0; i < current_values.length; i++) {
+					mappings_wrapper.appendChild(renderMappingRow(current_values[i], i));
+				}
+
+				// Add button
+				var addBtn = E('button', {
+					'type': 'button',
+					'class': 'btn btn-sm btn-primary',
+					'style': 'margin-bottom: 10px;'
+				}, _('Add Port Mapping'));
+
+				addBtn.addEventListener('click', function(e) {
+					e.preventDefault();
+					var rows = mappings_wrapper.querySelectorAll('.portmapping-row');
+					var new_index = rows.length;
+					mappings_wrapper.appendChild(renderMappingRow('', new_index));
+				});
+
+				container.appendChild(addBtn);
+				container.appendChild(mappings_wrapper);
+
+				// Hidden input to store actual value
+				var hidden = E('input', {
+					'type': 'hidden',
+					'id': 'portmapping-hidden-' + section_id,
+					'name': widget_id,
+					'value': current_values.join(' ')
+				});
+				container.appendChild(hidden);
+
+				var description = E('div', { 'class': 'cbi-value-description' }, 
+					_('Configure port forwarding rules. Listen Port and Target Port support single port (8080) or port range (8080-8090).'));
+				container.appendChild(description);
+
+				return container;
+			},
+
+			cfgvalue: function(section_id) {
+				var value = uci.get('portweaver', section_id, 'port_mapping');
+				if (Array.isArray(value)) {
+					return value;
+				} else if (typeof value === 'string') {
+					return value.split(/\s+/).filter(function(v) { return v; });
+				}
+				return [];
+			},
+
+			formvalue: function(section_id) {
+				var widget_id = this.cbid(section_id);
+				var hidden = document.getElementById('portmapping-hidden-' + section_id);
+				if (hidden && hidden.value) {
+					return hidden.value.split(/\s+/).filter(function(v) { return v; });
+				}
+				return null;
+			},
+
+			write: function(section_id, formvalue) {
+				if (formvalue && formvalue.length > 0) {
+					return uci.set('portweaver', section_id, 'port_mapping', formvalue);
+				} else {
+					return uci.unset('portweaver', section_id, 'port_mapping');
+				}
+			}
+		});
+
+		o = s.option(PortMappingEditor, 'port_mapping', _('Port Mappings'));
+		o.modalonly = true;
+		o.depends('use_port_mappings', '1');
+
 		o = s.option(form.Value, 'listen_port', _('Listen Port'));
 		o.modalonly = true;
 		o.datatype = 'port';
@@ -692,155 +1205,6 @@ return view.extend({
 				if (!value || String(value).trim() === '')
 					return _('This field is required in single port mode');
 			}
-			return true;
-		};
-
-		// Multi-port mode - Dynamic list
-		o = s.option(form.DynamicList, 'port_mapping', _('Port Mappings'));
-		o.modalonly = true;
-		o.depends('use_port_mappings', '1');
-		o.placeholder = '[8080][node1:9888]:80/tcp';
-		o.description = _('Format: [listen_port][frp_node:port]...:target_port/protocol or listen_port[:target_port][/protocol]. Examples: "[8080][node1:9888][node2:9999]:80/tcp" (with FRP), "8080-8090:80-90/udp" (port range), "[8080]:80/tcp" (single port with FRP), "443:8443/tcp" (single port), "80" (defaults to tcp, target_port same as listen_port)');
-		o.validate = function (section_id, value) {
-			if (!value || value.trim() === '') return true;
-
-			// Helper function to validate a single port or port range
-			function validatePortSpec(spec) {
-				spec = spec.trim();
-				if (!spec) return false;
-
-				// Check if it's a port range (e.g., "8080-8090")
-				if (spec.indexOf('-') !== -1) {
-					var range = spec.split('-');
-					if (range.length !== 2) return false;
-					var start = parseInt(range[0], 10);
-					var end = parseInt(range[1], 10);
-					if (isNaN(start) || isNaN(end)) return false;
-					if (start < 1 || start > 65535 || end < 1 || end > 65535) return false;
-					if (start > end) return false;
-				} else {
-					// Single port
-					var port = parseInt(spec, 10);
-					if (isNaN(port) || port < 1 || port > 65535) return false;
-				}
-				return true;
-			}
-
-			// Helper function to validate FRP node:port format
-			function validateFrpNode(spec) {
-				spec = spec.trim();
-				if (!spec) return false;
-				var colon_idx = spec.indexOf(':');
-				if (colon_idx === -1) {
-					// Node name without port
-					return /^[a-zA-Z0-9_-]+$/.test(spec);
-				}
-				var node_name = spec.substring(0, colon_idx).trim();
-				var port_str = spec.substring(colon_idx + 1).trim();
-				if (!node_name || !/^[a-zA-Z0-9_-]+$/.test(node_name)) return false;
-				var port = parseInt(port_str, 10);
-				if (isNaN(port) || port < 1 || port > 65535) return false;
-				return true;
-			}
-
-			// Parse FRP nodes from format: [node1:port1][node2:port2]...
-			var frp_nodes = [];
-			var work_str = value.trim();
-			var listen_port_idx = -1;
-
-			while (work_str.charAt(0) === '[') {
-				var close_idx = work_str.indexOf(']');
-				if (close_idx === -1) {
-					return _('Invalid bracket format: unmatched "[" or "]"');
-				}
-				var content = work_str.substring(1, close_idx).trim();
-				work_str = work_str.substring(close_idx + 1).trim();
-
-				if (content.indexOf(':') !== -1) {
-					// FRP node
-					if (!validateFrpNode(content)) {
-						return _('Invalid FRP node format: "') + content + _('. Expected format: "node_name:port"');
-					}
-					frp_nodes.push(content);
-				} else {
-					// Listen port
-					if (!validatePortSpec(content)) {
-						return _('Invalid listen port in brackets: "') + content + _('". Must be a port number (1-65535) or range (e.g., "8080-8090")');
-					}
-					listen_port_idx = frp_nodes.length; // Mark position of listen port
-				}
-			}
-
-			// Split by '/' to extract protocol
-			var parts = work_str.split('/');
-			if (parts.length > 2) return _('Invalid format: too many "/" separators');
-
-			// Validate protocol if present
-			if (parts.length === 2) {
-				var proto = parts[1].trim().toLowerCase();
-				if (!proto) return _('Protocol cannot be empty');
-				if (!['tcp', 'udp', 'both'].includes(proto)) {
-					return _('Protocol must be tcp, udp, or both');
-				}
-			}
-
-			// Split by ':' to extract listen_port and target_port (for non-FRP part)
-			var port_part = parts[0].trim();
-			if (!port_part) return _('Port specification required');
-
-			var port_split = port_part.split(':');
-			if (port_split.length > 2) return _('Invalid format: too many ":" separators');
-
-			var listen_port_str = port_split[0].trim();
-			var target_port_str = port_split.length === 2 ? port_split[1].trim() : null;
-
-			// Validate listen port from non-FRP part or use FRP listen port if available
-			var listenPort = listen_port_str;
-			if (listen_port_idx === -1 && !listen_port_str) {
-				return _('Listen port is required');
-			}
-
-			if (listen_port_str && !validatePortSpec(listen_port_str)) {
-				return _('Invalid listen port specification: "') + listen_port_str + _('. Must be a port number (1-65535) or range (e.g., "8080-8090")');
-			}
-
-			// Validate target_port if present
-			if (target_port_str && !validatePortSpec(target_port_str)) {
-				return _('Invalid target port specification: "') + target_port_str + _('. Must be a port number (1-65535) or range (e.g., "80-90")');
-			}
-
-			// If listen is a range, ensure target is also a range and sizes match
-			var parseRange = function (spec) {
-				var r = spec.split('-');
-				return { start: parseInt(r[0], 10), end: parseInt(r[1], 10) };
-			};
-
-			var listenIsRange = listen_port_str && listen_port_str.indexOf('-') !== -1;
-			var targetIsRange = target_port_str && target_port_str.indexOf('-') !== -1;
-
-			if (listenIsRange) {
-				if (!target_port_str) {
-					// shorthand: target omitted => implicit same range, acceptable
-				} else {
-					if (!targetIsRange) {
-						return _('When listen port is a range, target port must also be a range of the same size');
-					}
-					var l = parseRange(listen_port_str);
-					var t = parseRange(target_port_str);
-					if (isNaN(l.start) || isNaN(l.end) || isNaN(t.start) || isNaN(t.end)) {
-						return _('Invalid range specification');
-					}
-					if ((l.end - l.start) !== (t.end - t.start)) {
-						return _('Port range size mismatch: the listen and target ranges must have the same size');
-					}
-				}
-			}
-
-			// If target is range but listen is single, that's invalid
-			if (targetIsRange && !listenIsRange) {
-				return _('When target port is a range, listen port must also be a range of the same size');
-			}
-
 			return true;
 		};
 
