@@ -1,3 +1,4 @@
+import './utils/jsx-factory';
 import { formatBytes, formatUptime, getErrorMessage } from './utils/formatters';
 import { createRpcClient } from './utils/rpc-client';
 import { StatusPanel } from './components/StatusPanel';
@@ -5,12 +6,16 @@ import { createFrpNodeSelector } from './components/FrpNodeSelector';
 import { createPortMappingEditor } from './components/PortMappingEditor';
 import type { PortWeaverStatus, ProjectStatus } from './types/portweaver';
 
-declare const window: any;
+const rpc = L.rpc
+const view = L.view
+const form = L.form
+const ui = L.ui
+const uci = L.uci
+const poll = L.Poll
 
 const rpcClient = createRpcClient(rpc);
 
-// Export as 'return' statement for LuCI compatibility
-const viewModule = view.extend({
+export default view.extend({
 	load: function () {
 		return Promise.all([
 			uci.load('portweaver'),
@@ -48,7 +53,7 @@ const viewModule = view.extend({
 			return (idx >= 0 && projectStatuses && projectStatuses[idx]) ? projectStatuses[idx] : null;
 		};
 
-		function renderStatusElements(status: ProjectStatus | null, section_id: string) {
+		function renderStatusElements(status: ProjectStatus | null, _section_id: string) {
 			if (!status) {
 				return [
 					E('span', { 'style': 'color: gray;' }, _('N/A'))
@@ -160,7 +165,7 @@ const viewModule = view.extend({
 		o = s.option(form.DummyValue, '_runtime_status', _('Runtime Status'));
 		o.rawhtml = true;
 		o.cfgvalue = function () {
-			var panel = new StatusPanel(E, _);
+			var panel = new StatusPanel();
 			return panel.render(globalStatus);
 		};
 
@@ -230,19 +235,19 @@ const viewModule = view.extend({
 			var listen_port = uci.get('portweaver', section_id, 'listen_port') || '';
 			var target_address = uci.get('portweaver', section_id, 'target_address') || '';
 			var target_port = uci.get('portweaver', section_id, 'target_port') || '';
-			var port_mappings = L.toArray(uci.get('portweaver', section_id, 'port_mapping'));
-			var src_zones = L.toArray(uci.get('portweaver', section_id, 'src_zone'));
-			var dest_zones = L.toArray(uci.get('portweaver', section_id, 'dest_zone'));
+			var port_mappings = L.toArray<string>(uci.get('portweaver', section_id, 'port_mapping'));
+			var src_zones = L.toArray<string>(uci.get('portweaver', section_id, 'src_zone'));
+			var dest_zones = L.toArray<string>(uci.get('portweaver', section_id, 'dest_zone'));
 
 			var proto_text: string = ({ 'both': _('TCP and UDP'), 'tcp': 'TCP', 'udp': 'UDP' } as any)[protocol] || String(protocol).toUpperCase();
 			var family_text: string = ({ 'any': _('IPv4 and IPv6'), 'ipv4': 'IPv4', 'ipv6': 'IPv6' } as any)[family] || family;
 
 			var lines: any[] = [];
-			lines.push(E('span', {}, [ _('Incoming '), E('var', {}, family_text), _(' protocol '), E('var', {}, proto_text) ]));
+			lines.push(E('span', {}, [_('Incoming '), E('var', {}, family_text), _(' protocol '), E('var', {}, proto_text)]));
 
 			if (src_zones.length > 0) {
 				var src_badges = src_zones.map(function (z: string) {
-					return E('span', { 'class': 'zonebadge', 'style': fwmodel.getZoneColorStyle(z) }, [ E('strong', {}, z || E('em', _('any zone'))) ]);
+					return E('span', { 'class': 'zonebadge', 'style': fwmodel.getZoneColorStyle(z) }, [E('strong', {}, z || E('em', _('any zone')))]);
 				});
 				lines.push(E('br'));
 				lines.push(E('span', {}, [_('From '), ...src_badges]));
@@ -250,31 +255,31 @@ const viewModule = view.extend({
 
 			if (port_mappings.length > 0) {
 				lines.push(E('br'));
-				lines.push(E('span', {}, [ E('strong', { style: 'color: #09c;' }, _('Multi-Port')), _(' - '), E('var', {}, port_mappings.length), _(' mapping(s)') ]));
+				lines.push(E('span', {}, [E('strong', { style: 'color: #09c;' }, _('Multi-Port')), _(' - '), E('var', {}, port_mappings.length), _(' mapping(s)')]));
 				var first = port_mappings[0];
 				lines.push(E('br'));
-				lines.push(E('span', {}, [ _('e.g. '), E('var', {}, first) ]));
+				lines.push(E('span', {}, [_('e.g. '), E('var', {}, first)]));
 			} else if (listen_port) {
 				lines.push(E('br'));
-				lines.push(E('span', {}, [ _('Port '), E('var', {}, listen_port) ]));
+				lines.push(E('span', {}, [_('Port '), E('var', {}, listen_port)]));
 			}
 
 			lines.push(E('br'));
-			lines.push(E('span', {}, [ E('var', { 'data-tooltip': 'Forward' }, _('Forward')), _(' to ') ]));
+			lines.push(E('span', {}, [E('var', { 'data-tooltip': 'Forward' }, _('Forward')), _(' to ')]));
 
 			if (dest_zones.length > 0) {
 				var dest_badges = dest_zones.map(function (z: string) {
-					return E('span', { 'class': 'zonebadge', 'style': fwmodel.getZoneColorStyle(z) }, [ E('strong', {}, z || E('em', _('any zone'))) ]);
+					return E('span', { 'class': 'zonebadge', 'style': fwmodel.getZoneColorStyle(z) }, [E('strong', {}, z || E('em', _('any zone')))]);
 				});
 				lines.push(...dest_badges);
 				lines.push(_(' '));
 			}
 
 			if (target_address) {
-				lines.push(E('span', {}, [ _('IP '), E('var', {}, target_address) ]));
+				lines.push(E('span', {}, [_('IP '), E('var', {}, target_address)]));
 			}
 			if (port_mappings.length === 0 && target_port) {
-				lines.push(E('span', {}, [ _(' port '), E('var', {}, target_port) ]));
+				lines.push(E('span', {}, [_(' port '), E('var', {}, target_port)]));
 			}
 			return E('small', {}, lines);
 		};
@@ -338,7 +343,7 @@ const viewModule = view.extend({
 		o.depends('use_port_mappings', '0');
 
 		// FRP node selector component factory
-		const FrpNodeSelector = createFrpNodeSelector(form, uci, E, _);
+		const FrpNodeSelector = createFrpNodeSelector(form, uci);
 		o = s.option(FrpNodeSelector, 'frp_nodes', _('FRP Tunnels'));
 		o.modalonly = true;
 		o.rmempty = true;
@@ -346,7 +351,7 @@ const viewModule = view.extend({
 		o.depends('enable_app_forward', '1');
 
 		// Port Mapping Editor component factory
-		const PortMappingEditor = createPortMappingEditor(form, uci, E, _);
+		const PortMappingEditor = createPortMappingEditor(form, uci);
 		o = s.option(PortMappingEditor, 'port_mapping', _('Port Mappings'));
 		o.modalonly = true;
 		o.depends('use_port_mappings', '1');
@@ -449,10 +454,8 @@ const viewModule = view.extend({
 		o.modalonly = true;
 		o.password = true;
 		o.rmempty = true;
-    o.placeholder = 'optional token for authentication';
+		o.placeholder = 'optional token for authentication';
 
-    return m.render();
-  }
+		return m.render();
+	}
 });
-
-export default viewModule;

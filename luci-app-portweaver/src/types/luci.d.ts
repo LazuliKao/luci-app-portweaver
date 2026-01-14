@@ -4,12 +4,23 @@
  */
 
 declare namespace LuCI {
+  namespace uci {
+    interface SectionObject {
+      [x: string]: string | number | boolean | string[];
+      '.anonymous'?: boolean;
+      '.index'?: number;
+      '.name'?: string;
+      '.type'?: string;
+      '.create'?: string;
+    };
+  }
   interface View {
     load(): Promise<any>;
-    render(): HTMLElement;
+    render?(data?: any): HTMLElement;
     handleSave?(): Promise<void>;
     handleSaveApply?(): Promise<void>;
     handleReset?(): Promise<void>;
+    extend(proto: Partial<View>): View;
   }
 
   interface Form {
@@ -21,10 +32,12 @@ declare namespace LuCI {
     ListValue: any;
     DynamicList: any;
     Button: any;
+    GridSection: any;
+    DummyValue: any;
   }
 
   interface UI {
-    addNotification(title: string, message: string, type?: 'info' | 'warning' | 'error'): void;
+    addNotification(title?: string | null, message: string | HTMLElement, type?: 'info' | 'warning' | 'error'): void;
     showModal(title: string, content: HTMLElement | string): void;
     hideModal(): void;
   }
@@ -46,33 +59,32 @@ declare namespace LuCI {
     remove(config: string, section: string): void;
     save(): Promise<void>;
     apply(): Promise<void>;
+    sections(config: string, type?: string): Array<LuCI.uci.SectionObject>;
+  }
+  interface POLL {
+    add(fn: () => Promise<any> | any, interval?: number): void;
   }
 }
 
 // Global LuCI objects available via LuCI 'require' lines
 declare const L: {
-  view: { new(): LuCI.View };
+  view: LuCI.View;
   form: LuCI.Form;
   ui: LuCI.UI;
   rpc: LuCI.RPC;
   uci: LuCI.UCI;
+  Poll: LuCI.POLL;
+  toArray<T>(array: any): Array<T>;
+
   Class: {
     extend(proto: any): any;
   };
 };
 
-// LuCI view helpers injected in runtime
-declare const view: any;
-declare const form: any;
-declare const ui: LuCI.UI;
-declare const uci: LuCI.UCI;
-declare const rpc: LuCI.RPC;
-declare const poll: { add(fn: () => Promise<any> | any, interval?: number): void };
-declare const widgets: any;
-declare const fwmodel: { getZoneColorStyle(zone: string): string };
 declare const E: (...args: any[]) => HTMLElement;
 
 // i18n translate function
 declare function _(text: string, ...args: any[]): string;
 
-export { L, LuCI, _, view, form, ui, uci, rpc, poll, widgets, fwmodel, E };
+declare const widgets: any;
+declare const fwmodel: { getZoneColorStyle(zone: string): string };

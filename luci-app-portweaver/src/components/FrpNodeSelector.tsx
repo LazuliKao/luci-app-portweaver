@@ -1,4 +1,4 @@
-export function createFrpNodeSelector(form: any, uci: any, E: any, _: (t: string, ...a: any[]) => string) {
+export function createFrpNodeSelector(form: any, uci: any) {
   return form.DummyValue.extend({
     renderWidget: function(section_id: string, option_index: number, cfgvalue: string[] | string) {
       var frp_sections = uci.sections('portweaver', 'frp_node') || [];
@@ -15,6 +15,35 @@ export function createFrpNodeSelector(form: any, uci: any, E: any, _: (t: string
       }
 
       var widget_id = this.cbid(section_id);
+
+      var updateHandler = function(this: HTMLElement) {
+        var wid = this.getAttribute('data-widget-id') as string;
+        var checkboxes = document.querySelectorAll('input.frp-node-checkbox[data-widget-id="' + wid + '"]');
+        var values: string[] = [];
+        for (var j = 0; j < checkboxes.length; j++) {
+          var cb = checkboxes[j] as HTMLInputElement;
+          if (cb.checked) {
+            var node = cb.getAttribute('data-node') as string;
+            var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]') as HTMLInputElement | null;
+            var port = port_inp ? port_inp.value.trim() : '';
+            if (port) {
+              var p = parseInt(port, 10);
+              if (isNaN(p) || p < 1 || p > 65535) {
+                if (port_inp) port_inp.style.setProperty('border-color', 'red', 'important');
+                continue;
+              } else {
+                if (port_inp) port_inp.style.borderColor = '';
+              }
+              values.push(node + ':' + port);
+            } else {
+              values.push(node);
+            }
+          }
+        }
+        var hidden = document.querySelector('input[id="' + wid + '"]') as HTMLInputElement | null;
+        if (hidden) hidden.value = values.join(' ');
+      };
+
       var container = E('div', { 'class': 'cbi-value-field' });
 
       if (frp_sections.length === 0) {
@@ -49,38 +78,10 @@ export function createFrpNodeSelector(form: any, uci: any, E: any, _: (t: string
             'disabled': is_checked ? null : 'disabled'
           });
 
-          var updateHandler = function(this: HTMLElement) {
-            var widget_id = this.getAttribute('data-widget-id') as string;
-            var checkboxes = document.querySelectorAll('input.frp-node-checkbox[data-widget-id="' + widget_id + '"]');
-            var values: string[] = [];
-            for (var j = 0; j < checkboxes.length; j++) {
-              var cb = checkboxes[j] as HTMLInputElement;
-              if (cb.checked) {
-                var node = cb.getAttribute('data-node') as string;
-                var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + widget_id + '"][data-node="' + node + '"]') as HTMLInputElement | null;
-                var port = port_inp ? port_inp.value.trim() : '';
-                if (port) {
-                  var p = parseInt(port, 10);
-                  if (isNaN(p) || p < 1 || p > 65535) {
-                    if (port_inp) port_inp.style.setProperty('border-color', 'red', 'important');
-                    continue;
-                  } else {
-                    if (port_inp) port_inp.style.borderColor = '';
-                  }
-                  values.push(node + ':' + port);
-                } else {
-                  values.push(node);
-                }
-              }
-            }
-            var hidden = document.querySelector('input[id="' + widget_id + '"]') as HTMLInputElement | null;
-            if (hidden) hidden.value = values.join(' ');
-          };
-
           checkbox.addEventListener('change', function(this: HTMLInputElement) {
-            var widget_id = this.getAttribute('data-widget-id') as string;
+            var wid = this.getAttribute('data-widget-id') as string;
             var node = this.getAttribute('data-node') as string;
-            var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + widget_id + '"][data-node="' + node + '"]') as HTMLInputElement | null;
+            var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]') as HTMLInputElement | null;
             if (port_inp) {
               port_inp.disabled = !this.checked;
               if (!this.checked) port_inp.value = '';

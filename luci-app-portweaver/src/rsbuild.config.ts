@@ -1,26 +1,23 @@
 import { defineConfig } from '@rsbuild/core';
 import { rspack } from '@rsbuild/core';
-
 // LuCI require statements that must be at the very top of the output file
 const luciRequires = `'use strict';
-'require view';
-'require form';
-'require uci';
 'require firewall as fwmodel';
 'require tools.widgets as widgets';
-'require rpc';
-'require poll';
-'require ui';
-
 `;
 
 export default defineConfig({
   source: {
     entry: {
-      config: './main.ts',
+      config: './main.tsx',
     },
+    tsconfigPath: './tsconfig.json',
   },
   output: {
+    // polyfill: "usage",
+    module: true,
+    charset: 'ascii',
+    overrideBrowserslist: ['defaults', 'not ie <= 11', 'not op_mini all'],
     distPath: {
       root: '../htdocs/luci-static/resources/view/portweaver',
       js: '.',
@@ -35,16 +32,30 @@ export default defineConfig({
   plugins: [],
   tools: {
     htmlPlugin: false,
+    swc: {
+      jsc: {
+        transform: {
+          react: {
+            pragma: 'createJsxElement',
+            pragmaFrag: 'E.Fragment',
+            useBuiltins: true,
+          },
+          optimizer: {
+            simplify: true,
+          }
+        },
+      },
+    },
     rspack: (config) => {
       // Configure output for LuCI: simple return statement at module level
       config.output = config.output || {};
-      config.output.iife = false; // No IIFE wrapper
-      config.output.module = false;
+      // config.output.iife = true; // No IIFE wrapper
 
       config.optimization = config.optimization || {};
       config.optimization.splitChunks = false;
       config.optimization.runtimeChunk = false;
       config.optimization.minimize = false;
+      config.optimization.avoidEntryIife = true;
 
       // Use BannerPlugin to inject LuCI requires at the very top
       config.plugins = config.plugins || [];
@@ -56,7 +67,7 @@ export default defineConfig({
         })
       );
       config.plugins.push(new rspack.BannerPlugin({
-        banner: "return viewModule;",
+        banner: "return main;",
         raw: true,
         entryOnly: true,
         footer: true,
