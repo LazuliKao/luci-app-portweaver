@@ -135,28 +135,28 @@ class StatusPanel {
 function createFrpNodeSelector(form, uci) {
     return form.DummyValue.extend({
         renderWidget: function(section_id, option_index, cfgvalue) {
-            var frp_sections = uci.sections('portweaver', 'frp_node') || [];
-            var current_value = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === 'string' ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
-            var node_map = {};
-            for(var i = 0; i < current_value.length; i++){
-                var parts = current_value[i].split(':');
-                var node = parts[0];
-                var port = parts[1] || '';
+            let frp_sections = uci.sections('portweaver', 'frp_node') || [];
+            let current_value = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === 'string' ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
+            let node_map = {};
+            for(let i = 0; i < current_value.length; i++){
+                let parts = current_value[i].split(':');
+                let node = parts[0];
+                let port = parts[1] || '';
                 node_map[node] = port;
             }
-            var widget_id = this.cbid(section_id);
-            var updateHandler = function() {
-                var wid = this.getAttribute('data-widget-id');
-                var checkboxes = document.querySelectorAll('input.frp-node-checkbox[data-widget-id="' + wid + '"]');
-                var values = [];
-                for(var j = 0; j < checkboxes.length; j++){
-                    var cb = checkboxes[j];
+            let widget_id = this.cbid(section_id);
+            let updateHandler = function() {
+                let wid = this.getAttribute('data-widget-id');
+                let checkboxes = document.querySelectorAll('input.frp-node-checkbox[data-widget-id="' + wid + '"]');
+                let values = [];
+                for(let j = 0; j < checkboxes.length; j++){
+                    let cb = checkboxes[j];
                     if (cb.checked) {
-                        var node = cb.getAttribute('data-node');
-                        var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]');
-                        var port = port_inp ? port_inp.value.trim() : '';
+                        let node = cb.getAttribute('data-node');
+                        let port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]');
+                        let port = port_inp ? port_inp.value.trim() : '';
                         if (port) {
-                            var p = parseInt(port, 10);
+                            let p = parseInt(port, 10);
                             if (isNaN(p) || p < 1 || p > 65535) {
                                 if (port_inp) port_inp.style.setProperty('border-color', 'red', 'important');
                                 continue;
@@ -165,26 +165,26 @@ function createFrpNodeSelector(form, uci) {
                         } else values.push(node);
                     }
                 }
-                var hidden = document.querySelector('input[id="' + wid + '"]');
+                let hidden = document.querySelector('input[id="' + wid + '"]');
                 if (hidden) hidden.value = values.join(' ');
             };
-            var container = E('div', {
+            let container = E('div', {
                 'class': 'cbi-value-field'
             });
             if (frp_sections.length === 0) container.appendChild(E('em', {
                 'style': 'color: #999;'
             }, _('No FRP nodes configured. Please add FRP nodes first.')));
             else {
-                var table = E('table', {
+                let table = E('table', {
                     'class': 'table',
                     'style': 'margin: 0; width: auto;'
                 });
-                for(var i = 0; i < frp_sections.length; i++){
-                    var node_name = frp_sections[i]['name'] || frp_sections[i]['.name'];
+                for(let i = 0; i < frp_sections.length; i++){
+                    let node_name = frp_sections[i]['name'] || frp_sections[i]['.name'];
                     if (!node_name) continue;
-                    var is_checked = Object.prototype.hasOwnProperty.call(node_map, node_name);
-                    var port_value = node_map[node_name] || '';
-                    var checkbox = E('input', {
+                    let is_checked = Object.prototype.hasOwnProperty.call(node_map, node_name);
+                    let port_value = node_map[node_name] || '';
+                    let checkbox = E('input', {
                         'type': 'checkbox',
                         'class': 'frp-node-checkbox',
                         'data-widget-id': widget_id,
@@ -193,7 +193,7 @@ function createFrpNodeSelector(form, uci) {
                         'checked': is_checked ? 'checked' : null,
                         'style': 'margin-right: 8px;'
                     });
-                    var port_input = E('input', {
+                    let port_input = E('input', {
                         'type': 'text',
                         'class': 'frp-node-port',
                         'data-widget-id': widget_id,
@@ -205,9 +205,9 @@ function createFrpNodeSelector(form, uci) {
                         'disabled': is_checked ? null : 'disabled'
                     });
                     checkbox.addEventListener('change', function() {
-                        var wid = this.getAttribute('data-widget-id');
-                        var node = this.getAttribute('data-node');
-                        var port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]');
+                        let wid = this.getAttribute('data-widget-id');
+                        let node = this.getAttribute('data-node');
+                        let port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]');
                         if (port_inp) {
                             port_inp.disabled = !this.checked;
                             if (!this.checked) port_inp.value = '';
@@ -216,7 +216,7 @@ function createFrpNodeSelector(form, uci) {
                     });
                     port_input.addEventListener('input', updateHandler);
                     port_input.addEventListener('change', updateHandler);
-                    var row = E('tr', {}, [
+                    let row = E('tr', {}, [
                         E('td', {
                             'style': 'padding: 4px 8px; border: none;'
                         }, [
@@ -238,28 +238,28 @@ function createFrpNodeSelector(form, uci) {
                 }
                 container.appendChild(table);
             }
-            var hidden = E('input', {
-                'type': 'hidden',
-                'id': widget_id,
-                'name': widget_id,
-                'value': current_value.join(' ')
+            let hidden = /*#__PURE__*/ createJsxElement("input", {
+                type: "hidden",
+                id: widget_id,
+                name: widget_id,
+                value: current_value.join(' ')
             });
             container.appendChild(hidden);
-            var description = E('div', {
-                'class': 'cbi-value-description'
+            let description = /*#__PURE__*/ createJsxElement("div", {
+                class: "cbi-value-description"
             }, _('Select FRP nodes and optionally specify custom ports. Leave port empty to use default.'));
             container.appendChild(description);
             return container;
         },
         cfgvalue: function(section_id) {
-            var value = uci.get('portweaver', section_id, 'frp_nodes');
+            let value = uci.get('portweaver', section_id, 'frp_nodes');
             if (Array.isArray(value)) return value;
             if (typeof value === 'string') return String(value).split(/\s+/).filter(Boolean);
             return [];
         },
         formvalue: function(section_id) {
-            var widget_id = this.cbid(section_id);
-            var hidden = document.getElementById(widget_id);
+            let widget_id = this.cbid(section_id);
+            let hidden = document.getElementById(widget_id);
             if (hidden && hidden.value) return hidden.value.split(/\s+/).filter(Boolean);
             return null;
         },
@@ -276,22 +276,22 @@ function createPortMappingEditor(form, uci) {
         parseMapping: function(str) {
             if (!str || typeof str !== 'string') return null;
             str = str.trim();
-            var mapping = {
+            let mapping = {
                 listenPort: '',
                 targetPort: '',
                 frpNodes: [],
                 protocol: 'tcp'
             };
-            var protocolMatch = str.match(/\/([a-z]+)$/);
+            let protocolMatch = str.match(/\/([a-z]+)$/);
             if (protocolMatch) {
                 mapping.protocol = protocolMatch[1].toLowerCase();
                 str = str.substring(0, protocolMatch.index);
             }
-            var i = 0;
+            let i = 0;
             while(str[i] === '['){
-                var end = str.indexOf(']', i);
+                let end = str.indexOf(']', i);
                 if (end === -1) break;
-                var content = str.substring(i + 1, end);
+                let content = str.substring(i + 1, end);
                 if (content.indexOf(':') !== -1 || /[a-zA-Z_-]/.test(content)) {
                     mapping.frpNodes.push(content);
                     i = end + 1;
@@ -304,16 +304,16 @@ function createPortMappingEditor(form, uci) {
                 }
                 break;
             }
-            var rest = str.substring(i);
+            let rest = str.substring(i);
             if (!mapping.listenPort) {
-                var parts0 = rest.split(':');
+                let parts0 = rest.split(':');
                 if (parts0.length >= 1) mapping.listenPort = parts0[0].trim().replace(/[\[\]]/g, '');
                 if (parts0.length >= 2) mapping.targetPort = parts0[1].trim().replace(/[\[\]]/g, '');
             } else if (rest.startsWith(':')) mapping.targetPort = rest.substring(1).trim().replace(/[\[\]]/g, '');
             return mapping;
         },
         buildString: function(mapping) {
-            var result = '';
+            let result = '';
             if (mapping.frpNodes && mapping.frpNodes.length > 0) mapping.frpNodes.forEach(function(node) {
                 result += '[' + node + ']';
             });
@@ -619,13 +619,13 @@ function createPortMappingEditor(form, uci) {
             return container;
         },
         cfgvalue: function(section_id) {
-            var value = uci.get('portweaver', section_id, 'port_mapping');
+            let value = uci.get('portweaver', section_id, 'port_mapping');
             if (Array.isArray(value)) return value;
             if (typeof value === 'string') return String(value).split(/\s+/).filter(Boolean);
             return [];
         },
         formvalue: function(section_id) {
-            var hidden = document.getElementById('portmapping-hidden-' + section_id);
+            let hidden = document.getElementById('portmapping-hidden-' + section_id);
             if (hidden && hidden.value) return hidden.value.split(/\s+/).filter(Boolean);
             return null;
         },

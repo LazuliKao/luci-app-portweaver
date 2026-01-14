@@ -3,22 +3,22 @@ export function createPortMappingEditor(form: any, uci: any) {
     parseMapping: function (str: string) {
       if (!str || typeof str !== 'string') return null;
       str = str.trim();
-      var mapping = { listenPort: '', targetPort: '', frpNodes: [], protocol: 'tcp' } as {
+      let mapping = { listenPort: '', targetPort: '', frpNodes: [], protocol: 'tcp' } as {
         listenPort: string;
         targetPort: string;
         frpNodes: string[];
         protocol: 'tcp' | 'udp' | 'both';
       };
-      var protocolMatch = str.match(/\/([a-z]+)$/);
+      let protocolMatch = str.match(/\/([a-z]+)$/);
       if (protocolMatch) {
         mapping.protocol = protocolMatch[1].toLowerCase() as any;
         str = str.substring(0, protocolMatch.index);
       }
-      var i = 0;
+      let i = 0;
       while (str[i] === '[') {
-        var end = str.indexOf(']', i);
+        let end = str.indexOf(']', i);
         if (end === -1) break;
-        var content = str.substring(i + 1, end);
+        let content = str.substring(i + 1, end);
         if (content.indexOf(':') !== -1 || /[a-zA-Z_-]/.test(content)) {
           (mapping.frpNodes as string[]).push(content);
           i = end + 1;
@@ -31,9 +31,9 @@ export function createPortMappingEditor(form: any, uci: any) {
         }
         break;
       }
-      var rest = str.substring(i);
+      let rest = str.substring(i);
       if (!mapping.listenPort) {
-        var parts0 = rest.split(':');
+        let parts0 = rest.split(':');
         if (parts0.length >= 1) mapping.listenPort = parts0[0].trim().replace(/[\[\]]/g, '');
         if (parts0.length >= 2) mapping.targetPort = parts0[1].trim().replace(/[\[\]]/g, '');
       } else {
@@ -45,7 +45,7 @@ export function createPortMappingEditor(form: any, uci: any) {
     },
 
     buildString: function (mapping: { listenPort: string; targetPort: string; frpNodes: string[]; protocol: string; }) {
-      var result = '';
+      let result = '';
       if (mapping.frpNodes && mapping.frpNodes.length > 0) {
         mapping.frpNodes.forEach(function (node) { result += '[' + node + ']'; });
       }
@@ -397,14 +397,14 @@ export function createPortMappingEditor(form: any, uci: any) {
     },
 
     cfgvalue: function (section_id: string) {
-      var value = uci.get('portweaver', section_id, 'port_mapping');
+      let value = uci.get('portweaver', section_id, 'port_mapping');
       if (Array.isArray(value)) return value;
       if (typeof value === 'string') return String(value).split(/\s+/).filter(Boolean);
       return [];
     },
 
     formvalue: function (section_id: string) {
-      var hidden = document.getElementById('portmapping-hidden-' + section_id) as HTMLInputElement | null;
+      let hidden = document.getElementById('portmapping-hidden-' + section_id) as HTMLInputElement | null;
       if (hidden && hidden.value) return hidden.value.split(/\s+/).filter(Boolean);
       return null;
     },
