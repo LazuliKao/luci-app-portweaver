@@ -1,3 +1,5 @@
+import { ValidatedInput } from "./ValidatedInput";
+
 /**
  * 创建可复用的 FRP 节点选择器 UI
  * @param options 配置选项
@@ -40,13 +42,6 @@ export function createFrpNodeSelector(options: {
         const port_inp = portInputs.get(node);
         const port = port_inp ? port_inp.value.trim() : "";
         if (port) {
-          const p = parseInt(port, 10);
-          if (Number.isNaN(p) || p < 1 || p > 65535) {
-            if (port_inp)
-              port_inp.style.setProperty("border-color", "red", "important");
-          } else {
-            if (port_inp) port_inp.style.borderColor = "";
-          }
           values.push(`${node}:${port}`);
         } else {
           values.push(node);
@@ -84,14 +79,19 @@ export function createFrpNodeSelector(options: {
       ) as HTMLInputElement;
 
       const port_input = (
-        <input
+        <ValidatedInput
           type="text"
-          class={portInputClass}
-          data-node={node_name}
+          className={portInputClass}
           value={port_value}
           placeholder={_("default port")}
           style="min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;"
           disabled={!is_checked}
+          dataAttributes={{ node: node_name }}
+          onValidate={(value) => {
+            if (!value) return true; // 空值视为有效
+            const p = parseInt(value, 10);
+            return !Number.isNaN(p) && p >= 1 && p <= 65535;
+          }}
         />
       ) as HTMLInputElement;
 
@@ -115,7 +115,6 @@ export function createFrpNodeSelector(options: {
         updateHandler();
       });
 
-      port_input.addEventListener("input", updateHandler);
       port_input.addEventListener("change", updateHandler);
 
       const row = (

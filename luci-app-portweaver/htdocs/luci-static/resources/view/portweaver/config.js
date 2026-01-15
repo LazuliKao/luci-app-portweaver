@@ -5,7 +5,74 @@
 
 // UNUSED EXPORTS: main
 
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_define_property.js
+function _define_property(obj, key, value) {
+    if (key in obj) {
+        Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
+    } else obj[key] = value;
+
+    return obj;
+}
+
+
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_object_spread.js
+
+
+function _object_spread(target) {
+    for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i] != null ? arguments[i] : {};
+        var ownKeys = Object.keys(source);
+
+        if (typeof Object.getOwnPropertySymbols === "function") {
+            ownKeys = ownKeys.concat(
+                Object.getOwnPropertySymbols(source).filter(function(sym) {
+                    return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+                })
+            );
+        }
+
+        ownKeys.forEach(function(key) {
+            _define_property(target, key, source[key]);
+        });
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_object_spread_props.js
+function _object_spread_props_ownKeys(object, enumerableOnly) {
+    var keys = Object.keys(object);
+
+    if (Object.getOwnPropertySymbols) {
+        var symbols = Object.getOwnPropertySymbols(object);
+        if (enumerableOnly) {
+            symbols = symbols.filter(function(sym) {
+                return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+            });
+        }
+        keys.push.apply(keys, symbols);
+    }
+
+    return keys;
+}
+function _object_spread_props(target, source) {
+    source = source != null ? source : {};
+
+    if (Object.getOwnPropertyDescriptors) Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    else {
+        _object_spread_props_ownKeys(Object(source)).forEach(function(key) {
+            Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+        });
+    }
+
+    return target;
+}
+
+
 ;// CONCATENATED MODULE: ./utils/jsx-factory.ts
+
+
 const JSXFragment = Symbol.for("jsx.fragment");
 function jsx_factory_createJsxElement(tag, props) {
     for(var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++){
@@ -16,6 +83,10 @@ function jsx_factory_createJsxElement(tag, props) {
         fragment.append(...children);
         return fragment;
     }
+    // fix custom componment
+    if (typeof tag === "function") return tag(_object_spread_props(_object_spread({}, props), {
+        children
+    }));
     // fix all boolean attributes
     if (props) {
         for (const [key, value] of Object.entries(props))if (typeof value === "boolean") {
@@ -29,16 +100,6 @@ function jsx_factory_createJsxElement(tag, props) {
 }
 jsx_factory_createJsxElement.Fragment = JSXFragment;
 globalThis.createJsxElement = jsx_factory_createJsxElement;
-
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_define_property.js
-function _define_property(obj, key, value) {
-    if (key in obj) {
-        Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
-    } else obj[key] = value;
-
-    return obj;
-}
-
 
 ;// CONCATENATED MODULE: ./utils/formatters.ts
 function formatBytes() {
@@ -266,7 +327,40 @@ const frp_form = L.form;
     o.placeholder = "optional token for authentication";
 }
 
+;// CONCATENATED MODULE: ./components/ValidatedInput.tsx
+/**
+ * 创建带验证的通用 input 元素
+ * @param options 配置选项
+ * @returns 返回 input 元素
+ */ function ValidatedInput(options) {
+    const { type = "text", className = "", value = "", placeholder = "", style = "", disabled = false, onValidate, dataAttributes = {} } = options;
+    const input = document.createElement("input");
+    input.type = type;
+    input.className = className;
+    input.value = value;
+    input.placeholder = placeholder;
+    input.style.cssText = style;
+    input.disabled = disabled;
+    // 设置数据属性
+    Object.entries(dataAttributes).forEach((param)=>{
+        let [key, val] = param;
+        input.setAttribute("data-".concat(key), val);
+    });
+    // 验证函数
+    const validate = ()=>{
+        if (onValidate) {
+            const isValid = onValidate(input.value.trim());
+            if (!isValid) input.style.setProperty("border-color", "red", "important");
+            else input.style.borderColor = "";
+        }
+    };
+    input.addEventListener("input", validate);
+    input.addEventListener("change", validate);
+    return input;
+}
+
 ;// CONCATENATED MODULE: ./components/FrpNodeSelector.tsx
+
 
 /**
  * 创建可复用的 FRP 节点选择器 UI
@@ -291,13 +385,8 @@ const frp_form = L.form;
             const node = cb.getAttribute("data-node");
             const port_inp = portInputs.get(node);
             const port = port_inp ? port_inp.value.trim() : "";
-            if (port) {
-                const p = parseInt(port, 10);
-                if (Number.isNaN(p) || p < 1 || p > 65535) {
-                    if (port_inp) port_inp.style.setProperty("border-color", "red", "important");
-                } else if (port_inp) port_inp.style.borderColor = "";
-                values.push("".concat(node, ":").concat(port));
-            } else values.push(node);
+            if (port) values.push("".concat(node, ":").concat(port));
+            else values.push(node);
         }
         if (onChange) onChange(values);
     };
@@ -326,14 +415,21 @@ const frp_form = L.form;
                 checked: is_checked,
                 style: "margin-right: 8px;"
             });
-            const port_input = /*#__PURE__*/ createJsxElement("input", {
+            const port_input = /*#__PURE__*/ createJsxElement(ValidatedInput, {
                 type: "text",
-                class: portInputClass,
-                "data-node": node_name,
+                className: portInputClass,
                 value: port_value,
                 placeholder: _("default port"),
                 style: "min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;",
-                disabled: !is_checked
+                disabled: !is_checked,
+                dataAttributes: {
+                    node: node_name
+                },
+                onValidate: (value)=>{
+                    if (!value) return true; // 空值视为有效
+                    const p = parseInt(value, 10);
+                    return !Number.isNaN(p) && p >= 1 && p <= 65535;
+                }
             });
             checkboxes.push(checkbox);
             portInputs.set(node_name, port_input);
@@ -349,7 +445,6 @@ const frp_form = L.form;
                 if (!element.checked) port_input.value = "";
                 updateHandler();
             });
-            port_input.addEventListener("input", updateHandler);
             port_input.addEventListener("change", updateHandler);
             const row = /*#__PURE__*/ createJsxElement("tr", null, /*#__PURE__*/ createJsxElement("td", {
                 style: "padding: 4px 8px; border: none;"
@@ -649,8 +744,7 @@ class PortMappingEditor extends L.form.Value {
                     updateHiddenValue();
                 },
                 checkboxClass: "frp-node-checkbox-pm",
-                portInputClass: "frp-node-port-pm",
-                containerStyle: "margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px;"
+                portInputClass: "frp-node-port-pm"
             });
             const frpContainer = /*#__PURE__*/ createJsxElement("div", {
                 class: "frp-nodes-select",
@@ -787,8 +881,123 @@ class PortMappingEditor extends L.form.Value {
         if (formvalue && formvalue.length > 0) return L.uci.set("portweaver", section_id, "port_mapping", formvalue);
         else return L.uci.unset("portweaver", section_id, "port_mapping");
     }
+    validate(section_id, value) {
+        // 验证端口映射格式
+        if (!value) {
+            this.validationError = "";
+            this.isValidFlag = true;
+            return;
+        }
+        const valueStr = Array.isArray(value) ? value.join(" ") : String(value);
+        const mappings = valueStr.split(/\s+/).filter(Boolean);
+        for (const mappingStr of mappings){
+            const parsed = this.parseMapping(mappingStr);
+            if (!parsed) {
+                this.validationError = _("Invalid port mapping format");
+                this.isValidFlag = false;
+                return;
+            }
+            // 验证监听端口
+            if (!parsed.listenPort) {
+                this.validationError = _("Listen port is required");
+                this.isValidFlag = false;
+                return;
+            }
+            if (!this.validatePortOrRange(parsed.listenPort)) {
+                this.validationError = _("Invalid listen port format. Use port (8080) or range (8080-8090)");
+                this.isValidFlag = false;
+                return;
+            }
+            // 验证目标端口
+            if (!parsed.targetPort) {
+                this.validationError = _("Target port is required");
+                this.isValidFlag = false;
+                return;
+            }
+            if (!this.validatePortOrRange(parsed.targetPort)) {
+                this.validationError = _("Invalid target port format. Use port (80) or range (80-90)");
+                this.isValidFlag = false;
+                return;
+            }
+            // 验证端口范围匹配
+            const listenPorts = this.parsePortRange(parsed.listenPort);
+            const targetPorts = this.parsePortRange(parsed.targetPort);
+            if (listenPorts.length !== targetPorts.length) {
+                this.validationError = _("Listen port range and target port range must have the same size");
+                this.isValidFlag = false;
+                return;
+            }
+            // 验证 FRP 节点
+            if (parsed.frpNodes && parsed.frpNodes.length > 0) for (const nodeStr of parsed.frpNodes){
+                const [node, port] = nodeStr.split(":");
+                if (!node) {
+                    this.validationError = _("Invalid FRP node format");
+                    this.isValidFlag = false;
+                    return;
+                }
+                if (port) {
+                    const portNum = parseInt(port, 10);
+                    if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                        this.validationError = _("FRP node port must be between 1 and 65535");
+                        this.isValidFlag = false;
+                        return;
+                    }
+                }
+            }
+            // 验证协议
+            if (parsed.protocol && ![
+                "tcp",
+                "udp",
+                "both"
+            ].includes(parsed.protocol)) {
+                this.validationError = _("Protocol must be tcp, udp, or both");
+                this.isValidFlag = false;
+                return;
+            }
+        }
+        this.validationError = "";
+        this.isValidFlag = true;
+    }
+    validatePortOrRange(portStr) {
+        // 验证单个端口或端口范围
+        if (!portStr) return false;
+        // 单个端口
+        if (/^\d+$/.test(portStr)) {
+            const port = parseInt(portStr, 10);
+            return port >= 1 && port <= 65535;
+        }
+        // 端口范围
+        if (/^\d+-\d+$/.test(portStr)) {
+            const [start, end] = portStr.split("-").map((p)=>parseInt(p, 10));
+            return start >= 1 && start <= 65535 && end >= 1 && end <= 65535 && start <= end;
+        }
+        return false;
+    }
+    parsePortRange(portStr) {
+        // 解析端口或端口范围，返回端口数组
+        if (/^\d+$/.test(portStr)) return [
+            parseInt(portStr, 10)
+        ];
+        if (/^\d+-\d+$/.test(portStr)) {
+            const [start, end] = portStr.split("-").map((p)=>parseInt(p, 10));
+            const ports = [];
+            for(let i = start; i <= end; i++)ports.push(i);
+            return ports;
+        }
+        return [];
+    }
+    isValid(section_id) {
+        var _this_isValidFlag;
+        const value = this.formvalue(section_id);
+        this.validate(section_id, value);
+        return (_this_isValidFlag = this.isValidFlag) !== null && _this_isValidFlag !== void 0 ? _this_isValidFlag : true;
+    }
+    getValidationError(section_id) {
+        if (!this.isValid(section_id)) return this.validationError || _("Validation failed");
+        return "";
+    }
     constructor(...args){
-        super(...args), _define_property(this, "hiddenInput", void 0);
+        super(...args), _define_property(this, "hiddenInput", void 0), _define_property(this, "validationError", ""), _define_property(this, "isValidFlag", true);
     }
 }
 /* export default */ const components_PortMappingEditor = (PortMappingEditor);

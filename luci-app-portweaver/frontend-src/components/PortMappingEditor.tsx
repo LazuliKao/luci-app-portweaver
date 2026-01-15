@@ -231,8 +231,6 @@ class PortMappingEditor extends L.form.Value {
           },
           checkboxClass: "frp-node-checkbox-pm",
           portInputClass: "frp-node-port-pm",
-          containerStyle:
-            "margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px;",
         });
 
       const frpContainer = (
@@ -463,7 +461,7 @@ class PortMappingEditor extends L.form.Value {
 
     for (const mappingStr of mappings) {
       const parsed = this.parseMapping(mappingStr);
-      
+
       if (!parsed) {
         this.validationError = _("Invalid port mapping format");
         this.isValidFlag = false;
@@ -478,7 +476,9 @@ class PortMappingEditor extends L.form.Value {
       }
 
       if (!this.validatePortOrRange(parsed.listenPort)) {
-        this.validationError = _("Invalid listen port format. Use port (8080) or range (8080-8090)");
+        this.validationError = _(
+          "Invalid listen port format. Use port (8080) or range (8080-8090)",
+        );
         this.isValidFlag = false;
         return;
       }
@@ -491,7 +491,9 @@ class PortMappingEditor extends L.form.Value {
       }
 
       if (!this.validatePortOrRange(parsed.targetPort)) {
-        this.validationError = _("Invalid target port format. Use port (80) or range (80-90)");
+        this.validationError = _(
+          "Invalid target port format. Use port (80) or range (80-90)",
+        );
         this.isValidFlag = false;
         return;
       }
@@ -499,9 +501,11 @@ class PortMappingEditor extends L.form.Value {
       // 验证端口范围匹配
       const listenPorts = this.parsePortRange(parsed.listenPort);
       const targetPorts = this.parsePortRange(parsed.targetPort);
-      
+
       if (listenPorts.length !== targetPorts.length) {
-        this.validationError = _("Listen port range and target port range must have the same size");
+        this.validationError = _(
+          "Listen port range and target port range must have the same size",
+        );
         this.isValidFlag = false;
         return;
       }
@@ -510,7 +514,7 @@ class PortMappingEditor extends L.form.Value {
       if (parsed.frpNodes && parsed.frpNodes.length > 0) {
         for (const nodeStr of parsed.frpNodes) {
           const [node, port] = nodeStr.split(":");
-          
+
           if (!node) {
             this.validationError = _("Invalid FRP node format");
             this.isValidFlag = false;
@@ -520,7 +524,9 @@ class PortMappingEditor extends L.form.Value {
           if (port) {
             const portNum = parseInt(port, 10);
             if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
-              this.validationError = _("FRP node port must be between 1 and 65535");
+              this.validationError = _(
+                "FRP node port must be between 1 and 65535",
+              );
               this.isValidFlag = false;
               return;
             }
@@ -529,7 +535,10 @@ class PortMappingEditor extends L.form.Value {
       }
 
       // 验证协议
-      if (parsed.protocol && !["tcp", "udp", "both"].includes(parsed.protocol)) {
+      if (
+        parsed.protocol &&
+        !["tcp", "udp", "both"].includes(parsed.protocol)
+      ) {
         this.validationError = _("Protocol must be tcp, udp, or both");
         this.isValidFlag = false;
         return;
@@ -543,21 +552,21 @@ class PortMappingEditor extends L.form.Value {
   private validatePortOrRange(portStr: string): boolean {
     // 验证单个端口或端口范围
     if (!portStr) return false;
-    
+
     // 单个端口
     if (/^\d+$/.test(portStr)) {
       const port = parseInt(portStr, 10);
       return port >= 1 && port <= 65535;
     }
-    
+
     // 端口范围
     if (/^\d+-\d+$/.test(portStr)) {
-      const [start, end] = portStr.split("-").map(p => parseInt(p, 10));
-      return start >= 1 && start <= 65535 && 
-             end >= 1 && end <= 65535 && 
-             start <= end;
+      const [start, end] = portStr.split("-").map((p) => parseInt(p, 10));
+      return (
+        start >= 1 && start <= 65535 && end >= 1 && end <= 65535 && start <= end
+      );
     }
-    
+
     return false;
   }
 
@@ -566,16 +575,16 @@ class PortMappingEditor extends L.form.Value {
     if (/^\d+$/.test(portStr)) {
       return [parseInt(portStr, 10)];
     }
-    
+
     if (/^\d+-\d+$/.test(portStr)) {
-      const [start, end] = portStr.split("-").map(p => parseInt(p, 10));
+      const [start, end] = portStr.split("-").map((p) => parseInt(p, 10));
       const ports: number[] = [];
       for (let i = start; i <= end; i++) {
         ports.push(i);
       }
       return ports;
     }
-    
+
     return [];
   }
 

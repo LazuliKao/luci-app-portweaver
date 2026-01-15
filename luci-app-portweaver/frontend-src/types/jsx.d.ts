@@ -14,7 +14,7 @@ declare global {
   namespace JSX {
     type Element = HTMLElement;
     interface IntrinsicElements {
-      [elemName: string]: JSXElement<HTMLElement>;
+      // [elemName: string]: JSXElement<HTMLElement>;
       div: JSXElement<HTMLDivElement>;
       strong: JSXElement<HTMLElement>;
       button: JSXElement<HTMLButtonElement>;
@@ -32,6 +32,16 @@ declare global {
       h6: JSXElement<HTMLHeadingElement>;
       br: JSXElement<HTMLBRElement>;
       em: JSXElement<HTMLElement>;
+      tr: JSXElement<HTMLTableRowElement>;
+      td: JSXElement<HTMLTableCellElement>;
+      table: JSXElement<HTMLTableElement>;
+      thead: JSXElement<HTMLTableSectionElement>;
+      tbody: JSXElement<HTMLTableSectionElement>;
+      th: JSXElement<HTMLTableCellElement>;
+      textarea: JSXElement<HTMLTextAreaElement>;
+      var: JSXElement<HTMLElement>;
+      small: JSXElement<HTMLElement>;
+      p: JSXElement<HTMLParagraphElement>;
     }
   }
 }

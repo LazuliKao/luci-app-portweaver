@@ -9,6 +9,10 @@ export function createJsxElement(
     fragment.append(...children);
     return fragment;
   }
+  // fix custom componment
+  if (typeof tag === "function") {
+    return tag({ ...props, children });
+  }
   // fix all boolean attributes
   if (props) {
     for (const [key, value] of Object.entries(props)) {
