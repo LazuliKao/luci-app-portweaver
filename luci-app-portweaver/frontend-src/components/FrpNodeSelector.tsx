@@ -109,19 +109,30 @@ class FrpNodeSelector extends L.form.Value {
         });
         port_input.addEventListener("input", updateHandler);
         port_input.addEventListener("change", updateHandler);
-        const row = E("tr", {}, [
-          E("td", { style: "padding: 4px 8px; border: none;" }, [
-            checkbox,
-            E(
-              "label",
-              {
-                style: "cursor: pointer; font-weight: normal; margin: 0;",
-              },
-              node_name,
-            ),
-          ]),
-          port_input_area,
-        ]);
+        const row = (
+          <tr>
+            <td style="padding: 4px 8px; border: none;">
+              {checkbox}
+              <span style="cursor: pointer; font-weight: normal; margin: 0;">
+                {node_name}
+              </span>
+            </td>
+            {port_input_area}
+          </tr>
+        );
+        // const row = E("tr", {}, [
+        //   E("td", { style: "padding: 4px 8px; border: none;" }, [
+        //     checkbox,
+        //     E(
+        //       "label",
+        //       {
+        //         style: "cursor: pointer; font-weight: normal; margin: 0;",
+        //       },
+        //       node_name,
+        //     ),
+        //   ]),
+        //   port_input_area,
+        // ]);
         table.appendChild(row);
       }
       container.appendChild(table);
@@ -179,5 +190,8 @@ class FrpNodeSelector extends L.form.Value {
       return L.uci.unset("portweaver", section_id, "frp_nodes");
     }
   }
+  validate(section_id: string, value: any) {}
+  isValid(section_id: string): boolean {}
+  getValidationError(section_id: string): string {}
 }
 export default FrpNodeSelector;

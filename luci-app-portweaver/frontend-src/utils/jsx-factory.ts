@@ -21,7 +21,11 @@ export function createJsxElement(
       }
     }
   }
-  return E(tag, props, children);
+  if (props === null) {
+    props = {};
+  }
+  if (children.length > 1) return E(tag, props, children);
+  else return E(tag, props, children[0]);
 }
 createJsxElement.Fragment = JSXFragment;
 globalThis.createJsxElement = createJsxElement;

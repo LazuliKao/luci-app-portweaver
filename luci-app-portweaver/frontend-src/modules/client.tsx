@@ -72,11 +72,11 @@ export class Client {
               section_id,
             );
             section.replaceWith(
-              E(
-                "div",
-                { id: `project-status-${section_id}` },
-                newStatusElements,
-              ),
+              <span>
+                <div id={`project-status-${section_id}`}>
+                  {newStatusElements}
+                </div>
+              </span>,
             );
           }
         })();
@@ -125,45 +125,42 @@ export class Client {
     }
 
     const statusElements: any[] = [
-      E("div", {}, [
-        E("span", statusBadgeAttrs, [
-          E(
-            "strong",
-            {
-              style:
-                "font-size: 1em; font-weight: 600; color: " + statusColor + ";",
-            },
-            startupFailed ? "failed" : status.status || "unknown",
-          ),
-        ]),
-      ]),
+      <div>
+        <span {...statusBadgeAttrs}>
+          <strong
+            style={
+              "font-size: 1em; font-weight: 600; color: " + statusColor + ";"
+            }
+          >
+            {startupFailed ? "failed" : status.status || "unknown"}
+          </strong>
+        </span>
+      </div>,
     ];
 
     if (errorMessage && status.status !== "stopped") {
       statusElements.push(
-        E("small", { style: "color: #dc3545; margin-top: 0.3em;" }, [
-          `⚠ ${errorMessage}`,
-        ]),
+        <small style="color: #dc3545; margin-top: 0.3em;">
+          {`⚠ ${errorMessage}`}
+        </small>,
       );
     } else {
       const elements: any[] = [];
       if ((status.active_ports || 0) > 0) {
-        elements.push(E("span", {}, _("Ports: ") + (status.active_ports || 0)));
+        elements.push(<span>{_("Ports: ") + (status.active_ports || 0)}</span>);
         elements.push(<br />);
       }
       if ((status.bytes_in || 0) && (status.bytes_out || 0)) {
         elements.push(
-          E(
-            "span",
-            {},
-            "↓ " +
+          <span>
+            {"↓ " +
               formatBytes(status.bytes_in || 0) +
               " ↑ " +
-              formatBytes(status.bytes_out || 0),
-          ),
+              formatBytes(status.bytes_out || 0)}
+          </span>,
         );
       }
-      statusElements.push(E("small", {}, elements));
+      statusElements.push(<small>{elements}</small>);
     }
 
     return statusElements;

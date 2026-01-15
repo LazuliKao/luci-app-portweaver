@@ -28,7 +28,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
     if (idx < 0) {
       L.ui.addNotification(
         null,
-        E("p", _("Could not determine project index")),
+        <p>{_("Could not determine project index")}</p>,
         "error",
       );
       return Promise.resolve();
@@ -39,11 +39,10 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
       await rpcClient.setEnabled(idx, !!newEnabled);
       L.ui.addNotification(
         null,
-        E(
-          "p",
-          _("Runtime state updated to: ") +
-            (newEnabled ? _("enabled") : _("disabled")),
-        ),
+        <p>
+          {_("Runtime state updated to: ") +
+            (newEnabled ? _("enabled") : _("disabled"))}
+        </p>,
         "info",
       );
       const results = await Promise.all([
