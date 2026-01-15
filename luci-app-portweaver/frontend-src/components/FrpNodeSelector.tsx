@@ -36,7 +36,6 @@ class FrpNodeSelector extends L.form.Value {
             if (Number.isNaN(p) || p < 1 || p > 65535) {
               if (port_inp)
                 port_inp.style.setProperty("border-color", "red", "important");
-              continue;
             } else {
               if (port_inp) port_inp.style.borderColor = "";
             }
@@ -190,8 +189,56 @@ class FrpNodeSelector extends L.form.Value {
       return L.uci.unset("portweaver", section_id, "frp_nodes");
     }
   }
-  validate(section_id: string, value: any) {}
-  isValid(section_id: string): boolean {}
-  getValidationError(section_id: string): string {}
+  validate(section_id: string, value: any) {
+    // 验证值的格式：应该是空或空格分隔的 "node:port" 对
+    if (!value) {
+      this.validationError = "";
+      this.isValidFlag = true;
+      return;
+    }
+
+    const valueStr = Array.isArray(value) ? value.join(" ") : String(value);
+    const parts = valueStr.split(/\s+/).filter(Boolean);
+
+    for (const part of parts) {
+      const [node, port] = part.split(":");
+
+      // 检查节点名称是否为空
+      if (!node) {
+        this.validationError = _("Invalid FRP node format");
+        this.isValidFlag = false;
+        return;
+      }
+
+      // 如果指定了端口，验证端口号
+      if (port) {
+        const portNum = parseInt(port, 10);
+        if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
+          this.validationError = _("Port must be a number between 1 and 65535");
+          this.isValidFlag = false;
+          return;
+        }
+      }
+    }
+
+    this.validationError = "";
+    this.isValidFlag = true;
+  }
+
+  isValid(section_id: string): boolean {
+    const value = this.formvalue(section_id);
+    this.validate(section_id, value);
+    return this.isValidFlag ?? true;
+  }
+
+  getValidationError(section_id: string): string {
+    if (!this.isValid(section_id)) {
+      return this.validationError || _("Validation failed");
+    }
+    return "";
+  }
+
+  private validationError: string = "";
+  private isValidFlag: boolean = true;
 }
 export default FrpNodeSelector;

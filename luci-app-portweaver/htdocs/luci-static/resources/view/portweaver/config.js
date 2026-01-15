@@ -296,7 +296,6 @@ class FrpNodeSelector extends L.form.Value {
                         const p = parseInt(port, 10);
                         if (Number.isNaN(p) || p < 1 || p > 65535) {
                             if (port_inp) port_inp.style.setProperty("border-color", "red", "important");
-                            continue;
                         } else if (port_inp) port_inp.style.borderColor = "";
                         values.push("".concat(node, ":").concat(port));
                     } else values.push(node);
@@ -424,8 +423,48 @@ class FrpNodeSelector extends L.form.Value {
         if (formvalue && formvalue.length > 0) return L.uci.set("portweaver", section_id, "frp_nodes", formvalue);
         else return L.uci.unset("portweaver", section_id, "frp_nodes");
     }
+    validate(section_id, value) {
+        // 验证值的格式：应该是空或空格分隔的 "node:port" 对
+        if (!value) {
+            this.validationError = "";
+            this.isValidFlag = true;
+            return;
+        }
+        const valueStr = Array.isArray(value) ? value.join(" ") : String(value);
+        const parts = valueStr.split(/\s+/).filter(Boolean);
+        for (const part of parts){
+            const [node, port] = part.split(":");
+            // 检查节点名称是否为空
+            if (!node) {
+                this.validationError = _("Invalid FRP node format");
+                this.isValidFlag = false;
+                return;
+            }
+            // 如果指定了端口，验证端口号
+            if (port) {
+                const portNum = parseInt(port, 10);
+                if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                    this.validationError = _("Port must be a number between 1 and 65535");
+                    this.isValidFlag = false;
+                    return;
+                }
+            }
+        }
+        this.validationError = "";
+        this.isValidFlag = true;
+    }
+    isValid(section_id) {
+        var _this_isValidFlag;
+        const value = this.formvalue(section_id);
+        this.validate(section_id, value);
+        return (_this_isValidFlag = this.isValidFlag) !== null && _this_isValidFlag !== void 0 ? _this_isValidFlag : true;
+    }
+    getValidationError(section_id) {
+        if (!this.isValid(section_id)) return this.validationError || _("Validation failed");
+        return "";
+    }
     constructor(...args){
-        super(...args), _define_property(this, "hiddenInput", void 0);
+        super(...args), _define_property(this, "hiddenInput", void 0), _define_property(this, "validationError", ""), _define_property(this, "isValidFlag", true);
     }
 }
 /* export default */ const components_FrpNodeSelector = (FrpNodeSelector);
