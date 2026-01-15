@@ -268,124 +268,136 @@ const frp_form = L.form;
 
 ;// CONCATENATED MODULE: ./components/FrpNodeSelector.tsx
 
+/**
+ * 创建可复用的 FRP 节点选择器 UI
+ * @param options 配置选项
+ * @returns 返回容器元素和选中节点的 getter 函数
+ */ function createFrpNodeSelector(options) {
+    const { selectedNodes, onChange, checkboxClass = "frp-node-checkbox", portInputClass = "frp-node-port", containerStyle } = options;
+    const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
+    const node_map = {};
+    // 解析已选择的节点
+    for (const item of selectedNodes){
+        const parts = item.split(":");
+        const node = parts[0];
+        const port = parts[1] || "";
+        node_map[node] = port;
+    }
+    const checkboxes = [];
+    const portInputs = new Map();
+    const updateHandler = ()=>{
+        const values = [];
+        for (const cb of checkboxes)if (cb.checked) {
+            const node = cb.getAttribute("data-node");
+            const port_inp = portInputs.get(node);
+            const port = port_inp ? port_inp.value.trim() : "";
+            if (port) {
+                const p = parseInt(port, 10);
+                if (Number.isNaN(p) || p < 1 || p > 65535) {
+                    if (port_inp) port_inp.style.setProperty("border-color", "red", "important");
+                } else if (port_inp) port_inp.style.borderColor = "";
+                values.push("".concat(node, ":").concat(port));
+            } else values.push(node);
+        }
+        if (onChange) onChange(values);
+    };
+    const container = /*#__PURE__*/ createJsxElement("div", {
+        style: containerStyle || ""
+    });
+    if (frp_sections.length === 0) {
+        const emptyMsg = _("No FRP nodes configured");
+        container.appendChild(/*#__PURE__*/ createJsxElement("em", {
+            style: "color: #999;"
+        }, emptyMsg));
+    } else {
+        const table = /*#__PURE__*/ createJsxElement("table", {
+            class: "table",
+            style: "margin: 0; width: auto;"
+        });
+        for (const frp_section of frp_sections){
+            const node_name = String(frp_section.name || frp_section[".name"]);
+            if (!node_name) continue;
+            const is_checked = Object.hasOwn(node_map, node_name);
+            const port_value = node_map[node_name] || "";
+            const checkbox = /*#__PURE__*/ createJsxElement("input", {
+                type: "checkbox",
+                class: checkboxClass,
+                "data-node": node_name,
+                checked: is_checked,
+                style: "margin-right: 8px;"
+            });
+            const port_input = /*#__PURE__*/ createJsxElement("input", {
+                type: "text",
+                class: portInputClass,
+                "data-node": node_name,
+                value: port_value,
+                placeholder: _("default port"),
+                style: "min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;",
+                disabled: !is_checked
+            });
+            checkboxes.push(checkbox);
+            portInputs.set(node_name, port_input);
+            const port_input_area = /*#__PURE__*/ createJsxElement("td", {
+                style: "padding: 4px 8px; border: none;".concat(is_checked ? "" : "display: none;")
+            }, /*#__PURE__*/ createJsxElement("span", {
+                style: "margin-right: 5px; color: #666;"
+            }, _("Port:")), port_input);
+            checkbox.addEventListener("change", (ev)=>{
+                const element = ev.currentTarget;
+                port_input.disabled = !element.checked;
+                port_input_area.style.display = element.checked ? "" : "none";
+                if (!element.checked) port_input.value = "";
+                updateHandler();
+            });
+            port_input.addEventListener("input", updateHandler);
+            port_input.addEventListener("change", updateHandler);
+            const row = /*#__PURE__*/ createJsxElement("tr", null, /*#__PURE__*/ createJsxElement("td", {
+                style: "padding: 4px 8px; border: none;"
+            }, checkbox, /*#__PURE__*/ createJsxElement("span", {
+                style: "cursor: pointer; font-weight: normal; margin: 0;"
+            }, node_name)), port_input_area);
+            table.appendChild(row);
+        }
+        container.appendChild(table);
+    }
+    // 返回容器和获取当前选中节点的函数
+    return {
+        container,
+        getSelectedNodes: ()=>{
+            const values = [];
+            for (const cb of checkboxes)if (cb.checked) {
+                const node = cb.getAttribute("data-node");
+                const port_inp = portInputs.get(node);
+                const port = port_inp ? port_inp.value.trim() : "";
+                values.push(port ? "".concat(node, ":").concat(port) : node);
+            }
+            return values;
+        }
+    };
+}
 class FrpNodeSelector extends L.form.Value {
     renderWidget(section_id, _option_index, cfgvalue) {
-        const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
         const current_value = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === "string" ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
-        const node_map = {};
-        for(let i = 0; i < current_value.length; i++){
-            const parts = current_value[i].split(":");
-            const node = parts[0];
-            const port = parts[1] || "";
-            node_map[node] = port;
-        }
         const widget_id = this.cbid(section_id);
-        // 存储所有元素引用
-        const checkboxes = [];
-        const portInputs = new Map();
         let hiddenInput;
-        const updateHandler = ()=>{
-            const values = [];
-            for(let j = 0; j < checkboxes.length; j++){
-                const cb = checkboxes[j];
-                if (cb.checked) {
-                    const node = cb.getAttribute("data-node");
-                    const port_inp = portInputs.get(node);
-                    const port = port_inp ? port_inp.value.trim() : "";
-                    if (port) {
-                        const p = parseInt(port, 10);
-                        if (Number.isNaN(p) || p < 1 || p > 65535) {
-                            if (port_inp) port_inp.style.setProperty("border-color", "red", "important");
-                        } else if (port_inp) port_inp.style.borderColor = "";
-                        values.push("".concat(node, ":").concat(port));
-                    } else values.push(node);
-                }
-            }
-            hiddenInput.value = values.join(" ");
-        };
-        const container = /*#__PURE__*/ createJsxElement("div", {
-            class: "cbi-value-field"
+        const { container: selectorContainer } = createFrpNodeSelector({
+            selectedNodes: current_value,
+            onChange: (nodes)=>{
+                hiddenInput.value = nodes.join(" ");
+            },
+            checkboxClass: "frp-node-checkbox",
+            portInputClass: "frp-node-port"
         });
-        if (frp_sections.length === 0) {
-            const emptyMsg = _("No FRP nodes configured. Please add FRP nodes first.");
-            container.appendChild(/*#__PURE__*/ createJsxElement("em", {
-                style: "color: #999;"
-            }, emptyMsg));
-        } else {
-            const table = /*#__PURE__*/ createJsxElement("table", {
-                class: "table",
-                style: "margin: 0; width: auto;"
-            });
-            for(let i = 0; i < frp_sections.length; i++){
-                const node_name = String(frp_sections[i].name || frp_sections[i][".name"]);
-                if (!node_name) continue;
-                const is_checked = Object.hasOwn(node_map, node_name);
-                const port_value = node_map[node_name] || "";
-                const checkbox = /*#__PURE__*/ createJsxElement("input", {
-                    type: "checkbox",
-                    class: "frp-node-checkbox",
-                    "data-widget-id": widget_id,
-                    "data-node": node_name,
-                    "data-section": section_id,
-                    checked: is_checked,
-                    style: "margin-right: 8px;"
-                });
-                const port_input = /*#__PURE__*/ createJsxElement("input", {
-                    type: "text",
-                    class: "frp-node-port",
-                    "data-widget-id": widget_id,
-                    "data-node": node_name,
-                    "data-section": section_id,
-                    value: port_value,
-                    placeholder: _("default port"),
-                    style: "min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;",
-                    disabled: !is_checked
-                });
-                // 存储元素引用
-                checkboxes.push(checkbox);
-                portInputs.set(node_name, port_input);
-                const port_input_area = /*#__PURE__*/ createJsxElement("td", {
-                    style: "padding: 4px 8px; border: none;".concat(is_checked ? "" : "display: none;")
-                }, /*#__PURE__*/ createJsxElement("span", {
-                    style: "margin-right: 5px; color: #666;"
-                }, _("Port:")), port_input);
-                checkbox.addEventListener("change", (ev)=>{
-                    const element = ev.currentTarget;
-                    port_input.disabled = !element.checked;
-                    port_input_area.style.display = element.checked ? "" : "none";
-                    if (!element.checked) port_input.value = "";
-                    updateHandler();
-                });
-                port_input.addEventListener("input", updateHandler);
-                port_input.addEventListener("change", updateHandler);
-                const row = /*#__PURE__*/ createJsxElement("tr", null, /*#__PURE__*/ createJsxElement("td", {
-                    style: "padding: 4px 8px; border: none;"
-                }, checkbox, /*#__PURE__*/ createJsxElement("span", {
-                    style: "cursor: pointer; font-weight: normal; margin: 0;"
-                }, node_name)), port_input_area);
-                // const row = E("tr", {}, [
-                //   E("td", { style: "padding: 4px 8px; border: none;" }, [
-                //     checkbox,
-                //     E(
-                //       "label",
-                //       {
-                //         style: "cursor: pointer; font-weight: normal; margin: 0;",
-                //       },
-                //       node_name,
-                //     ),
-                //   ]),
-                //   port_input_area,
-                // ]);
-                table.appendChild(row);
-            }
-            container.appendChild(table);
-        }
         hiddenInput = /*#__PURE__*/ createJsxElement("input", {
             type: "hidden",
             id: widget_id,
             name: widget_id,
             value: current_value.join(" ")
         });
+        const container = /*#__PURE__*/ createJsxElement("div", {
+            class: "cbi-value-field"
+        });
+        container.appendChild(selectorContainer);
         container.appendChild(hiddenInput);
         // 存储 hiddenInput 引用供 formvalue 方法使用
         this.hiddenInput = hiddenInput;
@@ -469,31 +481,6 @@ class FrpNodeSelector extends L.form.Value {
 }
 /* export default */ const components_FrpNodeSelector = (FrpNodeSelector);
 
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_object_spread.js
-
-
-function _object_spread(target) {
-    for (var i = 1; i < arguments.length; i++) {
-        var source = arguments[i] != null ? arguments[i] : {};
-        var ownKeys = Object.keys(source);
-
-        if (typeof Object.getOwnPropertySymbols === "function") {
-            ownKeys = ownKeys.concat(
-                Object.getOwnPropertySymbols(source).filter(function(sym) {
-                    return Object.getOwnPropertyDescriptor(source, sym).enumerable;
-                })
-            );
-        }
-
-        ownKeys.forEach(function(key) {
-            _define_property(target, key, source[key]);
-        });
-    }
-
-    return target;
-}
-
-
 ;// CONCATENATED MODULE: ./components/PortMappingEditor.tsx
 
 
@@ -551,7 +538,7 @@ class PortMappingEditor extends L.form.Value {
         return result;
     }
     renderWidget(section_id, _option_index, cfgvalue) {
-        const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
+        L.uci.sections("portweaver", "frp_node");
         const current_values = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === "string" ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
         const widget_id = this.cbid(section_id);
         const mappings_wrapper = /*#__PURE__*/ createJsxElement("div", {
@@ -643,16 +630,7 @@ class PortMappingEditor extends L.form.Value {
                 const listen = listenInput.value.trim();
                 const target = targetInput.value.trim();
                 const protocol = protocolSelect.value;
-                const frpNodes = [];
-                const allFrpCheckboxes = row.querySelectorAll("input.frp-node-checkbox-pm");
-                allFrpCheckboxes.forEach((cb)=>{
-                    if (cb.checked) {
-                        const node = cb.getAttribute("data-node");
-                        const port_inp = row.querySelector('input.frp-node-port-pm[data-node="'.concat(node, '"]'));
-                        const port = port_inp ? port_inp.value.trim() : "";
-                        frpNodes.push(port ? "".concat(node, ":").concat(port) : node);
-                    }
-                });
+                const frpNodes = getSelectedNodes();
                 const temp_mapping = {
                     listenPort: listen,
                     targetPort: target,
@@ -663,75 +641,24 @@ class PortMappingEditor extends L.form.Value {
                 previewDiv.textContent = _("Preview: ") + preview_str;
                 textModeInput.value = preview_str;
             };
+            // 使用复用的 FRP 节点选择器组件
+            const { container: selectorContainer, getSelectedNodes } = createFrpNodeSelector({
+                selectedNodes: mapping.frpNodes || [],
+                onChange: ()=>{
+                    updatePreview();
+                    updateHiddenValue();
+                },
+                checkboxClass: "frp-node-checkbox-pm",
+                portInputClass: "frp-node-port-pm",
+                containerStyle: "margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px;"
+            });
             const frpContainer = /*#__PURE__*/ createJsxElement("div", {
                 class: "frp-nodes-select",
-                style: "margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px; display: block;"
-            });
-            if (frp_sections.length > 0) {
-                frpContainer.appendChild(/*#__PURE__*/ createJsxElement("span", {
-                    style: "display: block; margin-bottom: 8px; font-weight: bold;"
-                }, _("FRP Nodes (Optional):")));
-                frp_sections.forEach((frp_section)=>{
-                    const node_name = frp_section.name || frp_section[".name"];
-                    if (!node_name) return;
-                    const is_checked = (mapping.frpNodes || []).some((n)=>n.split(":")[0] === node_name);
-                    const found = (mapping.frpNodes || []).find((n)=>n.split(":")[0] === node_name);
-                    const port_value = found ? found.split(":")[1] || "" : "";
-                    const checkbox = /*#__PURE__*/ createJsxElement("input", {
-                        type: "checkbox",
-                        class: "frp-node-checkbox-pm",
-                        "data-node": node_name,
-                        "data-index": index,
-                        "data-section": section_id,
-                        checked: is_checked,
-                        style: "margin-right: 5px;"
-                    });
-                    const port_input = /*#__PURE__*/ createJsxElement("input", _object_spread({
-                        type: "text",
-                        class: "frp-node-port-pm",
-                        "data-node": node_name,
-                        "data-index": index,
-                        "data-section": section_id,
-                        value: port_value,
-                        placeholder: _("default"),
-                        style: "width: 80px; margin-right: 15px;"
-                    }, is_checked ? {} : {
-                        hidden: true
-                    }));
-                    checkbox.onchange = (ev)=>{
-                        const inputEl = ev.currentTarget;
-                        if (!inputEl) return;
-                        port_input.hidden = !inputEl.checked;
-                        if (!inputEl.checked) {
-                            port_input.value = "";
-                            port_input.style.borderColor = "";
-                        }
-                        updatePreview();
-                        updateHiddenValue();
-                    };
-                    const handlePortChange = ()=>{
-                        const port = port_input.value.trim();
-                        if (port) {
-                            const p = parseInt(port, 10);
-                            if (Number.isNaN(p) || p < 1 || p > 65535) port_input.style.setProperty("border-color", "red", "important");
-                            else port_input.style.borderColor = "";
-                        } else port_input.style.borderColor = "";
-                        updatePreview();
-                        updateHiddenValue();
-                    };
-                    port_input.oninput = handlePortChange;
-                    port_input.onchange = handlePortChange;
-                    frpContainer.appendChild(/*#__PURE__*/ createJsxElement("div", {
-                        style: "margin-bottom: 5px;"
-                    }, checkbox, /*#__PURE__*/ createJsxElement("span", {
-                        style: "margin-right: 10px; cursor: pointer;"
-                    }, node_name), /*#__PURE__*/ createJsxElement("span", {
-                        style: "margin-right: 5px;"
-                    }, _("Port:")), port_input));
-                });
-            } else frpContainer.appendChild(/*#__PURE__*/ createJsxElement("em", {
-                style: "color: #999;"
-            }, _("No FRP nodes configured")));
+                style: "display: block;"
+            }, /*#__PURE__*/ createJsxElement("span", {
+                style: "display: block; margin-bottom: 8px; font-weight: bold;"
+            }, _("FRP Nodes (Optional):")));
+            frpContainer.appendChild(selectorContainer);
             const errorDiv = /*#__PURE__*/ createJsxElement("div", {
                 class: "portmapping-error",
                 "data-index": index,
@@ -781,14 +708,17 @@ class PortMappingEditor extends L.form.Value {
                     listenInput.value = parsed.listenPort;
                     targetInput.value = parsed.targetPort;
                     protocolSelect.value = parsed.protocol;
-                    const allCheckboxes = row.querySelectorAll("input.frp-node-checkbox-pm");
+                    // 更新 FRP 节点选择器的状态
+                    const allCheckboxes = selectorContainer.querySelectorAll("input.frp-node-checkbox-pm");
                     allCheckboxes.forEach((cb)=>{
                         const node = cb.getAttribute("data-node");
                         const is_checked = (parsed.frpNodes || []).some((n)=>n.split(":")[0] === node);
                         cb.checked = is_checked;
-                        const port_inp = row.querySelector('input.frp-node-port-pm[data-node="'.concat(node, '"]'));
+                        const port_inp = selectorContainer.querySelector('input.frp-node-port-pm[data-node="'.concat(node, '"]'));
                         if (port_inp) {
-                            port_inp.hidden = !is_checked;
+                            port_inp.disabled = !is_checked;
+                            const port_td = port_inp.closest("td");
+                            if (port_td) port_td.style.display = is_checked ? "" : "none";
                             if (is_checked) {
                                 const foundNode = (parsed.frpNodes || []).find((n)=>n.split(":")[0] === node);
                                 if (foundNode) {

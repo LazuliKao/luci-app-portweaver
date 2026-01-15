@@ -1,3 +1,158 @@
+/**
+ * 创建可复用的 FRP 节点选择器 UI
+ * @param options 配置选项
+ * @returns 返回容器元素和选中节点的 getter 函数
+ */
+export function createFrpNodeSelector(options: {
+  selectedNodes: string[]; // ["node1:8080", "node2", ...]
+  onChange?: (nodes: string[]) => void; // 选择变化时的回调
+  checkboxClass?: string; // checkbox 的类名
+  portInputClass?: string; // port input 的类名
+  containerStyle?: string; // 容器样式
+}) {
+  const {
+    selectedNodes,
+    onChange,
+    checkboxClass = "frp-node-checkbox",
+    portInputClass = "frp-node-port",
+    containerStyle,
+  } = options;
+
+  const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
+  const node_map: Record<string, string> = {};
+
+  // 解析已选择的节点
+  for (const item of selectedNodes) {
+    const parts = item.split(":");
+    const node = parts[0];
+    const port = parts[1] || "";
+    node_map[node] = port;
+  }
+
+  const checkboxes: HTMLInputElement[] = [];
+  const portInputs: Map<string, HTMLInputElement> = new Map();
+
+  const updateHandler = () => {
+    const values: string[] = [];
+    for (const cb of checkboxes) {
+      if (cb.checked) {
+        const node = cb.getAttribute("data-node") as string;
+        const port_inp = portInputs.get(node);
+        const port = port_inp ? port_inp.value.trim() : "";
+        if (port) {
+          const p = parseInt(port, 10);
+          if (Number.isNaN(p) || p < 1 || p > 65535) {
+            if (port_inp)
+              port_inp.style.setProperty("border-color", "red", "important");
+          } else {
+            if (port_inp) port_inp.style.borderColor = "";
+          }
+          values.push(`${node}:${port}`);
+        } else {
+          values.push(node);
+        }
+      }
+    }
+    if (onChange) onChange(values);
+  };
+
+  const container = (<div style={containerStyle || ""}></div>) as HTMLElement;
+
+  if (frp_sections.length === 0) {
+    const emptyMsg = _("No FRP nodes configured");
+    container.appendChild(<em style="color: #999;">{emptyMsg}</em>);
+  } else {
+    const table = (
+      <table class="table" style="margin: 0; width: auto;"></table>
+    ) as HTMLElement;
+
+    for (const frp_section of frp_sections) {
+      const node_name = String(frp_section.name || frp_section[".name"]);
+      if (!node_name) continue;
+
+      const is_checked = Object.hasOwn(node_map, node_name);
+      const port_value = node_map[node_name] || "";
+
+      const checkbox = (
+        <input
+          type="checkbox"
+          class={checkboxClass}
+          data-node={node_name}
+          checked={is_checked}
+          style="margin-right: 8px;"
+        />
+      ) as HTMLInputElement;
+
+      const port_input = (
+        <input
+          type="text"
+          class={portInputClass}
+          data-node={node_name}
+          value={port_value}
+          placeholder={_("default port")}
+          style="min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;"
+          disabled={!is_checked}
+        />
+      ) as HTMLInputElement;
+
+      checkboxes.push(checkbox);
+      portInputs.set(node_name, port_input);
+
+      const port_input_area = (
+        <td
+          style={`padding: 4px 8px; border: none;${is_checked ? "" : "display: none;"}`}
+        >
+          <span style="margin-right: 5px; color: #666;">{_("Port:")}</span>
+          {port_input}
+        </td>
+      );
+
+      checkbox.addEventListener("change", (ev) => {
+        const element = ev.currentTarget as HTMLInputElement;
+        port_input.disabled = !element.checked;
+        port_input_area.style.display = element.checked ? "" : "none";
+        if (!element.checked) port_input.value = "";
+        updateHandler();
+      });
+
+      port_input.addEventListener("input", updateHandler);
+      port_input.addEventListener("change", updateHandler);
+
+      const row = (
+        <tr>
+          <td style="padding: 4px 8px; border: none;">
+            {checkbox}
+            <span style="cursor: pointer; font-weight: normal; margin: 0;">
+              {node_name}
+            </span>
+          </td>
+          {port_input_area}
+        </tr>
+      );
+
+      table.appendChild(row);
+    }
+    container.appendChild(table);
+  }
+
+  // 返回容器和获取当前选中节点的函数
+  return {
+    container,
+    getSelectedNodes: () => {
+      const values: string[] = [];
+      for (const cb of checkboxes) {
+        if (cb.checked) {
+          const node = cb.getAttribute("data-node") as string;
+          const port_inp = portInputs.get(node);
+          const port = port_inp ? port_inp.value.trim() : "";
+          values.push(port ? `${node}:${port}` : node);
+        }
+      }
+      return values;
+    },
+  };
+}
+
 class FrpNodeSelector extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
   renderWidget(
@@ -5,137 +160,24 @@ class FrpNodeSelector extends L.form.Value {
     _option_index: number,
     cfgvalue: string[] | string,
   ) {
-    const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
     const current_value: string[] = Array.isArray(cfgvalue)
       ? (cfgvalue as string[])
       : typeof cfgvalue === "string"
         ? String(cfgvalue).split(/\s+/).filter(Boolean)
         : [];
-    const node_map: Record<string, string> = {};
-    for (let i = 0; i < current_value.length; i++) {
-      const parts = current_value[i].split(":");
-      const node = parts[0];
-      const port = parts[1] || "";
-      node_map[node] = port;
-    }
     const widget_id = this.cbid(section_id);
-    // 存储所有元素引用
-    const checkboxes: HTMLInputElement[] = [];
-    const portInputs: Map<string, HTMLInputElement> = new Map();
+
     let hiddenInput: HTMLInputElement;
-    const updateHandler = () => {
-      const values: string[] = [];
-      for (let j = 0; j < checkboxes.length; j++) {
-        const cb = checkboxes[j];
-        if (cb.checked) {
-          const node = cb.getAttribute("data-node") as string;
-          const port_inp = portInputs.get(node);
-          const port = port_inp ? port_inp.value.trim() : "";
-          if (port) {
-            const p = parseInt(port, 10);
-            if (Number.isNaN(p) || p < 1 || p > 65535) {
-              if (port_inp)
-                port_inp.style.setProperty("border-color", "red", "important");
-            } else {
-              if (port_inp) port_inp.style.borderColor = "";
-            }
-            values.push(`${node}:${port}`);
-          } else {
-            values.push(node);
-          }
-        }
-      }
-      hiddenInput.value = values.join(" ");
-    };
-    const container = (<div class="cbi-value-field"></div>) as HTMLElement;
-    if (frp_sections.length === 0) {
-      const emptyMsg = _(
-        "No FRP nodes configured. Please add FRP nodes first.",
-      );
-      container.appendChild(<em style="color: #999;">{emptyMsg}</em>);
-    } else {
-      const table = (
-        <table class="table" style="margin: 0; width: auto;"></table>
-      ) as HTMLElement;
-      for (let i = 0; i < frp_sections.length; i++) {
-        const node_name = String(
-          frp_sections[i].name || frp_sections[i][".name"],
-        );
-        if (!node_name) continue;
-        const is_checked = Object.hasOwn(node_map, node_name);
-        const port_value = node_map[node_name] || "";
-        const checkbox = (
-          <input
-            type="checkbox"
-            class="frp-node-checkbox"
-            data-widget-id={widget_id}
-            data-node={node_name}
-            data-section={section_id}
-            checked={is_checked}
-            style="margin-right: 8px;"
-          />
-        ) as HTMLInputElement;
-        const port_input = (
-          <input
-            type="text"
-            class="frp-node-port"
-            data-widget-id={widget_id}
-            data-node={node_name}
-            data-section={section_id}
-            value={port_value}
-            placeholder={_("default port")}
-            style="min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;"
-            disabled={!is_checked}
-          />
-        ) as HTMLInputElement;
-        // 存储元素引用
-        checkboxes.push(checkbox);
-        portInputs.set(node_name, port_input);
-        const port_input_area = (
-          <td
-            style={`padding: 4px 8px; border: none;${is_checked ? "" : "display: none;"}`}
-          >
-            <span style="margin-right: 5px; color: #666;">{_("Port:")}</span>
-            {port_input}
-          </td>
-        );
-        checkbox.addEventListener("change", (ev) => {
-          const element = ev.currentTarget as HTMLInputElement;
-          port_input.disabled = !element.checked;
-          port_input_area.style.display = element.checked ? "" : "none";
-          if (!element.checked) port_input.value = "";
-          updateHandler();
-        });
-        port_input.addEventListener("input", updateHandler);
-        port_input.addEventListener("change", updateHandler);
-        const row = (
-          <tr>
-            <td style="padding: 4px 8px; border: none;">
-              {checkbox}
-              <span style="cursor: pointer; font-weight: normal; margin: 0;">
-                {node_name}
-              </span>
-            </td>
-            {port_input_area}
-          </tr>
-        );
-        // const row = E("tr", {}, [
-        //   E("td", { style: "padding: 4px 8px; border: none;" }, [
-        //     checkbox,
-        //     E(
-        //       "label",
-        //       {
-        //         style: "cursor: pointer; font-weight: normal; margin: 0;",
-        //       },
-        //       node_name,
-        //     ),
-        //   ]),
-        //   port_input_area,
-        // ]);
-        table.appendChild(row);
-      }
-      container.appendChild(table);
-    }
+
+    const { container: selectorContainer } = createFrpNodeSelector({
+      selectedNodes: current_value,
+      onChange: (nodes) => {
+        hiddenInput.value = nodes.join(" ");
+      },
+      checkboxClass: "frp-node-checkbox",
+      portInputClass: "frp-node-port",
+    });
+
     hiddenInput = (
       <input
         type="hidden"
@@ -144,7 +186,11 @@ class FrpNodeSelector extends L.form.Value {
         value={current_value.join(" ")}
       />
     ) as HTMLInputElement;
+
+    const container = (<div class="cbi-value-field"></div>) as HTMLElement;
+    container.appendChild(selectorContainer);
     container.appendChild(hiddenInput);
+
     // 存储 hiddenInput 引用供 formvalue 方法使用
     this.hiddenInput = hiddenInput;
     const description = (

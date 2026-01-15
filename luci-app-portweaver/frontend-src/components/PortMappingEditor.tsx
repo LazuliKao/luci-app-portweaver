@@ -1,3 +1,4 @@
+import { createFrpNodeSelector } from "./FrpNodeSelector";
 class PortMappingEditor extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
   parseMapping(str: string) {
@@ -208,20 +209,7 @@ class PortMappingEditor extends L.form.Value {
         const listen = listenInput.value.trim();
         const target = targetInput.value.trim();
         const protocol = protocolSelect.value;
-        const frpNodes: string[] = [];
-        const allFrpCheckboxes = row.querySelectorAll(
-          "input.frp-node-checkbox-pm",
-        );
-        allFrpCheckboxes.forEach((cb: any) => {
-          if (cb.checked) {
-            const node = cb.getAttribute("data-node") as string;
-            const port_inp = row.querySelector(
-              `input.frp-node-port-pm[data-node="${node}"]`,
-            ) as HTMLInputElement | null;
-            const port = port_inp ? port_inp.value.trim() : "";
-            frpNodes.push(port ? `${node}:${port}` : node);
-          }
-        });
+        const frpNodes = getSelectedNodes();
         const temp_mapping = {
           listenPort: listen,
           targetPort: target,
@@ -233,107 +221,29 @@ class PortMappingEditor extends L.form.Value {
         textModeInput.value = preview_str;
       };
 
-      const frpContainer = (
-        <div
-          class="frp-nodes-select"
-          style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px; display: block;"
-        ></div>
-      ) as HTMLElement;
+      // 使用复用的 FRP 节点选择器组件
+      const { container: selectorContainer, getSelectedNodes } =
+        createFrpNodeSelector({
+          selectedNodes: mapping.frpNodes || [],
+          onChange: () => {
+            updatePreview();
+            updateHiddenValue();
+          },
+          checkboxClass: "frp-node-checkbox-pm",
+          portInputClass: "frp-node-port-pm",
+          containerStyle:
+            "margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px;",
+        });
 
-      if (frp_sections.length > 0) {
-        frpContainer.appendChild(
+      const frpContainer = (
+        <div class="frp-nodes-select" style="display: block;">
           <span style="display: block; margin-bottom: 8px; font-weight: bold;">
             {_("FRP Nodes (Optional):")}
-          </span>,
-        );
+          </span>
+        </div>
+      ) as HTMLElement;
 
-        frp_sections.forEach((frp_section: any) => {
-          const node_name = frp_section.name || frp_section[".name"];
-          if (!node_name) return;
-          const is_checked = (mapping.frpNodes || []).some(
-            (n: string) => n.split(":")[0] === node_name,
-          );
-          const found = (mapping.frpNodes || []).find(
-            (n: string) => n.split(":")[0] === node_name,
-          );
-          const port_value = found ? found.split(":")[1] || "" : "";
-          const checkbox = (
-            <input
-              type="checkbox"
-              class="frp-node-checkbox-pm"
-              data-node={node_name}
-              data-index={index}
-              data-section={section_id}
-              checked={is_checked}
-              style="margin-right: 5px;"
-            />
-          ) as HTMLInputElement;
-
-          const port_input = (
-            <input
-              type="text"
-              class="frp-node-port-pm"
-              data-node={node_name}
-              data-index={index}
-              data-section={section_id}
-              value={port_value}
-              placeholder={_("default")}
-              style="width: 80px; margin-right: 15px;"
-              {...(is_checked ? {} : { hidden: true })}
-            />
-          ) as HTMLInputElement;
-
-          checkbox.onchange = (ev: Event) => {
-            const inputEl = ev.currentTarget as HTMLInputElement | null;
-            if (!inputEl) return;
-            port_input.hidden = !inputEl.checked;
-            if (!inputEl.checked) {
-              port_input.value = "";
-              port_input.style.borderColor = "";
-            }
-            updatePreview();
-            updateHiddenValue();
-          };
-
-          const handlePortChange = (): void => {
-            const port = port_input.value.trim();
-            if (port) {
-              const p = parseInt(port, 10);
-              if (Number.isNaN(p) || p < 1 || p > 65535) {
-                port_input.style.setProperty(
-                  "border-color",
-                  "red",
-                  "important",
-                );
-              } else {
-                port_input.style.borderColor = "";
-              }
-            } else {
-              port_input.style.borderColor = "";
-            }
-            updatePreview();
-            updateHiddenValue();
-          };
-
-          port_input.oninput = handlePortChange;
-          port_input.onchange = handlePortChange;
-
-          frpContainer.appendChild(
-            <div style="margin-bottom: 5px;">
-              {checkbox}
-              <span style="margin-right: 10px; cursor: pointer;">
-                {node_name}
-              </span>
-              <span style="margin-right: 5px;">{_("Port:")}</span>
-              {port_input}
-            </div>,
-          );
-        });
-      } else {
-        frpContainer.appendChild(
-          <em style="color: #999;">{_("No FRP nodes configured")}</em>,
-        );
-      }
+      frpContainer.appendChild(selectorContainer);
 
       const errorDiv = (
         <div
@@ -419,7 +329,9 @@ class PortMappingEditor extends L.form.Value {
           listenInput.value = parsed.listenPort;
           targetInput.value = parsed.targetPort;
           protocolSelect.value = parsed.protocol as any;
-          const allCheckboxes = row.querySelectorAll(
+
+          // 更新 FRP 节点选择器的状态
+          const allCheckboxes = selectorContainer.querySelectorAll(
             "input.frp-node-checkbox-pm",
           );
           allCheckboxes.forEach((cb: any) => {
@@ -428,11 +340,17 @@ class PortMappingEditor extends L.form.Value {
               (n: string) => n.split(":")[0] === node,
             );
             cb.checked = is_checked;
-            const port_inp = row.querySelector(
+
+            const port_inp = selectorContainer.querySelector(
               `input.frp-node-port-pm[data-node="${node}"]`,
             ) as HTMLInputElement | null;
             if (port_inp) {
-              port_inp.hidden = !is_checked;
+              port_inp.disabled = !is_checked;
+              const port_td = port_inp.closest("td");
+              if (port_td) {
+                port_td.style.display = is_checked ? "" : "none";
+              }
+
               if (is_checked) {
                 const foundNode = (parsed.frpNodes || []).find(
                   (n: string) => n.split(":")[0] === node,
@@ -531,5 +449,150 @@ class PortMappingEditor extends L.form.Value {
       return L.uci.unset("portweaver", section_id, "port_mapping");
     }
   }
+
+  validate(section_id: string, value: any) {
+    // 验证端口映射格式
+    if (!value) {
+      this.validationError = "";
+      this.isValidFlag = true;
+      return;
+    }
+
+    const valueStr = Array.isArray(value) ? value.join(" ") : String(value);
+    const mappings = valueStr.split(/\s+/).filter(Boolean);
+
+    for (const mappingStr of mappings) {
+      const parsed = this.parseMapping(mappingStr);
+      
+      if (!parsed) {
+        this.validationError = _("Invalid port mapping format");
+        this.isValidFlag = false;
+        return;
+      }
+
+      // 验证监听端口
+      if (!parsed.listenPort) {
+        this.validationError = _("Listen port is required");
+        this.isValidFlag = false;
+        return;
+      }
+
+      if (!this.validatePortOrRange(parsed.listenPort)) {
+        this.validationError = _("Invalid listen port format. Use port (8080) or range (8080-8090)");
+        this.isValidFlag = false;
+        return;
+      }
+
+      // 验证目标端口
+      if (!parsed.targetPort) {
+        this.validationError = _("Target port is required");
+        this.isValidFlag = false;
+        return;
+      }
+
+      if (!this.validatePortOrRange(parsed.targetPort)) {
+        this.validationError = _("Invalid target port format. Use port (80) or range (80-90)");
+        this.isValidFlag = false;
+        return;
+      }
+
+      // 验证端口范围匹配
+      const listenPorts = this.parsePortRange(parsed.listenPort);
+      const targetPorts = this.parsePortRange(parsed.targetPort);
+      
+      if (listenPorts.length !== targetPorts.length) {
+        this.validationError = _("Listen port range and target port range must have the same size");
+        this.isValidFlag = false;
+        return;
+      }
+
+      // 验证 FRP 节点
+      if (parsed.frpNodes && parsed.frpNodes.length > 0) {
+        for (const nodeStr of parsed.frpNodes) {
+          const [node, port] = nodeStr.split(":");
+          
+          if (!node) {
+            this.validationError = _("Invalid FRP node format");
+            this.isValidFlag = false;
+            return;
+          }
+
+          if (port) {
+            const portNum = parseInt(port, 10);
+            if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
+              this.validationError = _("FRP node port must be between 1 and 65535");
+              this.isValidFlag = false;
+              return;
+            }
+          }
+        }
+      }
+
+      // 验证协议
+      if (parsed.protocol && !["tcp", "udp", "both"].includes(parsed.protocol)) {
+        this.validationError = _("Protocol must be tcp, udp, or both");
+        this.isValidFlag = false;
+        return;
+      }
+    }
+
+    this.validationError = "";
+    this.isValidFlag = true;
+  }
+
+  private validatePortOrRange(portStr: string): boolean {
+    // 验证单个端口或端口范围
+    if (!portStr) return false;
+    
+    // 单个端口
+    if (/^\d+$/.test(portStr)) {
+      const port = parseInt(portStr, 10);
+      return port >= 1 && port <= 65535;
+    }
+    
+    // 端口范围
+    if (/^\d+-\d+$/.test(portStr)) {
+      const [start, end] = portStr.split("-").map(p => parseInt(p, 10));
+      return start >= 1 && start <= 65535 && 
+             end >= 1 && end <= 65535 && 
+             start <= end;
+    }
+    
+    return false;
+  }
+
+  private parsePortRange(portStr: string): number[] {
+    // 解析端口或端口范围，返回端口数组
+    if (/^\d+$/.test(portStr)) {
+      return [parseInt(portStr, 10)];
+    }
+    
+    if (/^\d+-\d+$/.test(portStr)) {
+      const [start, end] = portStr.split("-").map(p => parseInt(p, 10));
+      const ports: number[] = [];
+      for (let i = start; i <= end; i++) {
+        ports.push(i);
+      }
+      return ports;
+    }
+    
+    return [];
+  }
+
+  isValid(section_id: string): boolean {
+    const value = this.formvalue(section_id);
+    this.validate(section_id, value);
+    return this.isValidFlag ?? true;
+  }
+
+  getValidationError(section_id: string): string {
+    if (!this.isValid(section_id)) {
+      return this.validationError || _("Validation failed");
+    }
+    return "";
+  }
+
+  private validationError: string = "";
+  private isValidFlag: boolean = true;
 }
 export default PortMappingEditor;
