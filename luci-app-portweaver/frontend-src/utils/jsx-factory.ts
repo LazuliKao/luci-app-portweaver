@@ -24,5 +24,4 @@ export function createJsxElement(
   return E(tag, props, children);
 }
 createJsxElement.Fragment = JSXFragment;
-export {};
 globalThis.createJsxElement = createJsxElement;

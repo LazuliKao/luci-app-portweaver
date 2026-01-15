@@ -6,7 +6,7 @@
 // UNUSED EXPORTS: default
 
 ;// CONCATENATED MODULE: ./utils/jsx-factory.ts
-const JSXFragment = Symbol.for('jsx.fragment');
+const JSXFragment = Symbol.for("jsx.fragment");
 function jsx_factory_createJsxElement(tag, props) {
     for(var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++){
         children[_key - 2] = arguments[_key];
@@ -18,7 +18,7 @@ function jsx_factory_createJsxElement(tag, props) {
     }
     // fix all boolean attributes
     if (props) {
-        for (const [key, value] of Object.entries(props))if (typeof value === 'boolean') {
+        for (const [key, value] of Object.entries(props))if (typeof value === "boolean") {
             if (value) props[key] = key;
             else delete props[key];
         }
@@ -49,23 +49,23 @@ function formatUptime() {
 function getErrorMessage(error_code) {
     if (error_code === undefined || error_code === 0) return null;
     const messages = {
-        '0': 'OK',
-        '-1': 'Memory allocation failed',
-        '-2': 'Failed to bind to port',
-        '-3': 'Address or port already in use (EADDRINUSE)',
-        '-4': 'Permission denied - unable to bind to port (EACCES)',
-        '-5': 'Invalid address format',
-        '-98': 'Address already in use',
-        '-91': 'Protocol wrong type for socket',
-        '-92': 'Protocol not available',
-        '-93': 'Protocol not supported',
-        '-94': 'Socket type not supported',
-        '-95': 'Operation not supported on transport endpoint',
-        '-96': 'Protocol family not supported',
-        '-97': 'Address family not supported by protocol',
-        '-99': 'Cannot assign requested address',
-        '-100': 'Network is down',
-        '-101': 'Network is unreachable'
+        "0": "OK",
+        "-1": "Memory allocation failed",
+        "-2": "Failed to bind to port",
+        "-3": "Address or port already in use (EADDRINUSE)",
+        "-4": "Permission denied - unable to bind to port (EACCES)",
+        "-5": "Invalid address format",
+        "-98": "Address already in use",
+        "-91": "Protocol wrong type for socket",
+        "-92": "Protocol not available",
+        "-93": "Protocol not supported",
+        "-94": "Socket type not supported",
+        "-95": "Operation not supported on transport endpoint",
+        "-96": "Protocol family not supported",
+        "-97": "Address family not supported by protocol",
+        "-99": "Cannot assign requested address",
+        "-100": "Network is down",
+        "-101": "Network is unreachable"
     };
     return messages[String(error_code)] || "Unknown error (code: ".concat(error_code, ")");
 }
@@ -73,21 +73,21 @@ function getErrorMessage(error_code) {
 ;// CONCATENATED MODULE: ./utils/rpc-client.ts
 function createRpcClient(rpc) {
     const getStatus = rpc.declare({
-        object: 'portweaver',
-        method: 'get_status',
+        object: "portweaver",
+        method: "get_status",
         expect: {}
     });
     const listProjects = rpc.declare({
-        object: 'portweaver',
-        method: 'list_projects',
+        object: "portweaver",
+        method: "list_projects",
         expect: {}
     });
     const setEnabled = rpc.declare({
-        object: 'portweaver',
-        method: 'set_enabled',
+        object: "portweaver",
+        method: "set_enabled",
         params: [
-            'id',
-            'enabled'
+            "id",
+            "enabled"
         ],
         expect: {}
     });
@@ -103,100 +103,99 @@ function createRpcClient(rpc) {
 class StatusPanel {
     render(status) {
         const statusColor = {
-            running: '#28a745',
-            stopped: '#dc3545',
-            degraded: '#ffc107'
-        }[status.status || ''] || '#6c757d';
+            running: "#28a745",
+            stopped: "#dc3545",
+            degraded: "#ffc107"
+        }[status.status || ""] || "#6c757d";
         return /*#__PURE__*/ createJsxElement("div", {
             style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;"
-        }, this.card(_('Status'), /*#__PURE__*/ createJsxElement("strong", {
+        }, this.card(_("Status"), /*#__PURE__*/ createJsxElement("strong", {
             style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
             id: "status-value"
-        }, status.status || '-')), this.card(_('Total Projects'), /*#__PURE__*/ createJsxElement("strong", {
+        }, status.status || "-")), this.card(_("Total Projects"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "total-projects-value"
-        }, status.total_projects || 0)), this.card(_('Active Ports'), /*#__PURE__*/ createJsxElement("strong", {
+        }, status.total_projects || 0)), this.card(_("Active Ports"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "active-ports-value"
-        }, status.active_ports || 0)), this.card(_('Uptime'), /*#__PURE__*/ createJsxElement("strong", {
+        }, status.active_ports || 0)), this.card(_("Uptime"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "uptime-value"
-        }, formatUptime(status.uptime || 0))), this.card(_('Traffic In'), /*#__PURE__*/ createJsxElement("strong", {
+        }, formatUptime(status.uptime || 0))), this.card(_("Traffic In"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "traffic-in-value"
-        }, formatBytes(status.total_bytes_in || 0))), this.card(_('Traffic Out'), /*#__PURE__*/ createJsxElement("strong", {
+        }, formatBytes(status.total_bytes_in || 0))), this.card(_("Traffic Out"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "traffic-out-value"
         }, formatBytes(status.total_bytes_out || 0))));
     }
     card(label, valueEl) {
-        return /*#__PURE__*/ createJsxElement(createJsxElement.Fragment, null, /*#__PURE__*/ createJsxElement("div", {
+        return /*#__PURE__*/ createJsxElement("div", {
             style: "border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;"
         }, /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;"
-        }, label), valueEl));
+        }, label), valueEl);
     }
-    constructor(){}
 }
 
 ;// CONCATENATED MODULE: ./components/FrpNodeSelector.tsx
 function createFrpNodeSelector(form, uci) {
     return form.Value.extend({
         _hiddenInputs: {},
-        renderWidget: function renderWidget(section_id, option_index, cfgvalue) {
-            let frp_sections = uci.sections('portweaver', 'frp_node') || [];
-            let current_value = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === 'string' ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
-            let node_map = {};
+        renderWidget: function renderWidget(section_id, _option_index, cfgvalue) {
+            const frp_sections = uci.sections("portweaver", "frp_node") || [];
+            const current_value = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === "string" ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
+            const node_map = {};
             for(let i = 0; i < current_value.length; i++){
-                let parts = current_value[i].split(':');
-                let node = parts[0];
-                let port = parts[1] || '';
+                const parts = current_value[i].split(":");
+                const node = parts[0];
+                const port = parts[1] || "";
                 node_map[node] = port;
             }
-            let widget_id = this.cbid(section_id);
+            const widget_id = this.cbid(section_id);
             // 存储所有元素引用
-            let checkboxes = [];
-            let portInputs = new Map();
+            const checkboxes = [];
+            const portInputs = new Map();
             let hiddenInput;
-            let updateHandler = function updateHandler() {
-                let values = [];
+            const updateHandler = ()=>{
+                const values = [];
                 for(let j = 0; j < checkboxes.length; j++){
-                    let cb = checkboxes[j];
+                    const cb = checkboxes[j];
                     if (cb.checked) {
-                        let node = cb.getAttribute('data-node');
-                        let port_inp = portInputs.get(node);
-                        let port = port_inp ? port_inp.value.trim() : '';
+                        const node = cb.getAttribute("data-node");
+                        const port_inp = portInputs.get(node);
+                        const port = port_inp ? port_inp.value.trim() : "";
                         if (port) {
-                            let p = parseInt(port, 10);
-                            if (isNaN(p) || p < 1 || p > 65535) {
-                                if (port_inp) port_inp.style.setProperty('border-color', 'red', 'important');
+                            const p = parseInt(port, 10);
+                            if (Number.isNaN(p) || p < 1 || p > 65535) {
+                                if (port_inp) port_inp.style.setProperty("border-color", "red", "important");
                                 continue;
-                            } else if (port_inp) port_inp.style.borderColor = '';
-                            values.push(node + ':' + port);
+                            } else if (port_inp) port_inp.style.borderColor = "";
+                            values.push("".concat(node, ":").concat(port));
                         } else values.push(node);
                     }
                 }
-                hiddenInput.value = values.join(' ');
+                hiddenInput.value = values.join(" ");
             };
-            let container = /*#__PURE__*/ createJsxElement("div", {
+            const container = /*#__PURE__*/ createJsxElement("div", {
                 class: "cbi-value-field"
             });
             if (frp_sections.length === 0) {
-                const emptyMsg = _('No FRP nodes configured. Please add FRP nodes first.');
+                const emptyMsg = _("No FRP nodes configured. Please add FRP nodes first.");
                 container.appendChild(/*#__PURE__*/ createJsxElement("em", {
                     style: "color: #999;"
                 }, emptyMsg));
             } else {
-                let table = /*#__PURE__*/ createJsxElement("table", {
+                const table = /*#__PURE__*/ createJsxElement("table", {
                     class: "table",
                     style: "margin: 0; width: auto;"
                 });
                 for(let i = 0; i < frp_sections.length; i++){
-                    let node_name = frp_sections[i]['name'] || frp_sections[i]['.name'];
+                    const node_name = frp_sections[i].name || frp_sections[i][".name"];
                     if (!node_name) continue;
-                    let is_checked = Object.prototype.hasOwnProperty.call(node_map, node_name);
-                    let port_value = node_map[node_name] || '';
-                    let checkbox = /*#__PURE__*/ createJsxElement("input", {
+                    const is_checked = Object.hasOwn(node_map, node_name);
+                    const port_value = node_map[node_name] || "";
+                    const checkbox = /*#__PURE__*/ createJsxElement("input", {
                         type: "checkbox",
                         class: "frp-node-checkbox",
                         "data-widget-id": widget_id,
@@ -212,7 +211,7 @@ function createFrpNodeSelector(form, uci) {
                         "data-node": node_name,
                         "data-section": section_id,
                         value: port_value,
-                        placeholder: _('default port'),
+                        placeholder: _("default port"),
                         style: "min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;",
                         disabled: !is_checked
                     });
@@ -220,26 +219,26 @@ function createFrpNodeSelector(form, uci) {
                     checkboxes.push(checkbox);
                     portInputs.set(node_name, port_input);
                     const port_input_area = /*#__PURE__*/ createJsxElement("td", {
-                        style: "padding: 4px 8px; border: none;" + (is_checked ? '' : 'display: none;')
-                    }, /*#__PURE__*/ createJsxElement("label", {
+                        style: "padding: 4px 8px; border: none;".concat(is_checked ? "" : "display: none;")
+                    }, /*#__PURE__*/ createJsxElement("span", {
                         style: "margin-right: 5px; color: #666;"
-                    }, _('Port:')), port_input);
-                    checkbox.addEventListener('change', (ev)=>{
+                    }, _("Port:")), port_input);
+                    checkbox.addEventListener("change", (ev)=>{
                         const element = ev.currentTarget;
                         port_input.disabled = !element.checked;
-                        port_input_area.style.display = element.checked ? '' : 'none';
-                        if (!element.checked) port_input.value = '';
+                        port_input_area.style.display = element.checked ? "" : "none";
+                        if (!element.checked) port_input.value = "";
                         updateHandler();
                     });
-                    port_input.addEventListener('input', updateHandler);
-                    port_input.addEventListener('change', updateHandler);
-                    let row = E('tr', {}, [
-                        E('td', {
-                            'style': 'padding: 4px 8px; border: none;'
+                    port_input.addEventListener("input", updateHandler);
+                    port_input.addEventListener("change", updateHandler);
+                    const row = E("tr", {}, [
+                        E("td", {
+                            style: "padding: 4px 8px; border: none;"
                         }, [
                             checkbox,
-                            E('label', {
-                                'style': 'cursor: pointer; font-weight: normal; margin: 0;'
+                            E("label", {
+                                style: "cursor: pointer; font-weight: normal; margin: 0;"
                             }, node_name)
                         ]),
                         port_input_area
@@ -252,21 +251,21 @@ function createFrpNodeSelector(form, uci) {
                 type: "hidden",
                 id: widget_id,
                 name: widget_id,
-                value: current_value.join(' ')
+                value: current_value.join(" ")
             });
             container.appendChild(hiddenInput);
             // 存储 hiddenInput 引用供 formvalue 方法使用
             this._hiddenInputs[section_id] = hiddenInput;
-            let description = /*#__PURE__*/ createJsxElement("div", {
+            const description = /*#__PURE__*/ createJsxElement("div", {
                 class: "cbi-value-description"
-            }, _('Select FRP nodes and optionally specify custom ports. Leave port empty to use default.'));
+            }, _("Select FRP nodes and optionally specify custom ports. Leave port empty to use default."));
             container.appendChild(description);
             return container;
         },
-        cfgvalue: function cfgvalue(section_id) {
-            let value = uci.get('portweaver', section_id, 'frp_nodes');
+        cfgvalue: (section_id)=>{
+            const value = uci.get("portweaver", section_id, "frp_nodes");
             if (Array.isArray(value)) return value;
-            if (typeof value === 'string') return String(value).split(/\s+/).filter(Boolean);
+            if (typeof value === "string") return String(value).split(/\s+/).filter(Boolean);
             return [];
         },
         isChanged: function isChanged(section_id) {
@@ -281,16 +280,16 @@ function createFrpNodeSelector(form, uci) {
             return false;
         },
         formvalue: function formvalue(section_id) {
-            let hidden = this._hiddenInputs[section_id];
+            const hidden = this._hiddenInputs[section_id];
             if (hidden) {
-                let result = hidden.value.split(/\s+/).filter(Boolean);
+                const result = hidden.value.split(/\s+/).filter(Boolean);
                 return result.length > 0 ? result : [];
             }
             return [];
         },
-        write: function write(section_id, formvalue) {
-            if (formvalue && formvalue.length > 0) return uci.set('portweaver', section_id, 'frp_nodes', formvalue);
-            else return uci.unset('portweaver', section_id, 'frp_nodes');
+        write: (section_id, formvalue)=>{
+            if (formvalue && formvalue.length > 0) return uci.set("portweaver", section_id, "frp_nodes", formvalue);
+            else return uci.unset("portweaver", section_id, "frp_nodes");
         }
     });
 }
@@ -334,26 +333,26 @@ function _object_spread(target) {
 
 function createPortMappingEditor(form, uci) {
     return form.Value.extend({
-        parseMapping: function parseMapping(str) {
-            if (!str || typeof str !== 'string') return null;
+        parseMapping: (str)=>{
+            if (!str || typeof str !== "string") return null;
             str = str.trim();
-            let mapping = {
-                listenPort: '',
-                targetPort: '',
+            const mapping = {
+                listenPort: "",
+                targetPort: "",
                 frpNodes: [],
-                protocol: 'tcp'
+                protocol: "tcp"
             };
-            let protocolMatch = str.match(/\/([a-z]+)$/);
+            const protocolMatch = str.match(/\/([a-z]+)$/);
             if (protocolMatch) {
                 mapping.protocol = protocolMatch[1].toLowerCase();
                 str = str.substring(0, protocolMatch.index);
             }
             let i = 0;
-            while(str[i] === '['){
-                let end = str.indexOf(']', i);
+            while(str[i] === "["){
+                const end = str.indexOf("]", i);
                 if (end === -1) break;
-                let content = str.substring(i + 1, end);
-                if (content.indexOf(':') !== -1 || /[a-zA-Z_-]/.test(content)) {
+                const content = str.substring(i + 1, end);
+                if (content.indexOf(":") !== -1 || /[a-zA-Z_-]/.test(content)) {
                     mapping.frpNodes.push(content);
                     i = end + 1;
                     continue;
@@ -365,50 +364,49 @@ function createPortMappingEditor(form, uci) {
                 }
                 break;
             }
-            let rest = str.substring(i);
+            const rest = str.substring(i);
             if (!mapping.listenPort) {
-                let parts0 = rest.split(':');
-                if (parts0.length >= 1) mapping.listenPort = parts0[0].trim().replace(/[\[\]]/g, '');
-                if (parts0.length >= 2) mapping.targetPort = parts0[1].trim().replace(/[\[\]]/g, '');
-            } else if (rest.startsWith(':')) mapping.targetPort = rest.substring(1).trim().replace(/[\[\]]/g, '');
+                const parts0 = rest.split(":");
+                if (parts0.length >= 1) mapping.listenPort = parts0[0].trim().replace(/[[\]]/g, "");
+                if (parts0.length >= 2) mapping.targetPort = parts0[1].trim().replace(/[[\]]/g, "");
+            } else if (rest.startsWith(":")) mapping.targetPort = rest.substring(1).trim().replace(/[[\]]/g, "");
             return mapping;
         },
-        buildString: function buildString(mapping) {
-            let result = '';
-            if (mapping.frpNodes && mapping.frpNodes.length > 0) mapping.frpNodes.forEach(function(node) {
-                result += '[' + node + ']';
+        buildString: (mapping)=>{
+            let result = "";
+            if (mapping.frpNodes && mapping.frpNodes.length > 0) mapping.frpNodes.forEach((node)=>{
+                result += "[".concat(node, "]");
             });
             if (mapping.listenPort) {
-                if (mapping.frpNodes && mapping.frpNodes.length > 0) result += '[' + mapping.listenPort + ']';
+                if (mapping.frpNodes && mapping.frpNodes.length > 0) result += "[".concat(mapping.listenPort, "]");
                 else result += mapping.listenPort;
             }
-            if (mapping.targetPort) result += ':' + mapping.targetPort;
-            if (mapping.protocol) result += '/' + mapping.protocol;
+            if (mapping.targetPort) result += ":".concat(mapping.targetPort);
+            if (mapping.protocol) result += "/".concat(mapping.protocol);
             return result;
         },
         renderWidget: function renderWidget(section_id, _option_index, cfgvalue) {
-            const frp_sections = uci.sections('portweaver', 'frp_node') || [];
-            const current_values = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === 'string' ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
+            const frp_sections = uci.sections("portweaver", "frp_node") || [];
+            const current_values = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === "string" ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
             const widget_id = this.cbid(section_id);
-            const self = this;
             const mappings_wrapper = /*#__PURE__*/ createJsxElement("div", {
                 id: "portmapping-wrapper-".concat(section_id)
             });
             const updateHiddenValue = ()=>{
-                const rows = mappings_wrapper.querySelectorAll('.portmapping-row');
+                const rows = mappings_wrapper.querySelectorAll(".portmapping-row");
                 const values = [];
                 rows.forEach((r)=>{
-                    const listen = r.querySelector('.listen-port-input').value.trim();
-                    const target = r.querySelector('.target-port-input').value.trim();
-                    const protocol = r.querySelector('.protocol-select').value;
+                    const listen = r.querySelector(".listen-port-input").value.trim();
+                    const target = r.querySelector(".target-port-input").value.trim();
+                    const protocol = r.querySelector(".protocol-select").value;
                     const frpNodes = [];
-                    const checkboxes = r.querySelectorAll('input.frp-node-checkbox-pm');
+                    const checkboxes = r.querySelectorAll("input.frp-node-checkbox-pm");
                     checkboxes.forEach((cb)=>{
                         if (cb.checked) {
-                            const node = cb.getAttribute('data-node');
-                            const port_inp = r.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
-                            const port = port_inp ? port_inp.value.trim() : '';
-                            frpNodes.push(port ? node + ':' + port : node);
+                            const node = cb.getAttribute("data-node");
+                            const port_inp = r.querySelector('input.frp-node-port-pm[data-node="'.concat(node, '"]'));
+                            const port = port_inp ? port_inp.value.trim() : "";
+                            frpNodes.push(port ? "".concat(node, ":").concat(port) : node);
                         }
                     });
                     const temp = {
@@ -417,20 +415,20 @@ function createPortMappingEditor(form, uci) {
                         frpNodes: frpNodes,
                         protocol: protocol
                     };
-                    const str = self.buildString(temp);
+                    const str = this.buildString(temp);
                     if (str && listen && target) values.push(str);
                 });
-                const hidden = document.getElementById('portmapping-hidden-' + section_id);
-                if (hidden) hidden.value = values.join(' ');
+                const hidden = document.getElementById("portmapping-hidden-".concat(section_id));
+                if (hidden) hidden.value = values.join(" ");
             };
             const renderMappingRow = (mapping_str, index)=>{
-                const mapping = self.parseMapping(mapping_str) || {
-                    listenPort: '',
-                    targetPort: '',
+                const mapping = this.parseMapping(mapping_str) || {
+                    listenPort: "",
+                    targetPort: "",
                     frpNodes: [],
-                    protocol: 'tcp'
+                    protocol: "tcp"
                 };
-                const row_id = 'portmapping-row-' + section_id + '-' + index;
+                const row_id = "portmapping-row-".concat(section_id, "-").concat(index);
                 let isTextMode = false;
                 const listenInput = /*#__PURE__*/ createJsxElement("input", {
                     type: "text",
@@ -438,7 +436,7 @@ function createPortMappingEditor(form, uci) {
                     "data-index": index,
                     "data-section": section_id,
                     value: mapping.listenPort,
-                    placeholder: _('8080 or 8080-8090'),
+                    placeholder: _("8080 or 8080-8090"),
                     style: "width: 70px; min-width: 50px; margin-right: 10px;"
                 });
                 const targetInput = /*#__PURE__*/ createJsxElement("input", {
@@ -447,7 +445,7 @@ function createPortMappingEditor(form, uci) {
                     "data-index": index,
                     "data-section": section_id,
                     value: mapping.targetPort,
-                    placeholder: _('80 or 80-90'),
+                    placeholder: _("80 or 80-90"),
                     style: "width: 70px; min-width: 50px; margin-right: 10px;"
                 });
                 const protocolSelect = /*#__PURE__*/ createJsxElement("select", {
@@ -457,38 +455,38 @@ function createPortMappingEditor(form, uci) {
                     style: "width: 100px; margin-right: 10px;"
                 }, /*#__PURE__*/ createJsxElement("option", {
                     value: "tcp",
-                    selected: mapping.protocol === 'tcp'
+                    selected: mapping.protocol === "tcp"
                 }, "TCP"), /*#__PURE__*/ createJsxElement("option", {
                     value: "udp",
-                    selected: mapping.protocol === 'udp'
+                    selected: mapping.protocol === "udp"
                 }, "UDP"), /*#__PURE__*/ createJsxElement("option", {
                     value: "both",
-                    selected: mapping.protocol === 'both'
+                    selected: mapping.protocol === "both"
                 }, "Both"));
                 const textModeInput = /*#__PURE__*/ createJsxElement("input", {
                     type: "text",
                     class: "text-mode-input",
                     value: mapping_str,
-                    placeholder: _('[8080][node1:9888]:80/tcp or 8080:80/tcp'),
+                    placeholder: _("[8080][node1:9888]:80/tcp or 8080:80/tcp"),
                     style: "width: 100%; margin-bottom: 10px; padding: 5px; display: none;"
                 });
                 const previewDiv = /*#__PURE__*/ createJsxElement("div", {
                     class: "portmapping-preview",
                     "data-index": index,
                     style: "margin-top: 8px; padding: 8px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
-                }, _('Preview: '), self.buildString(mapping));
+                }, _("Preview: "), this.buildString(mapping));
                 const updatePreview = ()=>{
                     const listen = listenInput.value.trim();
                     const target = targetInput.value.trim();
                     const protocol = protocolSelect.value;
                     const frpNodes = [];
-                    const allFrpCheckboxes = row.querySelectorAll('input.frp-node-checkbox-pm');
+                    const allFrpCheckboxes = row.querySelectorAll("input.frp-node-checkbox-pm");
                     allFrpCheckboxes.forEach((cb)=>{
                         if (cb.checked) {
-                            const node = cb.getAttribute('data-node');
-                            const port_inp = row.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
-                            const port = port_inp ? port_inp.value.trim() : '';
-                            frpNodes.push(port ? node + ':' + port : node);
+                            const node = cb.getAttribute("data-node");
+                            const port_inp = row.querySelector('input.frp-node-port-pm[data-node="'.concat(node, '"]'));
+                            const port = port_inp ? port_inp.value.trim() : "";
+                            frpNodes.push(port ? "".concat(node, ":").concat(port) : node);
                         }
                     });
                     const temp_mapping = {
@@ -497,8 +495,8 @@ function createPortMappingEditor(form, uci) {
                         frpNodes: frpNodes,
                         protocol: protocol
                     };
-                    const preview_str = self.buildString(temp_mapping);
-                    previewDiv.textContent = _('Preview: ') + preview_str;
+                    const preview_str = this.buildString(temp_mapping);
+                    previewDiv.textContent = _("Preview: ") + preview_str;
                     textModeInput.value = preview_str;
                 };
                 const frpContainer = /*#__PURE__*/ createJsxElement("div", {
@@ -506,15 +504,15 @@ function createPortMappingEditor(form, uci) {
                     style: "margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px; display: block;"
                 });
                 if (frp_sections.length > 0) {
-                    frpContainer.appendChild(/*#__PURE__*/ createJsxElement("label", {
+                    frpContainer.appendChild(/*#__PURE__*/ createJsxElement("span", {
                         style: "display: block; margin-bottom: 8px; font-weight: bold;"
-                    }, _('FRP Nodes (Optional):')));
+                    }, _("FRP Nodes (Optional):")));
                     frp_sections.forEach((frp_section)=>{
-                        const node_name = frp_section['name'] || frp_section['.name'];
+                        const node_name = frp_section.name || frp_section[".name"];
                         if (!node_name) return;
-                        const is_checked = (mapping.frpNodes || []).some((n)=>n.split(':')[0] === node_name);
-                        const found = (mapping.frpNodes || []).find((n)=>n.split(':')[0] === node_name);
-                        const port_value = found ? found.split(':')[1] || '' : '';
+                        const is_checked = (mapping.frpNodes || []).some((n)=>n.split(":")[0] === node_name);
+                        const found = (mapping.frpNodes || []).find((n)=>n.split(":")[0] === node_name);
+                        const port_value = found ? found.split(":")[1] || "" : "";
                         const checkbox = /*#__PURE__*/ createJsxElement("input", {
                             type: "checkbox",
                             class: "frp-node-checkbox-pm",
@@ -531,7 +529,7 @@ function createPortMappingEditor(form, uci) {
                             "data-index": index,
                             "data-section": section_id,
                             value: port_value,
-                            placeholder: _('default'),
+                            placeholder: _("default"),
                             style: "width: 80px; margin-right: 15px;"
                         }, is_checked ? {} : {
                             hidden: true
@@ -541,8 +539,8 @@ function createPortMappingEditor(form, uci) {
                             if (!inputEl) return;
                             port_input.hidden = !inputEl.checked;
                             if (!inputEl.checked) {
-                                port_input.value = '';
-                                port_input.style.borderColor = '';
+                                port_input.value = "";
+                                port_input.style.borderColor = "";
                             }
                             updatePreview();
                             updateHiddenValue();
@@ -551,9 +549,9 @@ function createPortMappingEditor(form, uci) {
                             const port = port_input.value.trim();
                             if (port) {
                                 const p = parseInt(port, 10);
-                                if (isNaN(p) || p < 1 || p > 65535) port_input.style.setProperty('border-color', 'red', 'important');
-                                else port_input.style.borderColor = '';
-                            } else port_input.style.borderColor = '';
+                                if (Number.isNaN(p) || p < 1 || p > 65535) port_input.style.setProperty("border-color", "red", "important");
+                                else port_input.style.borderColor = "";
+                            } else port_input.style.borderColor = "";
                             updatePreview();
                             updateHiddenValue();
                         };
@@ -561,15 +559,15 @@ function createPortMappingEditor(form, uci) {
                         port_input.onchange = handlePortChange;
                         frpContainer.appendChild(/*#__PURE__*/ createJsxElement("div", {
                             style: "margin-bottom: 5px;"
-                        }, checkbox, /*#__PURE__*/ createJsxElement("label", {
+                        }, checkbox, /*#__PURE__*/ createJsxElement("span", {
                             style: "margin-right: 10px; cursor: pointer;"
-                        }, node_name), /*#__PURE__*/ createJsxElement("label", {
+                        }, node_name), /*#__PURE__*/ createJsxElement("span", {
                             style: "margin-right: 5px;"
-                        }, _('Port:')), port_input));
+                        }, _("Port:")), port_input));
                     });
                 } else frpContainer.appendChild(/*#__PURE__*/ createJsxElement("em", {
                     style: "color: #999;"
-                }, _('No FRP nodes configured')));
+                }, _("No FRP nodes configured")));
                 const errorDiv = /*#__PURE__*/ createJsxElement("div", {
                     class: "portmapping-error",
                     "data-index": index,
@@ -577,25 +575,25 @@ function createPortMappingEditor(form, uci) {
                 });
                 const titleRow = /*#__PURE__*/ createJsxElement("div", {
                     style: "display: flex; gap: 10px; align-items: center;"
-                }, /*#__PURE__*/ createJsxElement("label", {
+                }, /*#__PURE__*/ createJsxElement("span", {
                     style: "min-width: 80px; font-weight: bold;"
-                }, _('Listen Port:')), listenInput, /*#__PURE__*/ createJsxElement("label", {
+                }, _("Listen Port:")), listenInput, /*#__PURE__*/ createJsxElement("span", {
                     style: "min-width: 80px; font-weight: bold;"
-                }, _('Target Port:')), targetInput, /*#__PURE__*/ createJsxElement("label", {
+                }, _("Target Port:")), targetInput, /*#__PURE__*/ createJsxElement("span", {
                     style: "min-width: 60px; font-weight: bold;"
-                }, _('Protocol:')), protocolSelect);
+                }, _("Protocol:")), protocolSelect);
                 const modeToggleBtn = /*#__PURE__*/ createJsxElement("button", {
                     type: "button",
                     class: "btn btn-xs",
                     style: "margin-bottom: 10px; margin-right: 10px;"
-                }, _('Text Edit'));
+                }, _("Text Edit"));
                 const deleteBtn = /*#__PURE__*/ createJsxElement("button", {
                     type: "button",
                     class: "btn btn-sm btn-danger",
                     "data-index": index,
                     "data-section": section_id,
                     style: "margin-top: 10px; margin-left: 10px;"
-                }, _('Delete'));
+                }, _("Delete"));
                 const row = /*#__PURE__*/ createJsxElement("div", {
                     id: row_id,
                     class: "portmapping-row",
@@ -614,41 +612,41 @@ function createPortMappingEditor(form, uci) {
                 textModeInput.oninput = (ev)=>{
                     const inputEl = ev.currentTarget;
                     if (!inputEl) return;
-                    const parsed = self.parseMapping(inputEl.value);
+                    const parsed = this.parseMapping(inputEl.value);
                     if (parsed) {
                         listenInput.value = parsed.listenPort;
                         targetInput.value = parsed.targetPort;
                         protocolSelect.value = parsed.protocol;
-                        const allCheckboxes = row.querySelectorAll('input.frp-node-checkbox-pm');
+                        const allCheckboxes = row.querySelectorAll("input.frp-node-checkbox-pm");
                         allCheckboxes.forEach((cb)=>{
-                            const node = cb.getAttribute('data-node');
-                            const is_checked = (parsed.frpNodes || []).some((n)=>n.split(':')[0] === node);
+                            const node = cb.getAttribute("data-node");
+                            const is_checked = (parsed.frpNodes || []).some((n)=>n.split(":")[0] === node);
                             cb.checked = is_checked;
-                            const port_inp = row.querySelector('input.frp-node-port-pm[data-node="' + node + '"]');
+                            const port_inp = row.querySelector('input.frp-node-port-pm[data-node="'.concat(node, '"]'));
                             if (port_inp) {
                                 port_inp.hidden = !is_checked;
                                 if (is_checked) {
-                                    const foundNode = (parsed.frpNodes || []).find((n)=>n.split(':')[0] === node);
+                                    const foundNode = (parsed.frpNodes || []).find((n)=>n.split(":")[0] === node);
                                     if (foundNode) {
-                                        const parts = foundNode.split(':');
-                                        port_inp.value = parts.length > 1 ? parts[1] : '';
+                                        const parts = foundNode.split(":");
+                                        port_inp.value = parts.length > 1 ? parts[1] : "";
                                     }
-                                } else port_inp.value = '';
+                                } else port_inp.value = "";
                             }
                         });
                         updateHiddenValue();
                     }
                 };
-                modeToggleBtn.onclick = function renderMappingRow(e) {
+                modeToggleBtn.onclick = (e)=>{
                     e.preventDefault();
                     isTextMode = !isTextMode;
-                    titleRow.style.display = isTextMode ? 'none' : 'flex';
-                    frpContainer.style.display = isTextMode ? 'none' : 'block';
-                    textModeInput.style.display = isTextMode ? 'block' : 'none';
-                    previewDiv.style.display = isTextMode ? 'none' : 'block';
-                    modeToggleBtn.textContent = isTextMode ? _('Visual Edit') : _('Text Edit');
+                    titleRow.style.display = isTextMode ? "none" : "flex";
+                    frpContainer.style.display = isTextMode ? "none" : "block";
+                    textModeInput.style.display = isTextMode ? "block" : "none";
+                    previewDiv.style.display = isTextMode ? "none" : "block";
+                    modeToggleBtn.textContent = isTextMode ? _("Visual Edit") : _("Text Edit");
                 };
-                deleteBtn.onclick = function(e) {
+                deleteBtn.onclick = (e)=>{
                     e.preventDefault();
                     row.remove();
                     updateHiddenValue();
@@ -660,41 +658,41 @@ function createPortMappingEditor(form, uci) {
                 type: "button",
                 class: "btn btn-sm btn-primary",
                 style: "margin-bottom: 10px;"
-            }, _('Add Port Mapping'));
-            addBtn.onclick = function(e) {
+            }, _("Add Port Mapping"));
+            addBtn.onclick = (e)=>{
                 e.preventDefault();
-                const rows = mappings_wrapper.querySelectorAll('.portmapping-row');
+                const rows = mappings_wrapper.querySelectorAll(".portmapping-row");
                 const new_index = rows.length;
-                mappings_wrapper.appendChild(renderMappingRow('', new_index));
+                mappings_wrapper.appendChild(renderMappingRow("", new_index));
             };
             const hidden = /*#__PURE__*/ createJsxElement("input", {
                 type: "hidden",
                 id: "portmapping-hidden-".concat(section_id),
                 name: widget_id,
-                value: current_values.join(' ')
+                value: current_values.join(" ")
             });
             const container = /*#__PURE__*/ createJsxElement("div", {
                 class: "cbi-value-field"
             }, addBtn, mappings_wrapper, hidden, /*#__PURE__*/ createJsxElement("div", {
                 class: "cbi-value-description"
-            }, _('Configure port forwarding rules. Listen Port and Target Port support single port (8080) or port range (8080-8090).')));
+            }, _("Configure port forwarding rules. Listen Port and Target Port support single port (8080) or port range (8080-8090).")));
             return container;
         },
-        cfgvalue: function cfgvalue(section_id) {
-            let value = uci.get('portweaver', section_id, 'port_mapping');
+        cfgvalue: (section_id)=>{
+            const value = uci.get("portweaver", section_id, "port_mapping");
             if (Array.isArray(value)) return value;
-            if (typeof value === 'string') return String(value).split(/\s+/).filter(Boolean);
+            if (typeof value === "string") return String(value).split(/\s+/).filter(Boolean);
             return [];
         },
-        formvalue: function formvalue(section_id) {
-            let hidden = document.getElementById('portmapping-hidden-' + section_id);
-            if (hidden && hidden.value) return hidden.value.split(/\s+/).filter(Boolean);
+        formvalue: (section_id)=>{
+            const hidden = document.getElementById("portmapping-hidden-".concat(section_id));
+            if (hidden === null || hidden === void 0 ? void 0 : hidden.value) return hidden.value.split(/\s+/).filter(Boolean);
             return null;
         },
-        write: function write(section_id, formvalue) {
-            console.log('Writing port mapping for section:', section_id, 'with value:', formvalue);
-            if (formvalue && formvalue.length > 0) return uci.set('portweaver', section_id, 'port_mapping', formvalue);
-            else return uci.unset('portweaver', section_id, 'port_mapping');
+        write: (section_id, formvalue)=>{
+            console.log("Writing port mapping for section:", section_id, "with value:", formvalue);
+            if (formvalue && formvalue.length > 0) return uci.set("portweaver", section_id, "port_mapping", formvalue);
+            else return uci.unset("portweaver", section_id, "port_mapping");
         }
     });
 }
@@ -714,40 +712,34 @@ const main_uci = L.uci;
 const poll = L.Poll;
 const rpcClient = createRpcClient(main_rpc);
 /* export default */ const main = (view.extend({
-    load: function load() {
-        return Promise.all([
-            main_uci.load('portweaver'),
-            main_uci.load('firewall'),
-            rpcClient.getStatus().then(function(res) {
-                return res || {};
-            }).catch(function(err) {
-                console.warn('ubus get_status failed:', err);
+    load: ()=>Promise.all([
+            main_uci.load("portweaver"),
+            main_uci.load("firewall"),
+            rpcClient.getStatus().then((res)=>res || {}).catch((err)=>{
+                console.warn("ubus get_status failed:", err);
                 return {};
             }),
-            rpcClient.listProjects().then(function(res) {
-                return res || {
+            rpcClient.listProjects().then((res)=>res || {
                     projects: []
-                };
-            }).catch(function(err) {
-                console.warn('ubus list_projects failed:', err);
+                }).catch((err)=>{
+                console.warn("ubus list_projects failed:", err);
                 return {
                     projects: []
                 };
             })
-        ]);
-    },
-    render: function render(data) {
+        ]),
+    render: (data)=>{
         let m, s, o;
         let globalStatus = data[2] || {};
         let projectStatuses = data[3] ? data[3].projects || [] : [];
-        const getProjectIndex = function getProjectIndex(section_id) {
-            const sections = main_uci.sections('portweaver', 'project');
+        const getProjectIndex = (section_id)=>{
+            const sections = main_uci.sections("portweaver", "project");
             for(let i = 0; i < sections.length; i++){
-                if (sections[i]['.name'] === section_id) return i;
+                if (sections[i][".name"] === section_id) return i;
             }
             return -1;
         };
-        const getProjectStatus = function getProjectStatus(section_id) {
+        const getProjectStatus = (section_id)=>{
             const idx = getProjectIndex(section_id);
             return idx >= 0 && projectStatuses && projectStatuses[idx] ? projectStatuses[idx] : null;
         };
@@ -755,416 +747,409 @@ const rpcClient = createRpcClient(main_rpc);
             if (!status) return [
                 /*#__PURE__*/ createJsxElement("span", {
                     style: "color: gray;"
-                }, _('N/A'))
+                }, _("N/A"))
             ];
-            const startupFailed = status.startup_status === 'failed';
-            const statusColor = status.status === 'running' && !startupFailed ? 'green' : '#dc3545';
+            const startupFailed = status.startup_status === "failed";
+            const statusColor = status.status === "running" && !startupFailed ? "green" : "#dc3545";
             let errorMessage = null;
             if (startupFailed && status.error_code !== undefined && status.error_code !== 0) errorMessage = getErrorMessage(status.error_code);
             const statusBadgeAttrs = {
-                'class': 'ifacebadge',
-                'style': ''
+                class: "ifacebadge",
+                style: ""
             };
             if (errorMessage) {
                 statusBadgeAttrs.title = errorMessage;
-                statusBadgeAttrs.style += ' cursor: help;';
+                statusBadgeAttrs.style += " cursor: help;";
             }
             const statusElements = [
-                E('div', {}, [
-                    E('span', statusBadgeAttrs, [
-                        E('strong', {
-                            style: 'font-size: 1em; font-weight: 600; color: ' + statusColor + ';'
-                        }, startupFailed ? 'failed' : status.status || 'unknown')
+                E("div", {}, [
+                    E("span", statusBadgeAttrs, [
+                        E("strong", {
+                            style: "font-size: 1em; font-weight: 600; color: " + statusColor + ";"
+                        }, startupFailed ? "failed" : status.status || "unknown")
                     ])
                 ])
             ];
-            if (errorMessage && status.status !== 'stopped') statusElements.push(E('small', {
-                'style': 'color: #dc3545; margin-top: 0.3em;'
+            if (errorMessage && status.status !== "stopped") statusElements.push(E("small", {
+                style: "color: #dc3545; margin-top: 0.3em;"
             }, [
-                "\u26A0 " + errorMessage
+                "\u26A0 ".concat(errorMessage)
             ]));
             else {
-                let elements = [];
+                const elements = [];
                 if ((status.active_ports || 0) > 0) {
-                    elements.push(E('span', {}, _('Ports: ') + (status.active_ports || 0)));
-                    elements.push(E('br'));
+                    elements.push(E("span", {}, _("Ports: ") + (status.active_ports || 0)));
+                    elements.push(E("br"));
                 }
-                if ((status.bytes_in || 0) && (status.bytes_out || 0)) elements.push(E('span', {}, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
-                statusElements.push(E('small', {}, elements));
+                if ((status.bytes_in || 0) && (status.bytes_out || 0)) elements.push(E("span", {}, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
+                statusElements.push(E("small", {}, elements));
             }
             return statusElements;
         }
-        m = new main_form.Map('portweaver', _('PortWeaver'), _('Port forwarding and NAT traversal configuration'));
+        m = new main_form.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration"));
         // Setup auto-refresh
-        poll.add(function() {
-            const updateText = function updateText(id, value) {
+        poll.add(async ()=>{
+            const updateText = (id, value)=>{
                 const elem = document.getElementById(id);
                 if (elem) elem.textContent = String(value);
             };
-            return Promise.all([
-                rpcClient.getStatus(),
-                rpcClient.listProjects()
-            ]).then(function(results) {
+            try {
+                var _results_;
+                const results = await Promise.all([
+                    rpcClient.getStatus(),
+                    rpcClient.listProjects()
+                ]);
                 globalStatus = results[0] || {};
-                projectStatuses = results[1] && results[1].projects ? results[1].projects : [];
-                const statusElem = document.getElementById('status-value');
+                projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
+                const statusElem = document.getElementById("status-value");
                 const statusColors = {
-                    'running': 'green',
-                    'stopped': 'red',
-                    'degraded': 'orange'
+                    running: "green",
+                    stopped: "red",
+                    degraded: "orange"
                 };
                 if (statusElem) {
-                    statusElem.textContent = globalStatus.status || '-';
-                    statusElem.style.color = statusColors[globalStatus.status || ''] || 'gray';
+                    statusElem.textContent = globalStatus.status || "-";
+                    statusElem.style.color = statusColors[globalStatus.status || ""] || "gray";
                 }
-                updateText('total-projects-value', globalStatus.total_projects || 0);
-                updateText('active-ports-value', globalStatus.active_ports || 0);
-                updateText('uptime-value', formatUptime(globalStatus.uptime || 0));
-                updateText('traffic-in-value', formatBytes(globalStatus.total_bytes_in || 0));
-                updateText('traffic-out-value', formatBytes(globalStatus.total_bytes_out || 0));
-                (function() {
-                    const sections = main_uci.sections('portweaver', 'project') || [];
+                updateText("total-projects-value", globalStatus.total_projects || 0);
+                updateText("active-ports-value", globalStatus.active_ports || 0);
+                updateText("uptime-value", formatUptime(globalStatus.uptime || 0));
+                updateText("traffic-in-value", formatBytes(globalStatus.total_bytes_in || 0));
+                updateText("traffic-out-value", formatBytes(globalStatus.total_bytes_out || 0));
+                (()=>{
+                    const sections = main_uci.sections("portweaver", "project") || [];
                     for(let i = 0; i < sections.length; i++){
-                        const section_id = sections[i]['.name'];
+                        const section_id = sections[i][".name"];
                         if (!section_id) continue;
                         const status = getProjectStatus(section_id);
-                        const section = document.getElementById('project-status-' + section_id);
+                        const section = document.getElementById("project-status-".concat(section_id));
                         if (!section) continue;
                         const newStatusElements = renderStatusElements(status, section_id);
-                        section.replaceWith(E('div', {
-                            'id': 'project-status-' + section_id
+                        section.replaceWith(E("div", {
+                            id: "project-status-".concat(section_id)
                         }, newStatusElements));
                     }
                 })();
-            }).catch(function(err) {
-                console.warn('Auto-refresh failed:', err);
-            });
+            } catch (err) {
+                console.warn("Auto-refresh failed:", err);
+            }
         }, 3);
         // Global settings section
-        s = m.section(main_form.NamedSection, 'global', 'global', _('Global Settings'));
-        o = s.option(main_form.Flag, 'enabled', _('Enable PortWeaver'));
-        o.default = '1';
+        s = m.section(main_form.NamedSection, "global", "global", _("Global Settings"));
+        o = s.option(main_form.Flag, "enabled", _("Enable PortWeaver"));
+        o.default = "1";
         o.rmempty = false;
         // Runtime status display (component)
-        o = s.option(main_form.DummyValue, '_runtime_status', _('Runtime Status'));
+        o = s.option(main_form.DummyValue, "_runtime_status", _("Runtime Status"));
         o.rawhtml = true;
-        o.cfgvalue = function() {
+        o.cfgvalue = ()=>{
             const panel = new StatusPanel();
             return panel.render(globalStatus);
         };
         // Helper to toggle runtime enable via RPC
-        const runtimeToggle = function runtimeToggle(section_id) {
+        const runtimeToggle = (section_id)=>{
             const idx = getProjectIndex(section_id);
             if (idx < 0) {
-                ui.addNotification(null, E('p', _('Could not determine project index')), 'error');
+                ui.addNotification(null, E("p", _("Could not determine project index")), "error");
                 return Promise.resolve();
             }
             const status = getProjectStatus(section_id);
-            const newEnabled = !(status && status.enabled);
-            return rpcClient.setEnabled(idx, !!newEnabled).then(function() {
-                ui.addNotification(null, E('p', _('Runtime state updated to: ') + (newEnabled ? _('enabled') : _('disabled'))), 'info');
+            const newEnabled = !(status === null || status === void 0 ? void 0 : status.enabled);
+            return rpcClient.setEnabled(idx, !!newEnabled).then(()=>{
+                ui.addNotification(null, E("p", _("Runtime state updated to: ") + (newEnabled ? _("enabled") : _("disabled"))), "info");
                 return Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects()
-                ]).then(function(results) {
+                ]).then((results)=>{
+                    var _results_;
                     globalStatus = results[0] || {};
-                    projectStatuses = results[1] && results[1].projects ? results[1].projects : [];
+                    projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
                     location.reload();
                 });
-            }).catch(function(err) {
-                ui.addNotification(null, E('p', _('Failed to toggle runtime state: ') + ((err === null || err === void 0 ? void 0 : err.message) || String(err))), 'error');
+            }).catch((err)=>{
+                ui.addNotification(null, E("p", _("Failed to toggle runtime state: ") + ((err === null || err === void 0 ? void 0 : err.message) || String(err))), "error");
             });
         };
         window.portweaverToggle = runtimeToggle;
         // Port forwarding rules section
-        s = m.section(main_form.GridSection, 'project', _('Port Forwarding Projects'), _('Configure port forwarding projects for PortWeaver'));
+        s = m.section(main_form.GridSection, "project", _("Port Forwarding Projects"), _("Configure port forwarding projects for PortWeaver"));
         s.anonymous = true;
         s.addremove = true;
         s.sortable = true;
         s.cloneable = true;
-        s.sectiontitle = function(section_id) {
-            return main_uci.get('portweaver', section_id, 'remark') || _('Unnamed project');
-        };
+        s.sectiontitle = (section_id)=>main_uci.get("portweaver", section_id, "remark") || _("Unnamed project");
         // Runtime status indicator column
-        o = s.option(main_form.DummyValue, '_runtime_status', _('Status'));
+        o = s.option(main_form.DummyValue, "_runtime_status", _("Status"));
         o.modalonly = false;
-        o.textvalue = function(section_id) {
+        o.textvalue = (section_id)=>{
             const status = getProjectStatus(section_id);
-            return E('div', {
-                'id': 'project-status-' + section_id
+            return E("div", {
+                id: "project-status-".concat(section_id)
             }, renderStatusElements(status, section_id));
         };
         // Runtime toggle column
-        o = s.option(main_form.Button, '_runtime_toggle', _('Toggle'));
+        o = s.option(main_form.Button, "_runtime_toggle", _("Toggle"));
         o.modalonly = false;
         o.editable = true;
-        o.inputtitle = function(section_id) {
+        o.inputtitle = (section_id)=>{
             const status = getProjectStatus(section_id);
-            return status && status.enabled ? _('Disable') : _('Enable');
+            return (status === null || status === void 0 ? void 0 : status.enabled) ? _("Disable") : _("Enable");
         };
-        o.onclick = function(_ev, section_id) {
-            return window.portweaverToggle(section_id);
-        };
-        o = s.option(main_form.Flag, 'enabled', _('Enabled'));
+        o.onclick = (_ev, section_id)=>window.portweaverToggle(section_id);
+        o = s.option(main_form.Flag, "enabled", _("Enabled"));
         o.modalonly = false;
-        o.default = '1';
+        o.default = "1";
         o.editable = true;
         // Preview column
-        o = s.option(main_form.DummyValue, '_preview', _('Overview'));
+        o = s.option(main_form.DummyValue, "_preview", _("Overview"));
         o.modalonly = false;
-        o.textvalue = function(section_id) {
-            const protocol = main_uci.get('portweaver', section_id, 'protocol') || 'tcp';
-            const family = main_uci.get('portweaver', section_id, 'family') || 'any';
-            const listen_port = main_uci.get('portweaver', section_id, 'listen_port') || '';
-            const target_address = main_uci.get('portweaver', section_id, 'target_address') || '';
-            const target_port = main_uci.get('portweaver', section_id, 'target_port') || '';
-            const port_mappings = L.toArray(main_uci.get('portweaver', section_id, 'port_mapping'));
-            const src_zones = L.toArray(main_uci.get('portweaver', section_id, 'src_zone'));
-            const dest_zones = L.toArray(main_uci.get('portweaver', section_id, 'dest_zone'));
+        o.textvalue = (section_id)=>{
+            const protocol = main_uci.get("portweaver", section_id, "protocol") || "tcp";
+            const family = main_uci.get("portweaver", section_id, "family") || "any";
+            const listen_port = main_uci.get("portweaver", section_id, "listen_port") || "";
+            const target_address = main_uci.get("portweaver", section_id, "target_address") || "";
+            const target_port = main_uci.get("portweaver", section_id, "target_port") || "";
+            const port_mappings = L.toArray(main_uci.get("portweaver", section_id, "port_mapping"));
+            const src_zones = L.toArray(main_uci.get("portweaver", section_id, "src_zone"));
+            const dest_zones = L.toArray(main_uci.get("portweaver", section_id, "dest_zone"));
             const proto_text = {
-                'both': _('TCP and UDP'),
-                'tcp': 'TCP',
-                'udp': 'UDP'
+                both: _("TCP and UDP"),
+                tcp: "TCP",
+                udp: "UDP"
             }[protocol] || String(protocol).toUpperCase();
             const family_text = {
-                'any': _('IPv4 and IPv6'),
-                'ipv4': 'IPv4',
-                'ipv6': 'IPv6'
+                any: _("IPv4 and IPv6"),
+                ipv4: "IPv4",
+                ipv6: "IPv6"
             }[family] || family;
             const lines = [];
-            lines.push(E('span', {}, [
-                _('Incoming '),
-                E('var', {}, family_text),
-                _(' protocol '),
-                E('var', {}, proto_text)
+            lines.push(E("span", {}, [
+                _("Incoming "),
+                E("var", {}, family_text),
+                _(" protocol "),
+                E("var", {}, proto_text)
             ]));
             if (src_zones.length > 0) {
-                const src_badges = src_zones.map(function(z) {
-                    return E('span', {
-                        'class': 'zonebadge',
-                        'style': fwmodel.getZoneColorStyle(z)
+                const src_badges = src_zones.map((z)=>E("span", {
+                        class: "zonebadge",
+                        style: fwmodel.getZoneColorStyle(z)
                     }, [
-                        E('strong', {}, z || E('em', _('any zone')))
-                    ]);
-                });
-                lines.push(E('br'));
-                lines.push(E('span', {}, [
-                    _('From '),
+                        E("strong", {}, z || E("em", _("any zone")))
+                    ]));
+                lines.push(E("br"));
+                lines.push(E("span", {}, [
+                    _("From "),
                     ...src_badges
                 ]));
             }
             if (port_mappings.length > 0) {
-                lines.push(E('br'));
-                lines.push(E('span', {}, [
-                    E('strong', {
-                        style: 'color: #09c;'
-                    }, _('Multi-Port')),
-                    _(' - '),
-                    E('var', {}, port_mappings.length),
-                    _(' mapping(s)')
+                lines.push(E("br"));
+                lines.push(E("span", {}, [
+                    E("strong", {
+                        style: "color: #09c;"
+                    }, _("Multi-Port")),
+                    _(" - "),
+                    E("var", {}, port_mappings.length),
+                    _(" mapping(s)")
                 ]));
                 const first = port_mappings[0];
-                lines.push(E('br'));
-                lines.push(E('span', {}, [
-                    _('e.g. '),
-                    E('var', {}, first)
+                lines.push(E("br"));
+                lines.push(E("span", {}, [
+                    _("e.g. "),
+                    E("var", {}, first)
                 ]));
             } else if (listen_port) {
-                lines.push(E('br'));
-                lines.push(E('span', {}, [
-                    _('Port '),
-                    E('var', {}, listen_port)
+                lines.push(E("br"));
+                lines.push(E("span", {}, [
+                    _("Port "),
+                    E("var", {}, listen_port)
                 ]));
             }
-            lines.push(E('br'));
-            lines.push(E('span', {}, [
-                E('var', {
-                    'data-tooltip': 'Forward'
-                }, _('Forward')),
-                _(' to ')
+            lines.push(E("br"));
+            lines.push(E("span", {}, [
+                E("var", {
+                    "data-tooltip": "Forward"
+                }, _("Forward")),
+                _(" to ")
             ]));
             if (dest_zones.length > 0) {
-                const dest_badges = dest_zones.map(function(z) {
-                    return E('span', {
-                        'class': 'zonebadge',
-                        'style': fwmodel.getZoneColorStyle(z)
+                const dest_badges = dest_zones.map((z)=>E("span", {
+                        class: "zonebadge",
+                        style: fwmodel.getZoneColorStyle(z)
                     }, [
-                        E('strong', {}, z || E('em', _('any zone')))
-                    ]);
-                });
+                        E("strong", {}, z || E("em", _("any zone")))
+                    ]));
                 lines.push(...dest_badges);
-                lines.push(_(' '));
+                lines.push(_(" "));
             }
-            if (target_address) lines.push(E('span', {}, [
-                _('IP '),
-                E('var', {}, target_address)
+            if (target_address) lines.push(E("span", {}, [
+                _("IP "),
+                E("var", {}, target_address)
             ]));
-            if (port_mappings.length === 0 && target_port) lines.push(E('span', {}, [
-                _(' port '),
-                E('var', {}, target_port)
+            if (port_mappings.length === 0 && target_port) lines.push(E("span", {}, [
+                _(" port "),
+                E("var", {}, target_port)
             ]));
-            return E('small', {}, lines);
+            return E("small", {}, lines);
         };
         // Modal configuration fields
-        o = s.option(main_form.Value, 'remark', _('Remark'));
+        o = s.option(main_form.Value, "remark", _("Remark"));
         o.modalonly = true;
         o.rmempty = false;
-        o.datatype = 'string';
-        o.validate = function(_section_id, value) {
-            if (!value || String(value).trim() === '') return _('This field is required');
+        o.datatype = "string";
+        o.validate = (_section_id, value)=>{
+            if (!value || String(value).trim() === "") return _("This field is required");
             return true;
         };
-        o.placeholder = 'My Project';
-        o = s.option(main_form.Flag, 'enabled', _('Enabled'));
+        o.placeholder = "My Project";
+        o = s.option(main_form.Flag, "enabled", _("Enabled"));
         o.modalonly = true;
-        o.default = '1';
-        o = s.option(widgets.ZoneSelect, 'src_zone', _('Source Zones'));
-        o.modalonly = true;
-        o.multiple = true;
-        o.nocreate = false;
-        o.allowlocal = false;
-        o.default = 'wan';
-        o.rmempty = true;
-        o = s.option(widgets.ZoneSelect, 'dest_zone', _('Destination Zones'));
+        o.default = "1";
+        o = s.option(widgets.ZoneSelect, "src_zone", _("Source Zones"));
         o.modalonly = true;
         o.multiple = true;
         o.nocreate = false;
         o.allowlocal = false;
-        o.default = 'lan';
+        o.default = "wan";
         o.rmempty = true;
-        o = s.option(main_form.ListValue, 'family', _('Address Family'));
+        o = s.option(widgets.ZoneSelect, "dest_zone", _("Destination Zones"));
         o.modalonly = true;
-        o.value('any', _('IPv4 and IPv6'));
-        o.value('ipv4', 'IPv4');
-        o.value('ipv6', 'IPv6');
-        o.default = 'any';
-        o = s.option(main_form.Value, 'target_address', _('Target Address'));
+        o.multiple = true;
+        o.nocreate = false;
+        o.allowlocal = false;
+        o.default = "lan";
+        o.rmempty = true;
+        o = s.option(main_form.ListValue, "family", _("Address Family"));
+        o.modalonly = true;
+        o.value("any", _("IPv4 and IPv6"));
+        o.value("ipv4", "IPv4");
+        o.value("ipv6", "IPv6");
+        o.default = "any";
+        o = s.option(main_form.Value, "target_address", _("Target Address"));
         o.modalonly = true;
         o.rmempty = false;
-        o.datatype = 'host';
-        o.placeholder = '192.168.1.100';
-        o.validate = function(_section_id, value) {
-            if (!value || String(value).trim() === '') return _('This field is required');
+        o.datatype = "host";
+        o.placeholder = "192.168.1.100";
+        o.validate = (_section_id, value)=>{
+            if (!value || String(value).trim() === "") return _("This field is required");
             return true;
         };
         // Port mode switcher
-        o = s.option(main_form.Flag, 'use_port_mappings', _('Use Port Mappings Mode'));
+        o = s.option(main_form.Flag, "use_port_mappings", _("Use Port Mappings Mode"));
         o.modalonly = true;
         o.rmempty = true;
-        o.default = '0';
-        o.description = _('Enable to configure multiple port mappings or port ranges. Disable for single port mode.');
+        o.default = "0";
+        o.description = _("Enable to configure multiple port mappings or port ranges. Disable for single port mode.");
         // Single port mode
-        o = s.option(main_form.ListValue, 'protocol', _('Protocol'));
+        o = s.option(main_form.ListValue, "protocol", _("Protocol"));
         o.modalonly = true;
-        o.value('both', _('TCP and UDP'));
-        o.value('tcp', 'TCP');
-        o.value('udp', 'UDP');
-        o.default = 'tcp';
-        o.depends('use_port_mappings', '0');
+        o.value("both", _("TCP and UDP"));
+        o.value("tcp", "TCP");
+        o.value("udp", "UDP");
+        o.default = "tcp";
+        o.depends("use_port_mappings", "0");
         // FRP node selector component factory
         const FrpNodeSelector = createFrpNodeSelector(main_form, main_uci);
-        o = s.option(FrpNodeSelector, 'frp_nodes', _('FRP Tunnels'));
+        o = s.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
         o.modalonly = true;
         o.rmempty = true;
-        o.depends('use_port_mappings', '0');
-        o.depends('enable_app_forward', '1');
+        o.depends("use_port_mappings", "0");
+        o.depends("enable_app_forward", "1");
         // Port Mapping Editor component factory
         const PortMappingEditor = createPortMappingEditor(main_form, main_uci);
-        o = s.option(PortMappingEditor, 'port_mapping', _('Port Mappings'));
+        o = s.option(PortMappingEditor, "port_mapping", _("Port Mappings"));
         o.modalonly = true;
-        o.depends('use_port_mappings', '1');
-        o = s.option(main_form.Value, 'listen_port', _('Listen Port'));
+        o.depends("use_port_mappings", "1");
+        o = s.option(main_form.Value, "listen_port", _("Listen Port"));
         o.modalonly = true;
-        o.datatype = 'port';
-        o.placeholder = '8080';
-        o.depends('use_port_mappings', '0');
-        o.validate = function(section_id, value) {
-            const use_mappings = main_uci.get('portweaver', section_id, 'use_port_mappings');
-            if (use_mappings !== '1') {
-                if (!value || String(value).trim() === '') return _('This field is required in single port mode');
+        o.datatype = "port";
+        o.placeholder = "8080";
+        o.depends("use_port_mappings", "0");
+        o.validate = (section_id, value)=>{
+            const use_mappings = main_uci.get("portweaver", section_id, "use_port_mappings");
+            if (use_mappings !== "1") {
+                if (!value || String(value).trim() === "") return _("This field is required in single port mode");
             }
             return true;
         };
-        o = s.option(main_form.Value, 'target_port', _('Target Port'));
+        o = s.option(main_form.Value, "target_port", _("Target Port"));
         o.modalonly = true;
-        o.datatype = 'port';
-        o.placeholder = '80';
-        o.depends('use_port_mappings', '0');
-        o.validate = function(section_id, value) {
-            const use_mappings = main_uci.get('portweaver', section_id, 'use_port_mappings');
-            if (use_mappings !== '1') {
-                if (!value || String(value).trim() === '') return _('This field is required in single port mode');
+        o.datatype = "port";
+        o.placeholder = "80";
+        o.depends("use_port_mappings", "0");
+        o.validate = (section_id, value)=>{
+            const use_mappings = main_uci.get("portweaver", section_id, "use_port_mappings");
+            if (use_mappings !== "1") {
+                if (!value || String(value).trim() === "") return _("This field is required in single port mode");
             }
             return true;
         };
-        o = s.option(main_form.Flag, 'open_firewall_port', _('Open Firewall Port'));
+        o = s.option(main_form.Flag, "open_firewall_port", _("Open Firewall Port"));
         o.modalonly = true;
-        o.default = '1';
-        o = s.option(main_form.Flag, 'enable_app_forward', _('Enable App Level Forward'));
+        o.default = "1";
+        o = s.option(main_form.Flag, "enable_app_forward", _("Enable App Level Forward"));
         o.modalonly = true;
-        o.default = '0';
-        o = s.option(main_form.Flag, 'reuseaddr', _('Reuse Address'));
+        o.default = "0";
+        o = s.option(main_form.Flag, "reuseaddr", _("Reuse Address"));
         o.modalonly = true;
-        o.default = '1';
-        o.depends('enable_app_forward', '1');
-        o = s.option(main_form.Flag, 'enable_stats', _('Enable Statistics'), _("Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward."));
+        o.default = "1";
+        o.depends("enable_app_forward", "1");
+        o = s.option(main_form.Flag, "enable_stats", _("Enable Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward."));
         o.modalonly = true;
-        o.default = '0';
-        o.depends('enable_app_forward', '1');
-        o = s.option(main_form.Flag, 'add_firewall_forward', _('Add Firewall Forward'));
+        o.default = "0";
+        o.depends("enable_app_forward", "1");
+        o = s.option(main_form.Flag, "add_firewall_forward", _("Add Firewall Forward"));
         o.modalonly = true;
-        o.default = '1';
+        o.default = "1";
         o.depends({
-            'enable_app_forward': '0'
+            enable_app_forward: "0"
         });
         o.depends({
-            'enable_app_forward': '1',
-            'enable_stats': '0'
+            enable_app_forward: "1",
+            enable_stats: "0"
         });
         // FRP Node Management section
-        s = m.section(main_form.GridSection, 'frp_node', _('FRP Node Management'), _('Configure FRP nodes for port forwarding tunneling'));
+        s = m.section(main_form.GridSection, "frp_node", _("FRP Node Management"), _("Configure FRP nodes for port forwarding tunneling"));
         s.anonymous = true;
         s.addremove = true;
         s.sortable = true;
         s.cloneable = true;
-        s.sectiontitle = function(section_id) {
-            return main_uci.get('portweaver', section_id, 'name') || section_id || _('Unnamed node');
-        };
-        o = s.option(main_form.Value, 'name', _('Node Name'));
+        s.sectiontitle = (section_id)=>main_uci.get("portweaver", section_id, "name") || section_id || _("Unnamed node");
+        o = s.option(main_form.Value, "name", _("Node Name"));
         o.modalonly = true;
         o.rmempty = false;
-        o.datatype = 'string';
-        o.placeholder = 'node1';
-        o.validate = function(_section_id, value) {
-            if (!value || String(value).trim() === '') return _('Node name is required');
-            if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _('Node name must contain only alphanumeric characters, underscore, or hyphen');
+        o.datatype = "string";
+        o.placeholder = "node1";
+        o.validate = (_section_id, value)=>{
+            if (!value || String(value).trim() === "") return _("Node name is required");
+            if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _("Node name must contain only alphanumeric characters, underscore, or hyphen");
             return true;
         };
-        o = s.option(main_form.Value, 'server', _('FRP Server Address'));
+        o = s.option(main_form.Value, "server", _("FRP Server Address"));
         o.modalonly = true;
         o.rmempty = false;
-        o.datatype = 'host';
-        o.placeholder = '1.2.3.4';
-        o.validate = function(_section_id, value) {
-            if (!value || String(value).trim() === '') return _('Server address is required');
+        o.datatype = "host";
+        o.placeholder = "1.2.3.4";
+        o.validate = (_section_id, value)=>{
+            if (!value || String(value).trim() === "") return _("Server address is required");
             return true;
         };
-        o = s.option(main_form.Value, 'port', _('FRP Server Port'));
+        o = s.option(main_form.Value, "port", _("FRP Server Port"));
         o.modalonly = true;
         o.rmempty = false;
-        o.datatype = 'port';
-        o.placeholder = '7000';
-        o.validate = function(_section_id, value) {
-            if (!value || String(value).trim() === '') return _('Server port is required');
+        o.datatype = "port";
+        o.placeholder = "7000";
+        o.validate = (_section_id, value)=>{
+            if (!value || String(value).trim() === "") return _("Server port is required");
             const port = parseInt(value, 10);
-            if (isNaN(port) || port < 1 || port > 65535) return _('Port must be between 1 and 65535');
+            if (Number.isNaN(port) || port < 1 || port > 65535) return _("Port must be between 1 and 65535");
             return true;
         };
-        o = s.option(main_form.Value, 'token', _('Authentication Token'));
+        o = s.option(main_form.Value, "token", _("Authentication Token"));
         o.modalonly = true;
         o.password = true;
         o.rmempty = true;
-        o.placeholder = 'optional token for authentication';
+        o.placeholder = "optional token for authentication";
         return m.render();
     }
 }));

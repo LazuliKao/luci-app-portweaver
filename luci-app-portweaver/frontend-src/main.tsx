@@ -16,41 +16,36 @@ const poll = L.Poll;
 const rpcClient = createRpcClient(rpc);
 
 export default view.extend({
-  load: function () {
-    return Promise.all([
+  load: () =>
+    Promise.all([
       uci.load("portweaver"),
       uci.load("firewall"),
       rpcClient
         .getStatus()
-        .then(function (res: PortWeaverStatus) {
-          return res || {};
-        })
-        .catch(function (err: any) {
+        .then((res: PortWeaverStatus) => res || {})
+        .catch((err: any) => {
           console.warn("ubus get_status failed:", err);
           return {} as PortWeaverStatus;
         }),
       rpcClient
         .listProjects()
-        .then(function (res: { projects: ProjectStatus[] }) {
-          return res || { projects: [] };
-        })
-        .catch(function (err: any) {
+        .then((res: { projects: ProjectStatus[] }) => res || { projects: [] })
+        .catch((err: any) => {
           console.warn("ubus list_projects failed:", err);
           return { projects: [] } as { projects: ProjectStatus[] };
         }),
-    ]);
-  },
+    ]),
 
-  render: function (
+  render: (
     data: [any, any, PortWeaverStatus, { projects: ProjectStatus[] }],
-  ) {
+  ) => {
     let m: any, s: any, o: any;
     let globalStatus: PortWeaverStatus = data[2] || {};
     let projectStatuses: ProjectStatus[] = data[3]
       ? data[3].projects || []
       : [];
 
-    const getProjectIndex = function (section_id: string): number {
+    const getProjectIndex = (section_id: string): number => {
       const sections = uci.sections("portweaver", "project");
       for (let i = 0; i < sections.length; i++) {
         if (sections[i][".name"] === section_id) return i;
@@ -58,9 +53,7 @@ export default view.extend({
       return -1;
     };
 
-    const getProjectStatus = function (
-      section_id: string,
-    ): ProjectStatus | null {
+    const getProjectStatus = (section_id: string): ProjectStatus | null => {
       const idx = getProjectIndex(section_id);
       return idx >= 0 && projectStatuses && projectStatuses[idx]
         ? projectStatuses[idx]
@@ -115,11 +108,11 @@ export default view.extend({
       if (errorMessage && status.status !== "stopped") {
         statusElements.push(
           E("small", { style: "color: #dc3545; margin-top: 0.3em;" }, [
-            "⚠ " + errorMessage,
+            `⚠ ${errorMessage}`,
           ]),
         );
       } else {
-        let elements: any[] = [];
+        const elements: any[] = [];
         if ((status.active_ports || 0) > 0) {
           elements.push(
             E("span", {}, _("Ports: ") + (status.active_ports || 0)),
@@ -151,75 +144,71 @@ export default view.extend({
     );
 
     // Setup auto-refresh
-    poll.add(function () {
-      const updateText = function (id: string, value: any) {
+    poll.add(async () => {
+      const updateText = (id: string, value: any) => {
         const elem = document.getElementById(id);
         if (elem) elem.textContent = String(value);
       };
 
-      return Promise.all([rpcClient.getStatus(), rpcClient.listProjects()])
-        .then(function (
-          results: [PortWeaverStatus, { projects: ProjectStatus[] }],
-        ) {
-          globalStatus = results[0] || {};
-          projectStatuses =
-            results[1] && results[1].projects ? results[1].projects : [];
+      try {
+        const results = await Promise.all([
+          rpcClient.getStatus(),
+          rpcClient.listProjects(),
+        ]);
+        globalStatus = results[0] || {};
+        projectStatuses = results[1]?.projects ? results[1].projects : [];
 
-          const statusElem = document.getElementById(
-            "status-value",
-          ) as HTMLElement | null;
-          const statusColors: Record<string, string> = {
-            running: "green",
-            stopped: "red",
-            degraded: "orange",
-          };
-          if (statusElem) {
-            statusElem.textContent = globalStatus.status || "-";
-            (statusElem.style as any).color =
-              statusColors[globalStatus.status || ""] || "gray";
-          }
+        const statusElem = document.getElementById(
+          "status-value",
+        ) as HTMLElement | null;
+        const statusColors: Record<string, string> = {
+          running: "green",
+          stopped: "red",
+          degraded: "orange",
+        };
+        if (statusElem) {
+          statusElem.textContent = globalStatus.status || "-";
+          (statusElem.style as any).color =
+            statusColors[globalStatus.status || ""] || "gray";
+        }
 
-          updateText("total-projects-value", globalStatus.total_projects || 0);
-          updateText("active-ports-value", globalStatus.active_ports || 0);
-          updateText("uptime-value", formatUptime(globalStatus.uptime || 0));
-          updateText(
-            "traffic-in-value",
-            formatBytes(globalStatus.total_bytes_in || 0),
-          );
-          updateText(
-            "traffic-out-value",
-            formatBytes(globalStatus.total_bytes_out || 0),
-          );
+        updateText("total-projects-value", globalStatus.total_projects || 0);
+        updateText("active-ports-value", globalStatus.active_ports || 0);
+        updateText("uptime-value", formatUptime(globalStatus.uptime || 0));
+        updateText(
+          "traffic-in-value",
+          formatBytes(globalStatus.total_bytes_in || 0),
+        );
+        updateText(
+          "traffic-out-value",
+          formatBytes(globalStatus.total_bytes_out || 0),
+        );
 
-          (function () {
-            const sections = uci.sections("portweaver", "project") || [];
-            for (let i = 0; i < sections.length; i++) {
-              const section_id = sections[i][".name"];
-              if (!section_id) {
-                continue;
-              }
-              const status = getProjectStatus(section_id);
-              const section = document.getElementById(
-                "project-status-" + section_id,
-              );
-              if (!section) continue;
-              const newStatusElements = renderStatusElements(
-                status,
-                section_id,
-              );
-              section.replaceWith(
-                E(
-                  "div",
-                  { id: "project-status-" + section_id },
-                  newStatusElements,
-                ),
-              );
+        (() => {
+          const sections = uci.sections("portweaver", "project") || [];
+          for (let i = 0; i < sections.length; i++) {
+            const section_id = sections[i][".name"];
+            if (!section_id) {
+              continue;
             }
-          })();
-        })
-        .catch(function (err: any) {
-          console.warn("Auto-refresh failed:", err);
-        });
+            const status = getProjectStatus(section_id);
+            const section = document.getElementById(
+              `project-status-${section_id}`,
+            );
+            if (!section) continue;
+            const newStatusElements = renderStatusElements(status, section_id);
+            section.replaceWith(
+              E(
+                "div",
+                { id: `project-status-${section_id}` },
+                newStatusElements,
+              ),
+            );
+          }
+        })();
+      } catch (err) {
+        console.warn("Auto-refresh failed:", err);
+      }
     }, 3);
 
     // Global settings section
@@ -232,13 +221,13 @@ export default view.extend({
     // Runtime status display (component)
     o = s.option(form.DummyValue, "_runtime_status", _("Runtime Status"));
     o.rawhtml = true;
-    o.cfgvalue = function () {
+    o.cfgvalue = () => {
       const panel = new StatusPanel();
       return panel.render(globalStatus);
     };
 
     // Helper to toggle runtime enable via RPC
-    const runtimeToggle = function (section_id: string) {
+    const runtimeToggle = (section_id: string) => {
       const idx = getProjectIndex(section_id);
       if (idx < 0) {
         ui.addNotification(
@@ -249,10 +238,10 @@ export default view.extend({
         return Promise.resolve();
       }
       const status = getProjectStatus(section_id);
-      const newEnabled = !(status && status.enabled);
+      const newEnabled = !status?.enabled;
       return rpcClient
         .setEnabled(idx, !!newEnabled)
-        .then(function () {
+        .then(() => {
           ui.addNotification(
             null,
             E(
@@ -265,14 +254,13 @@ export default view.extend({
           return Promise.all([
             rpcClient.getStatus(),
             rpcClient.listProjects(),
-          ]).then(function (results) {
+          ]).then((results) => {
             globalStatus = results[0] || {};
-            projectStatuses =
-              results[1] && results[1].projects ? results[1].projects : [];
+            projectStatuses = results[1]?.projects ? results[1].projects : [];
             location.reload();
           });
         })
-        .catch(function (err: any) {
+        .catch((err: any) => {
           ui.addNotification(
             null,
             E(
@@ -298,20 +286,17 @@ export default view.extend({
     s.sortable = true;
     s.cloneable = true;
 
-    s.sectiontitle = function (section_id: string) {
-      return (
-        uci.get("portweaver", section_id, "remark") || _("Unnamed project")
-      );
-    };
+    s.sectiontitle = (section_id: string) =>
+      uci.get("portweaver", section_id, "remark") || _("Unnamed project");
 
     // Runtime status indicator column
     o = s.option(form.DummyValue, "_runtime_status", _("Status"));
     o.modalonly = false;
-    o.textvalue = function (section_id: string) {
+    o.textvalue = (section_id: string) => {
       const status = getProjectStatus(section_id);
       return E(
         "div",
-        { id: "project-status-" + section_id },
+        { id: `project-status-${section_id}` },
         renderStatusElements(status, section_id),
       );
     };
@@ -320,13 +305,12 @@ export default view.extend({
     o = s.option(form.Button, "_runtime_toggle", _("Toggle"));
     o.modalonly = false;
     o.editable = true;
-    o.inputtitle = function (section_id: string) {
+    o.inputtitle = (section_id: string) => {
       const status = getProjectStatus(section_id);
-      return status && status.enabled ? _("Disable") : _("Enable");
+      return status?.enabled ? _("Disable") : _("Enable");
     };
-    o.onclick = function (_ev: any, section_id: string) {
-      return (window as any).portweaverToggle(section_id);
-    };
+    o.onclick = (_ev: any, section_id: string) =>
+      (window as any).portweaverToggle(section_id);
 
     o = s.option(form.Flag, "enabled", _("Enabled"));
     o.modalonly = false;
@@ -336,7 +320,7 @@ export default view.extend({
     // Preview column
     o = s.option(form.DummyValue, "_preview", _("Overview"));
     o.modalonly = false;
-    o.textvalue = function (section_id: string) {
+    o.textvalue = (section_id: string) => {
       const protocol = uci.get("portweaver", section_id, "protocol") || "tcp";
       const family = uci.get("portweaver", section_id, "family") || "any";
       const listen_port =
@@ -359,9 +343,13 @@ export default view.extend({
         ({ both: _("TCP and UDP"), tcp: "TCP", udp: "UDP" } as any)[protocol] ||
         String(protocol).toUpperCase();
       const family_text: string =
-        ({ any: _("IPv4 and IPv6"), ipv4: "IPv4", ipv6: "IPv6" } as any)[
-          family
-        ] || family;
+        (
+          {
+            any: _("IPv4 and IPv6"),
+            ipv4: "IPv4",
+            ipv6: "IPv6",
+          } as any
+        )[family] || family;
 
       const lines: any[] = [];
       lines.push(
@@ -374,13 +362,16 @@ export default view.extend({
       );
 
       if (src_zones.length > 0) {
-        const src_badges = src_zones.map(function (z: string) {
-          return E(
+        const src_badges = src_zones.map((z: string) =>
+          E(
             "span",
-            { class: "zonebadge", style: fwmodel.getZoneColorStyle(z) },
+            {
+              class: "zonebadge",
+              style: fwmodel.getZoneColorStyle(z),
+            },
             [E("strong", {}, z || E("em", _("any zone")))],
-          );
-        });
+          ),
+        );
         lines.push(E("br"));
         lines.push(E("span", {}, [_("From "), ...src_badges]));
       }
@@ -412,13 +403,16 @@ export default view.extend({
       );
 
       if (dest_zones.length > 0) {
-        const dest_badges = dest_zones.map(function (z: string) {
-          return E(
+        const dest_badges = dest_zones.map((z: string) =>
+          E(
             "span",
-            { class: "zonebadge", style: fwmodel.getZoneColorStyle(z) },
+            {
+              class: "zonebadge",
+              style: fwmodel.getZoneColorStyle(z),
+            },
             [E("strong", {}, z || E("em", _("any zone")))],
-          );
-        });
+          ),
+        );
         lines.push(...dest_badges);
         lines.push(_(" "));
       }
@@ -437,7 +431,7 @@ export default view.extend({
     o.modalonly = true;
     o.rmempty = false;
     o.datatype = "string";
-    o.validate = function (_section_id: string, value: string) {
+    o.validate = (_section_id: string, value: string) => {
       if (!value || String(value).trim() === "")
         return _("This field is required");
       return true;
@@ -476,7 +470,7 @@ export default view.extend({
     o.rmempty = false;
     o.datatype = "host";
     o.placeholder = "192.168.1.100";
-    o.validate = function (_section_id: string, value: string) {
+    o.validate = (_section_id: string, value: string) => {
       if (!value || String(value).trim() === "")
         return _("This field is required");
       return true;
@@ -519,7 +513,7 @@ export default view.extend({
     o.datatype = "port";
     o.placeholder = "8080";
     o.depends("use_port_mappings", "0");
-    o.validate = function (section_id: string, value: string) {
+    o.validate = (section_id: string, value: string) => {
       const use_mappings = uci.get(
         "portweaver",
         section_id,
@@ -537,7 +531,7 @@ export default view.extend({
     o.datatype = "port";
     o.placeholder = "80";
     o.depends("use_port_mappings", "0");
-    o.validate = function (section_id: string, value: string) {
+    o.validate = (section_id: string, value: string) => {
       const use_mappings = uci.get(
         "portweaver",
         section_id,
@@ -598,20 +592,17 @@ export default view.extend({
     s.sortable = true;
     s.cloneable = true;
 
-    s.sectiontitle = function (section_id: string) {
-      return (
-        uci.get("portweaver", section_id, "name") ||
-        section_id ||
-        _("Unnamed node")
-      );
-    };
+    s.sectiontitle = (section_id: string) =>
+      uci.get("portweaver", section_id, "name") ||
+      section_id ||
+      _("Unnamed node");
 
     o = s.option(form.Value, "name", _("Node Name"));
     o.modalonly = true;
     o.rmempty = false;
     o.datatype = "string";
     o.placeholder = "node1";
-    o.validate = function (_section_id: string, value: string) {
+    o.validate = (_section_id: string, value: string) => {
       if (!value || String(value).trim() === "")
         return _("Node name is required");
       if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim()))
@@ -626,7 +617,7 @@ export default view.extend({
     o.rmempty = false;
     o.datatype = "host";
     o.placeholder = "1.2.3.4";
-    o.validate = function (_section_id: string, value: string) {
+    o.validate = (_section_id: string, value: string) => {
       if (!value || String(value).trim() === "")
         return _("Server address is required");
       return true;
@@ -637,11 +628,11 @@ export default view.extend({
     o.rmempty = false;
     o.datatype = "port";
     o.placeholder = "7000";
-    o.validate = function (_section_id: string, value: string) {
+    o.validate = (_section_id: string, value: string) => {
       if (!value || String(value).trim() === "")
         return _("Server port is required");
       const port = parseInt(value, 10);
-      if (isNaN(port) || port < 1 || port > 65535)
+      if (Number.isNaN(port) || port < 1 || port > 65535)
         return _("Port must be between 1 and 65535");
       return true;
     };

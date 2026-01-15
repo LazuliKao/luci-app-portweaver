@@ -1,9 +1,9 @@
 export function createPortMappingEditor(form: any, uci: any) {
   return form.Value.extend({
-    parseMapping: function (str: string) {
+    parseMapping: (str: string) => {
       if (!str || typeof str !== "string") return null;
       str = str.trim();
-      let mapping = {
+      const mapping = {
         listenPort: "",
         targetPort: "",
         frpNodes: [],
@@ -14,16 +14,16 @@ export function createPortMappingEditor(form: any, uci: any) {
         frpNodes: string[];
         protocol: "tcp" | "udp" | "both";
       };
-      let protocolMatch = str.match(/\/([a-z]+)$/);
+      const protocolMatch = str.match(/\/([a-z]+)$/);
       if (protocolMatch) {
         mapping.protocol = protocolMatch[1].toLowerCase() as any;
         str = str.substring(0, protocolMatch.index);
       }
       let i = 0;
       while (str[i] === "[") {
-        let end = str.indexOf("]", i);
+        const end = str.indexOf("]", i);
         if (end === -1) break;
-        let content = str.substring(i + 1, end);
+        const content = str.substring(i + 1, end);
         if (content.indexOf(":") !== -1 || /[a-zA-Z_-]/.test(content)) {
           (mapping.frpNodes as string[]).push(content);
           i = end + 1;
@@ -36,43 +36,40 @@ export function createPortMappingEditor(form: any, uci: any) {
         }
         break;
       }
-      let rest = str.substring(i);
+      const rest = str.substring(i);
       if (!mapping.listenPort) {
-        let parts0 = rest.split(":");
+        const parts0 = rest.split(":");
         if (parts0.length >= 1)
-          mapping.listenPort = parts0[0].trim().replace(/[\[\]]/g, "");
+          mapping.listenPort = parts0[0].trim().replace(/[[\]]/g, "");
         if (parts0.length >= 2)
-          mapping.targetPort = parts0[1].trim().replace(/[\[\]]/g, "");
+          mapping.targetPort = parts0[1].trim().replace(/[[\]]/g, "");
       } else {
         if (rest.startsWith(":")) {
-          mapping.targetPort = rest
-            .substring(1)
-            .trim()
-            .replace(/[\[\]]/g, "");
+          mapping.targetPort = rest.substring(1).trim().replace(/[[\]]/g, "");
         }
       }
       return mapping;
     },
 
-    buildString: function (mapping: {
+    buildString: (mapping: {
       listenPort: string;
       targetPort: string;
       frpNodes: string[];
       protocol: string;
-    }) {
+    }) => {
       let result = "";
       if (mapping.frpNodes && mapping.frpNodes.length > 0) {
-        mapping.frpNodes.forEach(function (node) {
-          result += "[" + node + "]";
+        mapping.frpNodes.forEach((node) => {
+          result += `[${node}]`;
         });
       }
       if (mapping.listenPort) {
         if (mapping.frpNodes && mapping.frpNodes.length > 0)
-          result += "[" + mapping.listenPort + "]";
+          result += `[${mapping.listenPort}]`;
         else result += mapping.listenPort;
       }
-      if (mapping.targetPort) result += ":" + mapping.targetPort;
-      if (mapping.protocol) result += "/" + mapping.protocol;
+      if (mapping.targetPort) result += `:${mapping.targetPort}`;
+      if (mapping.protocol) result += `/${mapping.protocol}`;
       return result;
     },
 
@@ -90,7 +87,6 @@ export function createPortMappingEditor(form: any, uci: any) {
           : [];
 
       const widget_id = this.cbid(section_id);
-      const self = this;
       const mappings_wrapper = (
         <div id={`portmapping-wrapper-${section_id}`}></div>
       ) as HTMLElement;
@@ -114,10 +110,10 @@ export function createPortMappingEditor(form: any, uci: any) {
             if (cb.checked) {
               const node = cb.getAttribute("data-node") as string;
               const port_inp = r.querySelector(
-                'input.frp-node-port-pm[data-node="' + node + '"]',
+                `input.frp-node-port-pm[data-node="${node}"]`,
               ) as HTMLInputElement | null;
               const port = port_inp ? port_inp.value.trim() : "";
-              frpNodes.push(port ? node + ":" + port : node);
+              frpNodes.push(port ? `${node}:${port}` : node);
             }
           });
           const temp = {
@@ -126,11 +122,11 @@ export function createPortMappingEditor(form: any, uci: any) {
             frpNodes: frpNodes,
             protocol: protocol,
           };
-          const str = self.buildString(temp);
+          const str = this.buildString(temp);
           if (str && listen && target) values.push(str);
         });
         const hidden = document.getElementById(
-          "portmapping-hidden-" + section_id,
+          `portmapping-hidden-${section_id}`,
         ) as HTMLInputElement | null;
         if (hidden) hidden.value = values.join(" ");
       };
@@ -139,13 +135,13 @@ export function createPortMappingEditor(form: any, uci: any) {
         mapping_str: string,
         index: number,
       ): HTMLElement => {
-        const mapping = self.parseMapping(mapping_str) || {
+        const mapping = this.parseMapping(mapping_str) || {
           listenPort: "",
           targetPort: "",
           frpNodes: [],
           protocol: "tcp",
         };
-        const row_id = "portmapping-row-" + section_id + "-" + index;
+        const row_id = `portmapping-row-${section_id}-${index}`;
         let isTextMode = false;
 
         const listenInput = (
@@ -208,7 +204,7 @@ export function createPortMappingEditor(form: any, uci: any) {
             style="margin-top: 8px; padding: 8px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
           >
             {_("Preview: ")}
-            {self.buildString(mapping)}
+            {this.buildString(mapping)}
           </div>
         ) as HTMLElement;
 
@@ -224,10 +220,10 @@ export function createPortMappingEditor(form: any, uci: any) {
             if (cb.checked) {
               const node = cb.getAttribute("data-node") as string;
               const port_inp = row.querySelector(
-                'input.frp-node-port-pm[data-node="' + node + '"]',
+                `input.frp-node-port-pm[data-node="${node}"]`,
               ) as HTMLInputElement | null;
               const port = port_inp ? port_inp.value.trim() : "";
-              frpNodes.push(port ? node + ":" + port : node);
+              frpNodes.push(port ? `${node}:${port}` : node);
             }
           });
           const temp_mapping = {
@@ -236,7 +232,7 @@ export function createPortMappingEditor(form: any, uci: any) {
             frpNodes: frpNodes,
             protocol: protocol,
           };
-          const preview_str = self.buildString(temp_mapping);
+          const preview_str = this.buildString(temp_mapping);
           previewDiv.textContent = _("Preview: ") + preview_str;
           textModeInput.value = preview_str;
         };
@@ -250,13 +246,13 @@ export function createPortMappingEditor(form: any, uci: any) {
 
         if (frp_sections.length > 0) {
           frpContainer.appendChild(
-            <label style="display: block; margin-bottom: 8px; font-weight: bold;">
+            <span style="display: block; margin-bottom: 8px; font-weight: bold;">
               {_("FRP Nodes (Optional):")}
-            </label>,
+            </span>,
           );
 
           frp_sections.forEach((frp_section: any) => {
-            const node_name = frp_section["name"] || frp_section[".name"];
+            const node_name = frp_section.name || frp_section[".name"];
             if (!node_name) return;
             const is_checked = (mapping.frpNodes || []).some(
               (n: string) => n.split(":")[0] === node_name,
@@ -307,7 +303,7 @@ export function createPortMappingEditor(form: any, uci: any) {
               const port = port_input.value.trim();
               if (port) {
                 const p = parseInt(port, 10);
-                if (isNaN(p) || p < 1 || p > 65535) {
+                if (Number.isNaN(p) || p < 1 || p > 65535) {
                   port_input.style.setProperty(
                     "border-color",
                     "red",
@@ -329,10 +325,10 @@ export function createPortMappingEditor(form: any, uci: any) {
             frpContainer.appendChild(
               <div style="margin-bottom: 5px;">
                 {checkbox}
-                <label style="margin-right: 10px; cursor: pointer;">
+                <span style="margin-right: 10px; cursor: pointer;">
                   {node_name}
-                </label>
-                <label style="margin-right: 5px;">{_("Port:")}</label>
+                </span>
+                <span style="margin-right: 5px;">{_("Port:")}</span>
                 {port_input}
               </div>,
             );
@@ -353,17 +349,17 @@ export function createPortMappingEditor(form: any, uci: any) {
 
         const titleRow = (
           <div style="display: flex; gap: 10px; align-items: center;">
-            <label style="min-width: 80px; font-weight: bold;">
+            <span style="min-width: 80px; font-weight: bold;">
               {_("Listen Port:")}
-            </label>
+            </span>
             {listenInput}
-            <label style="min-width: 80px; font-weight: bold;">
+            <span style="min-width: 80px; font-weight: bold;">
               {_("Target Port:")}
-            </label>
+            </span>
             {targetInput}
-            <label style="min-width: 60px; font-weight: bold;">
+            <span style="min-width: 60px; font-weight: bold;">
               {_("Protocol:")}
-            </label>
+            </span>
             {protocolSelect}
           </div>
         ) as HTMLElement;
@@ -422,7 +418,7 @@ export function createPortMappingEditor(form: any, uci: any) {
         textModeInput.oninput = (ev: Event) => {
           const inputEl = ev.currentTarget as HTMLInputElement | null;
           if (!inputEl) return;
-          const parsed = self.parseMapping(inputEl.value);
+          const parsed = this.parseMapping(inputEl.value);
           if (parsed) {
             listenInput.value = parsed.listenPort;
             targetInput.value = parsed.targetPort;
@@ -437,7 +433,7 @@ export function createPortMappingEditor(form: any, uci: any) {
               );
               cb.checked = is_checked;
               const port_inp = row.querySelector(
-                'input.frp-node-port-pm[data-node="' + node + '"]',
+                `input.frp-node-port-pm[data-node="${node}"]`,
               ) as HTMLInputElement | null;
               if (port_inp) {
                 port_inp.hidden = !is_checked;
@@ -458,7 +454,7 @@ export function createPortMappingEditor(form: any, uci: any) {
           }
         };
 
-        modeToggleBtn.onclick = function (e: MouseEvent) {
+        modeToggleBtn.onclick = (e: MouseEvent) => {
           e.preventDefault();
           isTextMode = !isTextMode;
           titleRow.style.display = isTextMode ? "none" : "flex";
@@ -470,7 +466,7 @@ export function createPortMappingEditor(form: any, uci: any) {
             : _("Text Edit");
         };
 
-        deleteBtn.onclick = function (e: MouseEvent) {
+        deleteBtn.onclick = (e: MouseEvent) => {
           e.preventDefault();
           row.remove();
           updateHiddenValue();
@@ -493,7 +489,7 @@ export function createPortMappingEditor(form: any, uci: any) {
         </button>
       ) as HTMLButtonElement;
 
-      addBtn.onclick = function (e: MouseEvent) {
+      addBtn.onclick = (e: MouseEvent) => {
         e.preventDefault();
         const rows = mappings_wrapper.querySelectorAll(".portmapping-row");
         const new_index = rows.length;
@@ -525,24 +521,23 @@ export function createPortMappingEditor(form: any, uci: any) {
       return container;
     },
 
-    cfgvalue: function (section_id: string) {
-      let value = uci.get("portweaver", section_id, "port_mapping");
+    cfgvalue: (section_id: string) => {
+      const value = uci.get("portweaver", section_id, "port_mapping");
       if (Array.isArray(value)) return value;
       if (typeof value === "string")
         return String(value).split(/\s+/).filter(Boolean);
       return [];
     },
 
-    formvalue: function (section_id: string) {
-      let hidden = document.getElementById(
-        "portmapping-hidden-" + section_id,
+    formvalue: (section_id: string) => {
+      const hidden = document.getElementById(
+        `portmapping-hidden-${section_id}`,
       ) as HTMLInputElement | null;
-      if (hidden && hidden.value)
-        return hidden.value.split(/\s+/).filter(Boolean);
+      if (hidden?.value) return hidden.value.split(/\s+/).filter(Boolean);
       return null;
     },
 
-    write: function (section_id: string, formvalue: string[] | null) {
+    write: (section_id: string, formvalue: string[] | null) => {
       console.log(
         "Writing port mapping for section:",
         section_id,

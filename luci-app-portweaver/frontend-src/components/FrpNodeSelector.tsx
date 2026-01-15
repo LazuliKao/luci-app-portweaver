@@ -4,42 +4,42 @@ export function createFrpNodeSelector(form: any, uci: any) {
 
     renderWidget: function (
       section_id: string,
-      option_index: number,
+      _option_index: number,
       cfgvalue: string[] | string,
     ) {
-      let frp_sections = uci.sections("portweaver", "frp_node") || [];
-      let current_value: string[] = Array.isArray(cfgvalue)
+      const frp_sections = uci.sections("portweaver", "frp_node") || [];
+      const current_value: string[] = Array.isArray(cfgvalue)
         ? (cfgvalue as string[])
         : typeof cfgvalue === "string"
           ? String(cfgvalue).split(/\s+/).filter(Boolean)
           : [];
 
-      let node_map: Record<string, string> = {};
+      const node_map: Record<string, string> = {};
       for (let i = 0; i < current_value.length; i++) {
-        let parts = current_value[i].split(":");
-        let node = parts[0];
-        let port = parts[1] || "";
+        const parts = current_value[i].split(":");
+        const node = parts[0];
+        const port = parts[1] || "";
         node_map[node] = port;
       }
 
-      let widget_id = this.cbid(section_id);
+      const widget_id = this.cbid(section_id);
 
       // 存储所有元素引用
-      let checkboxes: HTMLInputElement[] = [];
-      let portInputs: Map<string, HTMLInputElement> = new Map();
+      const checkboxes: HTMLInputElement[] = [];
+      const portInputs: Map<string, HTMLInputElement> = new Map();
       let hiddenInput: HTMLInputElement;
 
-      let updateHandler = function () {
-        let values: string[] = [];
+      const updateHandler = () => {
+        const values: string[] = [];
         for (let j = 0; j < checkboxes.length; j++) {
-          let cb = checkboxes[j];
+          const cb = checkboxes[j];
           if (cb.checked) {
-            let node = cb.getAttribute("data-node") as string;
-            let port_inp = portInputs.get(node);
-            let port = port_inp ? port_inp.value.trim() : "";
+            const node = cb.getAttribute("data-node") as string;
+            const port_inp = portInputs.get(node);
+            const port = port_inp ? port_inp.value.trim() : "";
             if (port) {
-              let p = parseInt(port, 10);
-              if (isNaN(p) || p < 1 || p > 65535) {
+              const p = parseInt(port, 10);
+              if (Number.isNaN(p) || p < 1 || p > 65535) {
                 if (port_inp)
                   port_inp.style.setProperty(
                     "border-color",
@@ -50,7 +50,7 @@ export function createFrpNodeSelector(form: any, uci: any) {
               } else {
                 if (port_inp) port_inp.style.borderColor = "";
               }
-              values.push(node + ":" + port);
+              values.push(`${node}:${port}`);
             } else {
               values.push(node);
             }
@@ -59,7 +59,7 @@ export function createFrpNodeSelector(form: any, uci: any) {
         hiddenInput.value = values.join(" ");
       };
 
-      let container = (<div class="cbi-value-field"></div>) as HTMLElement;
+      const container = (<div class="cbi-value-field"></div>) as HTMLElement;
 
       if (frp_sections.length === 0) {
         const emptyMsg = _(
@@ -67,19 +67,16 @@ export function createFrpNodeSelector(form: any, uci: any) {
         );
         container.appendChild(<em style="color: #999;">{emptyMsg}</em>);
       } else {
-        let table = (
+        const table = (
           <table class="table" style="margin: 0; width: auto;"></table>
         ) as HTMLElement;
         for (let i = 0; i < frp_sections.length; i++) {
-          let node_name = frp_sections[i]["name"] || frp_sections[i][".name"];
+          const node_name = frp_sections[i].name || frp_sections[i][".name"];
           if (!node_name) continue;
-          let is_checked = Object.prototype.hasOwnProperty.call(
-            node_map,
-            node_name,
-          );
-          let port_value = node_map[node_name] || "";
+          const is_checked = Object.hasOwn(node_map, node_name);
+          const port_value = node_map[node_name] || "";
 
-          let checkbox = (
+          const checkbox = (
             <input
               type="checkbox"
               class="frp-node-checkbox"
@@ -128,12 +125,14 @@ export function createFrpNodeSelector(form: any, uci: any) {
           port_input.addEventListener("input", updateHandler);
           port_input.addEventListener("change", updateHandler);
 
-          let row = E("tr", {}, [
+          const row = E("tr", {}, [
             E("td", { style: "padding: 4px 8px; border: none;" }, [
               checkbox,
               E(
                 "label",
-                { style: "cursor: pointer; font-weight: normal; margin: 0;" },
+                {
+                  style: "cursor: pointer; font-weight: normal; margin: 0;",
+                },
                 node_name,
               ),
             ]),
@@ -157,7 +156,7 @@ export function createFrpNodeSelector(form: any, uci: any) {
       // 存储 hiddenInput 引用供 formvalue 方法使用
       this._hiddenInputs[section_id] = hiddenInput;
 
-      let description = (
+      const description = (
         <div class="cbi-value-description">
           {_(
             "Select FRP nodes and optionally specify custom ports. Leave port empty to use default.",
@@ -169,8 +168,8 @@ export function createFrpNodeSelector(form: any, uci: any) {
       return container;
     },
 
-    cfgvalue: function (section_id: string) {
-      let value = uci.get("portweaver", section_id, "frp_nodes");
+    cfgvalue: (section_id: string) => {
+      const value = uci.get("portweaver", section_id, "frp_nodes");
       if (Array.isArray(value)) return value;
       if (typeof value === "string")
         return String(value).split(/\s+/).filter(Boolean);
@@ -194,15 +193,15 @@ export function createFrpNodeSelector(form: any, uci: any) {
     },
 
     formvalue: function (section_id: string) {
-      let hidden = this._hiddenInputs[section_id];
+      const hidden = this._hiddenInputs[section_id];
       if (hidden) {
-        let result = hidden.value.split(/\s+/).filter(Boolean);
+        const result = hidden.value.split(/\s+/).filter(Boolean);
         return result.length > 0 ? result : [];
       }
       return [];
     },
 
-    write: function (section_id: string, formvalue: string[] | null) {
+    write: (section_id: string, formvalue: string[] | null) => {
       if (formvalue && formvalue.length > 0) {
         return uci.set("portweaver", section_id, "frp_nodes", formvalue);
       } else {
