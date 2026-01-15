@@ -87,10 +87,10 @@ export function createFrpNodeSelector(form: any, uci: any) {
           checkboxes.push(checkbox);
           portInputs.set(node_name, port_input);
 
-          const port_input_area = <td style={"padding: 4px 8px; border: none;" + (is_checked ? '' : 'display: none;')}>
-            <label style="margin-right: 5px; color: #666;">
+          const port_input_area = <td style={`padding: 4px 8px; border: none;${is_checked ? '' : 'display: none;'}`}>
+            <span style="margin-right: 5px; color: #666;">
               {_('Port:')}
-            </label>
+            </span>
             {port_input}
           </td>
           checkbox.addEventListener('change', (ev) => {
