@@ -58,12 +58,14 @@ export class StatusPanel {
 
   private card(label: string, valueEl: any): HTMLElement {
     return (
-      <div style="border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;">
-        <div style="font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;">
-          {label}
-        </div>
-        {valueEl}
-      </div>
+      <>
+
+        <div style="border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;">
+          <div style="font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;">
+            {label}
+          </div>
+          {valueEl}
+        </div></>
     );
   }
 }

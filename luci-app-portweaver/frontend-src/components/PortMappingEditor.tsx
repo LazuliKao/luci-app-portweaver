@@ -1,5 +1,5 @@
 export function createPortMappingEditor(form: any, uci: any) {
-  return form.DummyValue.extend({
+  return form.Value.extend({
     parseMapping: function (str: string) {
       if (!str || typeof str !== 'string') return null;
       str = str.trim();
@@ -125,9 +125,9 @@ export function createPortMappingEditor(form: any, uci: any) {
 
         const protocolSelect = (
           <select class="protocol-select" data-index={index} data-section={section_id} style="width: 100px; margin-right: 10px;">
-            <option value="tcp" selected={mapping.protocol === 'tcp' ? 'selected' : null}>TCP</option>
-            <option value="udp" selected={mapping.protocol === 'udp' ? 'selected' : null}>UDP</option>
-            <option value="both" selected={mapping.protocol === 'both' ? 'selected' : null}>Both</option>
+            <option value="tcp" selected={mapping.protocol === 'tcp'}>TCP</option>
+            <option value="udp" selected={mapping.protocol === 'udp'}>UDP</option>
+            <option value="both" selected={mapping.protocol === 'both'}>Both</option>
           </select>
         ) as HTMLSelectElement;
 
@@ -186,7 +186,6 @@ export function createPortMappingEditor(form: any, uci: any) {
             const is_checked = (mapping.frpNodes || []).some((n: string) => n.split(':')[0] === node_name);
             const found = (mapping.frpNodes || []).find((n: string) => n.split(':')[0] === node_name);
             const port_value = found ? (found.split(':')[1] || '') : '';
-
             const checkbox = (
               <input
                 type="checkbox"
@@ -194,7 +193,7 @@ export function createPortMappingEditor(form: any, uci: any) {
                 data-node={node_name}
                 data-index={index}
                 data-section={section_id}
-                checked={is_checked ? 'checked' : null}
+                checked={is_checked}
                 style="margin-right: 5px;"
               />
             ) as HTMLInputElement;
@@ -209,14 +208,14 @@ export function createPortMappingEditor(form: any, uci: any) {
                 value={port_value}
                 placeholder={_('default')}
                 style="width: 80px; margin-right: 15px;"
-                disabled={is_checked ? null : 'disabled'}
+                {...(is_checked ? {} : { hidden: true })}
               />
             ) as HTMLInputElement;
 
             checkbox.onchange = (ev: Event) => {
               const inputEl = ev.currentTarget as HTMLInputElement | null;
               if (!inputEl) return;
-              port_input.disabled = !inputEl.checked;
+              port_input.hidden = !inputEl.checked;
               if (!inputEl.checked) {
                 port_input.value = '';
                 port_input.style.borderColor = '';
@@ -276,13 +275,13 @@ export function createPortMappingEditor(form: any, uci: any) {
           <button type="button" class="btn btn-xs" style="margin-bottom: 10px; margin-right: 10px;">
             {_('Text Edit')}
           </button>
-        ) as HTMLButtonElement;
+        );
 
         const deleteBtn = (
           <button type="button" class="btn btn-sm btn-danger" data-index={index} data-section={section_id} style="margin-top: 10px; margin-left: 10px;">
             {_('Delete')}
           </button>
-        ) as HTMLButtonElement;
+        );
 
         const row = (
           <div
@@ -328,7 +327,7 @@ export function createPortMappingEditor(form: any, uci: any) {
               cb.checked = is_checked;
               const port_inp = row.querySelector('input.frp-node-port-pm[data-node="' + node + '"]') as HTMLInputElement | null;
               if (port_inp) {
-                port_inp.disabled = !is_checked;
+                port_inp.hidden = !is_checked;
                 if (is_checked) {
                   const foundNode = (parsed.frpNodes || []).find((n: string) => n.split(':')[0] === node);
                   if (foundNode) {
@@ -410,6 +409,8 @@ export function createPortMappingEditor(form: any, uci: any) {
     },
 
     write: function (section_id: string, formvalue: string[] | null) {
+      console.log('Writing port mapping for section:', section_id, 'with value:', formvalue);
+      
       if (formvalue && formvalue.length > 0) {
         return uci.set('portweaver', section_id, 'port_mapping', formvalue);
       } else {

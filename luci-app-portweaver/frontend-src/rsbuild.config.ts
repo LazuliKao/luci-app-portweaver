@@ -1,5 +1,5 @@
-import { defineConfig } from '@rsbuild/core';
-import { rspack } from '@rsbuild/core';
+import { defineConfig } from "@rsbuild/core";
+import { rspack } from "@rsbuild/core";
 // LuCI require statements that must be at the very top of the output file
 const luciRequires = `'use strict';
 'require firewall as fwmodel';
@@ -9,23 +9,31 @@ const luciRequires = `'use strict';
 export default defineConfig({
   source: {
     entry: {
-      config: './main.tsx',
+      config: "./main.tsx",
     },
-    tsconfigPath: './tsconfig.json',
+    tsconfigPath: "./tsconfig.json",
   },
   output: {
     // polyfill: "usage",
     module: true,
-    charset: 'ascii',
-    overrideBrowserslist: ['defaults', 'not ie <= 11', 'not op_mini all'],
+    charset: "ascii",
+    overrideBrowserslist: [
+      "defaults",
+      "not ie <= 11",
+      "not op_mini all",
+      "chrome >= 60",
+      "firefox >= 60",
+      "safari >= 11",
+      "edge >= 16",
+    ],
     distPath: {
-      root: '../htdocs/luci-static/resources/view/portweaver',
-      js: '.',
+      root: "../htdocs/luci-static/resources/view/portweaver",
+      js: ".",
     },
     filename: {
-      js: '[name].js',
+      js: "[name].js",
     },
-    assetPrefix: '',
+    assetPrefix: "",
     minify: false,
     cleanDistPath: true,
   },
@@ -36,13 +44,13 @@ export default defineConfig({
       jsc: {
         transform: {
           react: {
-            pragma: 'createJsxElement',
-            pragmaFrag: 'E.Fragment',
+            pragma: "createJsxElement",
+            pragmaFrag: "createJsxElement.Fragment",
             useBuiltins: true,
           },
           optimizer: {
             simplify: true,
-          }
+          },
         },
       },
     },
@@ -66,18 +74,20 @@ export default defineConfig({
           entryOnly: true,
         })
       );
-      config.plugins.push(new rspack.BannerPlugin({
-        banner: "return main;",
-        raw: true,
-        entryOnly: true,
-        footer: true,
-      }))
+      config.plugins.push(
+        new rspack.BannerPlugin({
+          banner: "return main;",
+          raw: true,
+          entryOnly: true,
+          footer: true,
+        })
+      );
       return config;
     },
   },
   performance: {
     chunkSplit: {
-      strategy: 'all-in-one',
+      strategy: "all-in-one",
     },
   },
 });

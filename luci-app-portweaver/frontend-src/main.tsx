@@ -56,7 +56,9 @@ export default view.extend({
 		function renderStatusElements(status: ProjectStatus | null, _section_id: string) {
 			if (!status) {
 				return [
-					E('span', { 'style': 'color: gray;' }, _('N/A'))
+					<span style='color: gray;'>
+						{_('N/A')}
+					</span>
 				];
 			}
 			const startupFailed = status.startup_status === 'failed';

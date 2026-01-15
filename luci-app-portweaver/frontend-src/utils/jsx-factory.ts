@@ -1,24 +1,24 @@
-export function createJsxElement(tag: any, props: any, ...children: any[]): any {
-    const flatChildren: any[] = [];
-
-    const pushChild = (child: any): void => {
-        if (Array.isArray(child)) {
-            child.forEach(pushChild);
-            return;
+export const JSXFragment = Symbol.for('jsx.fragment');
+export function createJsxElement(tag: any, props: any, ...children: any[]): Node {
+    if(tag === JSXFragment) {   
+        const fragment = document.createDocumentFragment();
+        fragment.append(...children);
+        return fragment;
+    }
+    // fix all boolean attributes
+    if (props) {
+        for (const [key, value] of Object.entries(props)) {
+            if (typeof value === 'boolean') {
+                if (value) {
+                    props[key] = key;
+                } else {
+                    delete props[key];
+                }
+            }
         }
-        if (child === null || child === undefined || child === false) return;
-        flatChildren.push(child);
-    };
-
-    children.forEach(pushChild);
-
-    const childArg = flatChildren.length === 0
-        ? undefined
-        : flatChildren.length === 1
-            ? flatChildren[0]
-            : flatChildren;
-
-    return (E as any)(tag, props || {}, childArg);
+    }
+    return E(tag, props, children);
 }
-
+createJsxElement.Fragment = JSXFragment
+export { };
 globalThis.createJsxElement = createJsxElement;

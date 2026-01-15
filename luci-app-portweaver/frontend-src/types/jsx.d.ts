@@ -6,24 +6,30 @@ declare global {
     name?: string;
     style?: string;
   };
-  function createJsxElement(tag: any, props: any, ...children: any[]): any;
+  function createJsxElement(tag: any, props: any, ...children: any[]): Node;
+  const JSXFragment: unique symbol;
+  type JSXElement<T extends HTMLElement> = Partial<Omit<T, keyof BaseProps> & BaseProps>
   namespace JSX {
-    type Element = any;
+    type Element = HTMLElement;
     interface IntrinsicElements {
-      [elemName: string]: Element;
-      div: BaseProps;
-      span: BaseProps;
-      input: BaseProps & {
-        type?: 'hidden' | 'text' | 'checkbox';
-        value?: string;
-        checked?: boolean;
-        placeholder?: string;
-      }
-      button: BaseProps & {
-        disabled?: boolean;
-        type?: 'button' | 'submit' | 'reset';
-        onClick?: () => void;
-      };
+      [elemName: string]: JSXElement<HTMLElement>;
+      div: JSXElement<HTMLDivElement>;
+      strong: JSXElement<HTMLElement>;
+      button: JSXElement<HTMLButtonElement>;
+      span: JSXElement<HTMLSpanElement>;
+      input: JSXElement<HTMLInputElement>;
+      select: JSXElement<HTMLSelectElement>;
+      option: JSXElement<HTMLOptionElement>;
+      label: JSXElement<HTMLLabelElement>;
+      form: JSXElement<HTMLFormElement>;
+      h1: JSXElement<HTMLHeadingElement>;
+      h2: JSXElement<HTMLHeadingElement>;
+      h3: JSXElement<HTMLHeadingElement>;
+      h4: JSXElement<HTMLHeadingElement>;
+      h5: JSXElement<HTMLHeadingElement>;
+      h6: JSXElement<HTMLHeadingElement>;
+      br: JSXElement<HTMLBRElement>;
+      em: JSXElement<HTMLElement>;
     }
   }
 }

@@ -1,5 +1,7 @@
 export function createFrpNodeSelector(form: any, uci: any) {
-  return form.DummyValue.extend({
+  return form.Value.extend({
+    _hiddenInputs: {} as Record<string, HTMLInputElement>,
+
     renderWidget: function (section_id: string, option_index: number, cfgvalue: string[] | string) {
       let frp_sections = uci.sections('portweaver', 'frp_node') || [];
       let current_value: string[] = Array.isArray(cfgvalue)
@@ -16,15 +18,18 @@ export function createFrpNodeSelector(form: any, uci: any) {
 
       let widget_id = this.cbid(section_id);
 
-      let updateHandler = function (this: HTMLElement) {
-        let wid = this.getAttribute('data-widget-id') as string;
-        let checkboxes = document.querySelectorAll('input.frp-node-checkbox[data-widget-id="' + wid + '"]');
+      // 存储所有元素引用
+      let checkboxes: HTMLInputElement[] = [];
+      let portInputs: Map<string, HTMLInputElement> = new Map();
+      let hiddenInput: HTMLInputElement;
+
+      let updateHandler = function () {
         let values: string[] = [];
         for (let j = 0; j < checkboxes.length; j++) {
-          let cb = checkboxes[j] as HTMLInputElement;
+          let cb = checkboxes[j];
           if (cb.checked) {
             let node = cb.getAttribute('data-node') as string;
-            let port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]') as HTMLInputElement | null;
+            let port_inp = portInputs.get(node);
             let port = port_inp ? port_inp.value.trim() : '';
             if (port) {
               let p = parseInt(port, 10);
@@ -40,53 +45,60 @@ export function createFrpNodeSelector(form: any, uci: any) {
             }
           }
         }
-        let hidden = document.querySelector('input[id="' + wid + '"]') as HTMLInputElement | null;
-        if (hidden) hidden.value = values.join(' ');
+        hiddenInput.value = values.join(' ');
       };
 
-      let container = E('div', { 'class': 'cbi-value-field' });
+      let container = <div class="cbi-value-field"></div> as HTMLElement;
 
       if (frp_sections.length === 0) {
-        container.appendChild(E('em', { 'style': 'color: #999;' }, _('No FRP nodes configured. Please add FRP nodes first.')));
+        const emptyMsg = _('No FRP nodes configured. Please add FRP nodes first.');
+        container.appendChild(<em style="color: #999;">{emptyMsg}</em>);
       } else {
-        let table = E('table', { 'class': 'table', 'style': 'margin: 0; width: auto;' });
+        let table = <table class="table" style="margin: 0; width: auto;"></table> as HTMLElement;
         for (let i = 0; i < frp_sections.length; i++) {
           let node_name = frp_sections[i]['name'] || frp_sections[i]['.name'];
           if (!node_name) continue;
           let is_checked = Object.prototype.hasOwnProperty.call(node_map, node_name);
           let port_value = node_map[node_name] || '';
 
-          let checkbox = E('input', {
-            'type': 'checkbox',
-            'class': 'frp-node-checkbox',
-            'data-widget-id': widget_id,
-            'data-node': node_name,
-            'data-section': section_id,
-            'checked': is_checked ? 'checked' : null,
-            'style': 'margin-right: 8px;'
-          });
+          let checkbox = <input
+            type="checkbox"
+            class="frp-node-checkbox"
+            data-widget-id={widget_id}
+            data-node={node_name}
+            data-section={section_id}
+            checked={is_checked}
+            style="margin-right: 8px;"
+          /> as HTMLInputElement;
 
-          let port_input = E('input', {
-            'type': 'text',
-            'class': 'frp-node-port',
-            'data-widget-id': widget_id,
-            'data-node': node_name,
-            'data-section': section_id,
-            'value': port_value,
-            'placeholder': _('default port'),
-            'style': 'min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;',
-            'disabled': is_checked ? null : 'disabled'
-          });
+          const port_input = <input
+            type='text'
+            class='frp-node-port'
+            data-widget-id={widget_id}
+            data-node={node_name}
+            data-section={section_id}
+            value={port_value}
+            placeholder={_('default port')}
+            style='min-width: 100px !important; width: calc(100% - 80px) !important; margin-left: 10px;'
+            disabled={!is_checked}
+          /> as HTMLInputElement;
 
-          checkbox.addEventListener('change', function (this: HTMLInputElement) {
-            let wid = this.getAttribute('data-widget-id') as string;
-            let node = this.getAttribute('data-node') as string;
-            let port_inp = document.querySelector('input.frp-node-port[data-widget-id="' + wid + '"][data-node="' + node + '"]') as HTMLInputElement | null;
-            if (port_inp) {
-              port_inp.disabled = !this.checked;
-              if (!this.checked) port_inp.value = '';
-            }
-            updateHandler.call(this);
+          // 存储元素引用
+          checkboxes.push(checkbox);
+          portInputs.set(node_name, port_input);
+
+          const port_input_area = <td style={"padding: 4px 8px; border: none;" + (is_checked ? '' : 'display: none;')}>
+            <label style="margin-right: 5px; color: #666;">
+              {_('Port:')}
+            </label>
+            {port_input}
+          </td>
+          checkbox.addEventListener('change', (ev) => {
+            const element = ev.currentTarget as HTMLInputElement;
+            port_input.disabled = !element.checked;
+            port_input_area.style.display = element.checked ? '' : 'none';
+            if (!element.checked) port_input.value = '';
+            updateHandler();
           });
 
           port_input.addEventListener('input', updateHandler);
@@ -97,29 +109,27 @@ export function createFrpNodeSelector(form: any, uci: any) {
               checkbox,
               E('label', { 'style': 'cursor: pointer; font-weight: normal; margin: 0;' }, node_name)
             ]),
-            E('td', { 'style': 'padding: 4px 8px; border: none;' }, [
-              E('label', { 'style': 'margin-right: 5px; color: #666;' }, _('Port:')),
-              port_input
-            ])
+            port_input_area
           ]);
           table.appendChild(row);
         }
         container.appendChild(table);
       }
 
-      let hidden =
-        <input
-          type="hidden"
-          id={widget_id}
-          name={widget_id}
-          value={current_value.join(' ')}
-        >
-        </input>
-      container.appendChild(hidden);
+      hiddenInput = <input
+        type="hidden"
+        id={widget_id}
+        name={widget_id}
+        value={current_value.join(' ')}
+      /> as HTMLInputElement;
+      container.appendChild(hiddenInput);
+
+      // 存储 hiddenInput 引用供 formvalue 方法使用
+      this._hiddenInputs[section_id] = hiddenInput;
 
       let description = <div class="cbi-value-description">
         {_('Select FRP nodes and optionally specify custom ports. Leave port empty to use default.')}
-      </div>
+      </div> as HTMLElement;
       container.appendChild(description);
 
       return container;
@@ -132,11 +142,29 @@ export function createFrpNodeSelector(form: any, uci: any) {
       return [];
     },
 
+    isChanged: function (section_id: string) {
+      let cfg = this.cfgvalue(section_id);
+      let form = this.formvalue(section_id);
+
+      if (!Array.isArray(cfg)) cfg = [];
+      if (!Array.isArray(form)) form = [];
+
+      if (cfg.length !== form.length) return true;
+
+      for (let i = 0; i < cfg.length; i++) {
+        if (cfg[i] !== form[i]) return true;
+      }
+
+      return false;
+    },
+
     formvalue: function (section_id: string) {
-      let widget_id = this.cbid(section_id);
-      let hidden = document.getElementById(widget_id) as HTMLInputElement | null;
-      if (hidden && hidden.value) return hidden.value.split(/\s+/).filter(Boolean);
-      return null;
+      let hidden = this._hiddenInputs[section_id];
+      if (hidden) {
+        let result = hidden.value.split(/\s+/).filter(Boolean);
+        return result.length > 0 ? result : [];
+      }
+      return [];
     },
 
     write: function (section_id: string, formvalue: string[] | null) {
