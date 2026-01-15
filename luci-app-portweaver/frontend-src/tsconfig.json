@@ -2,10 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "es2020",
-    "lib": [
-      "ES5",
-      "DOM"
-    ],
+    "lib": ["ES5", "DOM"],
     "outDir": "./dist",
     "rootDir": "./",
     "strict": true,
@@ -25,12 +22,6 @@
     "jsxFactory": "createJsxElement",
     "jsxFragmentFactory": "createJsxElement.Fragment"
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
 }

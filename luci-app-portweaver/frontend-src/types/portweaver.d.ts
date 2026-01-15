@@ -1,5 +1,5 @@
 export interface PortWeaverStatus {
-  status?: 'running' | 'stopped' | 'degraded' | string;
+  status?: "running" | "stopped" | "degraded" | string;
   total_projects?: number;
   active_ports?: number;
   uptime?: number;
@@ -10,7 +10,7 @@ export interface PortWeaverStatus {
 export interface ProjectStatus {
   enabled?: boolean;
   status?: string;
-  startup_status?: 'failed' | string;
+  startup_status?: "failed" | string;
   error_code?: number;
   active_ports?: number;
   bytes_in?: number;
@@ -21,5 +21,5 @@ export interface PortMapping {
   listenPort: string;
   targetPort: string;
   frpNodes: string[];
-  protocol: 'tcp' | 'udp' | 'both';
+  protocol: "tcp" | "udp" | "both";
 }

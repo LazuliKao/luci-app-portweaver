@@ -7,12 +7,12 @@ declare namespace LuCI {
   namespace uci {
     interface SectionObject {
       [x: string]: string | number | boolean | string[];
-      '.anonymous'?: boolean;
-      '.index'?: number;
-      '.name'?: string;
-      '.type'?: string;
-      '.create'?: string;
-    };
+      ".anonymous"?: boolean;
+      ".index"?: number;
+      ".name"?: string;
+      ".type"?: string;
+      ".create"?: string;
+    }
   }
   interface View {
     load(): Promise<any>;
@@ -37,7 +37,11 @@ declare namespace LuCI {
   }
 
   interface UI {
-    addNotification(title?: string | null, message: string | HTMLElement, type?: 'info' | 'warning' | 'error'): void;
+    addNotification(
+      title?: string | null,
+      message: string | HTMLElement,
+      type?: "info" | "warning" | "error",
+    ): void;
     showModal(title: string, content: HTMLElement | string): void;
     hideModal(): void;
   }

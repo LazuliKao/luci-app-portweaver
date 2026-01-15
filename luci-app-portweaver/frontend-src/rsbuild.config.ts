@@ -72,7 +72,7 @@ export default defineConfig({
           banner: luciRequires,
           raw: true,
           entryOnly: true,
-        })
+        }),
       );
       config.plugins.push(
         new rspack.BannerPlugin({
@@ -80,7 +80,7 @@ export default defineConfig({
           raw: true,
           entryOnly: true,
           footer: true,
-        })
+        }),
       );
       return config;
     },
