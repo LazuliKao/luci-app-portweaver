@@ -1,4 +1,5 @@
 import { createFrpNodeSelector } from "./FrpNodeSelector";
+import { ValidatedInput } from "./ValidatedInput";
 class PortMappingEditor extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
   parseMapping(str: string) {
@@ -78,7 +79,6 @@ class PortMappingEditor extends L.form.Value {
     cfgvalue: string[] | string,
   ) {
     void _option_index;
-    const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
     const current_values: string[] = Array.isArray(cfgvalue)
       ? (cfgvalue as string[])
       : typeof cfgvalue === "string"
@@ -90,31 +90,22 @@ class PortMappingEditor extends L.form.Value {
       <div id={`portmapping-wrapper-${section_id}`}></div>
     ) as HTMLElement;
 
+    // 存储每个行的元素引用
+    const rowRefs: Array<{
+      listenInput: HTMLInputElement;
+      targetInput: HTMLInputElement;
+      protocolSelect: HTMLSelectElement;
+      getSelectedNodes: () => string[];
+    }> = [];
+
     const updateHiddenValue = (): void => {
-      const rows = mappings_wrapper.querySelectorAll(".portmapping-row");
       const values: string[] = [];
-      rows.forEach((r: Element) => {
-        const listen = (
-          r.querySelector(".listen-port-input") as HTMLInputElement
-        ).value.trim();
-        const target = (
-          r.querySelector(".target-port-input") as HTMLInputElement
-        ).value.trim();
-        const protocol = (
-          r.querySelector(".protocol-select") as HTMLSelectElement
-        ).value;
-        const frpNodes: string[] = [];
-        const checkboxes = r.querySelectorAll("input.frp-node-checkbox-pm");
-        checkboxes.forEach((cb: any) => {
-          if (cb.checked) {
-            const node = cb.getAttribute("data-node") as string;
-            const port_inp = r.querySelector(
-              `input.frp-node-port-pm[data-node="${node}"]`,
-            ) as HTMLInputElement | null;
-            const port = port_inp ? port_inp.value.trim() : "";
-            frpNodes.push(port ? `${node}:${port}` : node);
-          }
-        });
+      for (const ref of rowRefs) {
+        const listen = ref.listenInput.value.trim();
+        const target = ref.targetInput.value.trim();
+        const protocol = ref.protocolSelect.value;
+        const frpNodes = ref.getSelectedNodes();
+
         const temp = {
           listenPort: listen,
           targetPort: target,
@@ -123,7 +114,7 @@ class PortMappingEditor extends L.form.Value {
         };
         const str = this.buildString(temp);
         if (str && listen && target) values.push(str);
-      });
+      }
 
       if (this.hiddenInput) this.hiddenInput.value = values.join(" ");
     };
@@ -131,7 +122,13 @@ class PortMappingEditor extends L.form.Value {
     const renderMappingRow = (
       mapping_str: string,
       index: number,
-    ): HTMLElement => {
+    ): {
+      element: HTMLElement;
+      listenInput: HTMLInputElement;
+      targetInput: HTMLInputElement;
+      protocolSelect: HTMLSelectElement;
+      getSelectedNodes: () => string[];
+    } => {
       const mapping = this.parseMapping(mapping_str) || {
         listenPort: "",
         targetPort: "",
@@ -139,31 +136,33 @@ class PortMappingEditor extends L.form.Value {
         protocol: "tcp",
       };
       const row_id = `portmapping-row-${section_id}-${index}`;
-      let isTextMode = false;
+      let isTextMode = true;
 
-      const listenInput = (
-        <input
-          type="text"
-          class="listen-port-input"
-          data-index={index}
-          data-section={section_id}
-          value={mapping.listenPort}
-          placeholder={_("8080 or 8080-8090")}
-          style="width: 70px; min-width: 50px; margin-right: 10px;"
-        />
-      ) as HTMLInputElement;
+      const listenInput = ValidatedInput({
+        type: "text",
+        className: "listen-port-input",
+        value: mapping.listenPort,
+        placeholder: _("8080 or 8080-8090"),
+        style: "width: 70px; min-width: 50px; margin-right: 10px;",
+        dataAttributes: { index: String(index), section: section_id },
+        onValidate: (value) => {
+          if (!value.trim()) return false;
+          return this.validatePortOrRange(value.trim());
+        },
+      }) as HTMLInputElement;
 
-      const targetInput = (
-        <input
-          type="text"
-          class="target-port-input"
-          data-index={index}
-          data-section={section_id}
-          value={mapping.targetPort}
-          placeholder={_("80 or 80-90")}
-          style="width: 70px; min-width: 50px; margin-right: 10px;"
-        />
-      ) as HTMLInputElement;
+      const targetInput = ValidatedInput({
+        type: "text",
+        className: "target-port-input",
+        value: mapping.targetPort,
+        placeholder: _("80 or 80-90"),
+        style: "width: 70px; min-width: 50px; margin-right: 10px;",
+        dataAttributes: { index: String(index), section: section_id },
+        onValidate: (value) => {
+          if (!value.trim()) return false;
+          return this.validatePortOrRange(value.trim());
+        },
+      }) as HTMLInputElement;
 
       const protocolSelect = (
         <select
@@ -222,16 +221,21 @@ class PortMappingEditor extends L.form.Value {
       };
 
       // 使用复用的 FRP 节点选择器组件
-      const { container: selectorContainer, getSelectedNodes } =
-        createFrpNodeSelector({
-          selectedNodes: mapping.frpNodes || [],
-          onChange: () => {
-            updatePreview();
-            updateHiddenValue();
-          },
-          checkboxClass: "frp-node-checkbox-pm",
-          portInputClass: "frp-node-port-pm",
-        });
+      const selector = createFrpNodeSelector({
+        selectedNodes: mapping.frpNodes || [],
+        onChange: () => {
+          validateAndUpdate();
+        },
+        checkboxClass: "frp-node-checkbox-pm",
+        portInputClass: "frp-node-port-pm",
+      });
+
+      const {
+        container: selectorContainer,
+        getSelectedNodes,
+        isValid: isFrpValid,
+        getValidationError: getFrpError,
+      } = selector;
 
       const frpContainer = (
         <div class="frp-nodes-select" style="display: block;">
@@ -271,7 +275,7 @@ class PortMappingEditor extends L.form.Value {
       const modeToggleBtn = (
         <button
           type="button"
-          class="btn btn-xs"
+          class="btn cbi-button cbi-button-edit"
           style="margin-bottom: 10px; margin-right: 10px;"
         >
           {_("Text Edit")}
@@ -281,7 +285,7 @@ class PortMappingEditor extends L.form.Value {
       const deleteBtn = (
         <button
           type="button"
-          class="btn btn-sm btn-danger"
+          class="btn cbi-button cbi-button-remove"
           data-index={index}
           data-section={section_id}
           style="margin-top: 10px; margin-left: 10px;"
@@ -308,16 +312,51 @@ class PortMappingEditor extends L.form.Value {
         </div>
       ) as HTMLElement;
 
-      const updatePreviewAndHidden = (): void => {
+      const validateAndUpdate = (): void => {
+        const listen = listenInput.value.trim();
+        const target = targetInput.value.trim();
+
+        // 清除之前的错误
+        errorDiv.textContent = "";
+
+        // 验证监听端口
+        if (listen && !this.validatePortOrRange(listen)) {
+          errorDiv.textContent = _("Invalid listen port format");
+          return;
+        }
+
+        // 验证目标端口
+        if (target && !this.validatePortOrRange(target)) {
+          errorDiv.textContent = _("Invalid target port format");
+          return;
+        }
+
+        // 验证端口范围匹配
+        if (listen && target) {
+          const listenPorts = this.parsePortRange(listen);
+          const targetPorts = this.parsePortRange(target);
+
+          if (listenPorts.length !== targetPorts.length) {
+            errorDiv.textContent = _("Port ranges must have the same size");
+            return;
+          }
+        }
+
+        // 验证 FRP 节点
+        if (!isFrpValid()) {
+          errorDiv.textContent = getFrpError();
+          return;
+        }
+
         updatePreview();
         updateHiddenValue();
       };
 
-      listenInput.oninput = updatePreviewAndHidden;
-      listenInput.onchange = updatePreviewAndHidden;
-      targetInput.oninput = updatePreviewAndHidden;
-      targetInput.onchange = updatePreviewAndHidden;
-      protocolSelect.onchange = updatePreviewAndHidden;
+      listenInput.oninput = validateAndUpdate;
+      listenInput.onchange = validateAndUpdate;
+      targetInput.oninput = validateAndUpdate;
+      targetInput.onchange = validateAndUpdate;
+      protocolSelect.onchange = validateAndUpdate;
 
       textModeInput.oninput = (ev: Event) => {
         const inputEl = ev.currentTarget as HTMLInputElement | null;
@@ -328,67 +367,60 @@ class PortMappingEditor extends L.form.Value {
           targetInput.value = parsed.targetPort;
           protocolSelect.value = parsed.protocol as any;
 
-          // 更新 FRP 节点选择器的状态
-          const allCheckboxes = selectorContainer.querySelectorAll(
-            "input.frp-node-checkbox-pm",
-          );
-          allCheckboxes.forEach((cb: any) => {
-            const node = cb.getAttribute("data-node");
-            const is_checked = (parsed.frpNodes || []).some(
-              (n: string) => n.split(":")[0] === node,
-            );
-            cb.checked = is_checked;
-
-            const port_inp = selectorContainer.querySelector(
-              `input.frp-node-port-pm[data-node="${node}"]`,
-            ) as HTMLInputElement | null;
-            if (port_inp) {
-              port_inp.disabled = !is_checked;
-              const port_td = port_inp.closest("td");
-              if (port_td) {
-                port_td.style.display = is_checked ? "" : "none";
-              }
-
-              if (is_checked) {
-                const foundNode = (parsed.frpNodes || []).find(
-                  (n: string) => n.split(":")[0] === node,
-                );
-                if (foundNode) {
-                  const parts = foundNode.split(":");
-                  port_inp.value = parts.length > 1 ? parts[1] : "";
-                }
-              } else {
-                port_inp.value = "";
-              }
-            }
-          });
-          updateHiddenValue();
+          // 重新创建选择器以更新状态（避免使用 querySelectorAll）
+          // 由于 FRP 节点选择器已经创建，我们需要手动同步状态
+          // 这里简化处理：直接调用 validateAndUpdate
+          validateAndUpdate();
         }
       };
-
-      modeToggleBtn.onclick = (e: MouseEvent) => {
-        e.preventDefault();
-        isTextMode = !isTextMode;
-        titleRow.style.display = isTextMode ? "none" : "flex";
-        frpContainer.style.display = isTextMode ? "none" : "block";
-        textModeInput.style.display = isTextMode ? "block" : "none";
-        previewDiv.style.display = isTextMode ? "none" : "block";
+      function setDisplay(element: HTMLElement, display: string) {
+        element.style.setProperty("display", display, "important");
+      }
+      function updateVis() {
+        setDisplay(titleRow, isTextMode ? "none" : "flex");
+        setDisplay(frpContainer, isTextMode ? "none" : "block");
+        setDisplay(textModeInput, isTextMode ? "block" : "none");
+        setDisplay(previewDiv, isTextMode ? "none" : "block");
         modeToggleBtn.textContent = isTextMode
           ? _("Visual Edit")
           : _("Text Edit");
+      }
+      updateVis();
+      modeToggleBtn.onclick = (e: MouseEvent) => {
+        e.preventDefault();
+        isTextMode = !isTextMode;
+        updateVis();
       };
 
       deleteBtn.onclick = (e: MouseEvent) => {
         e.preventDefault();
         row.remove();
+        // 从 rowRefs 中移除当前行的引用
+        const idx = rowRefs.findIndex(
+          (ref) =>
+            ref.listenInput === listenInput &&
+            ref.targetInput === targetInput &&
+            ref.protocolSelect === protocolSelect,
+        );
+        if (idx !== -1) {
+          rowRefs.splice(idx, 1);
+        }
         updateHiddenValue();
       };
 
-      return row;
+      return {
+        element: row,
+        listenInput,
+        targetInput,
+        protocolSelect,
+        getSelectedNodes,
+      };
     };
 
     for (let i = 0; i < current_values.length; i++) {
-      mappings_wrapper.appendChild(renderMappingRow(current_values[i], i));
+      const rowData = renderMappingRow(current_values[i], i);
+      rowRefs.push(rowData);
+      mappings_wrapper.appendChild(rowData.element);
     }
 
     const addBtn = (
@@ -403,9 +435,10 @@ class PortMappingEditor extends L.form.Value {
 
     addBtn.onclick = (e: MouseEvent) => {
       e.preventDefault();
-      const rows = mappings_wrapper.querySelectorAll(".portmapping-row");
-      const new_index = rows.length;
-      mappings_wrapper.appendChild(renderMappingRow("", new_index));
+      const new_index = rowRefs.length;
+      const rowData = renderMappingRow("", new_index);
+      rowRefs.push(rowData);
+      mappings_wrapper.appendChild(rowData.element);
     };
 
     const hiddenInput = (
@@ -415,8 +448,8 @@ class PortMappingEditor extends L.form.Value {
     this.hiddenInput = hiddenInput as HTMLInputElement;
     const container = (
       <div class="cbi-value-field">
-        {addBtn}
         {mappings_wrapper}
+        {addBtn}
         {hiddenInput}
         <div class="cbi-value-description">
           {_(
@@ -447,7 +480,6 @@ class PortMappingEditor extends L.form.Value {
       return L.uci.unset("portweaver", section_id, "port_mapping");
     }
   }
-
   validate(section_id: string, value: any) {
     // 验证端口映射格式
     if (!value) {
@@ -548,7 +580,6 @@ class PortMappingEditor extends L.form.Value {
     this.validationError = "";
     this.isValidFlag = true;
   }
-
   private validatePortOrRange(portStr: string): boolean {
     // 验证单个端口或端口范围
     if (!portStr) return false;

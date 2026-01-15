@@ -134,6 +134,46 @@ export function createFrpNodeSelector(options: {
     container.appendChild(table);
   }
 
+  // 验证逻辑
+  let validationError = "";
+  let isValidFlag = true;
+
+  const validate = (value: string[] | string | null) => {
+    // 验证值的格式：应该是空或空格分隔的 "node:port" 对
+    if (!value) {
+      validationError = "";
+      isValidFlag = true;
+      return;
+    }
+
+    const valueStr = Array.isArray(value) ? value.join(" ") : String(value);
+    const parts = valueStr.split(/\s+/).filter(Boolean);
+
+    for (const part of parts) {
+      const [node, port] = part.split(":");
+
+      // 检查节点名称是否为空
+      if (!node) {
+        validationError = _("Invalid FRP node format");
+        isValidFlag = false;
+        return;
+      }
+
+      // 如果指定了端口，验证端口号
+      if (port) {
+        const portNum = parseInt(port, 10);
+        if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
+          validationError = _("Port must be a number between 1 and 65535");
+          isValidFlag = false;
+          return;
+        }
+      }
+    }
+
+    validationError = "";
+    isValidFlag = true;
+  };
+
   // 返回容器和获取当前选中节点的函数
   return {
     container,
@@ -149,11 +189,32 @@ export function createFrpNodeSelector(options: {
       }
       return values;
     },
+    isValid: () => {
+      const nodes = [];
+      for (const cb of checkboxes) {
+        if (cb.checked) {
+          const node = cb.getAttribute("data-node") as string;
+          const port_inp = portInputs.get(node);
+          const port = port_inp ? port_inp.value.trim() : "";
+          nodes.push(port ? `${node}:${port}` : node);
+        }
+      }
+      validate(nodes);
+      return isValidFlag;
+    },
+    getValidationError: () => {
+      return validationError || "";
+    },
   };
 }
 
 class FrpNodeSelector extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
+  private selectorValidation?: {
+    isValid: () => boolean;
+    getValidationError: () => string;
+  };
+
   renderWidget(
     section_id: string,
     _option_index: number,
@@ -168,7 +229,7 @@ class FrpNodeSelector extends L.form.Value {
 
     let hiddenInput: HTMLInputElement;
 
-    const { container: selectorContainer } = createFrpNodeSelector({
+    const selector = createFrpNodeSelector({
       selectedNodes: current_value,
       onChange: (nodes) => {
         hiddenInput.value = nodes.join(" ");
@@ -176,6 +237,14 @@ class FrpNodeSelector extends L.form.Value {
       checkboxClass: "frp-node-checkbox",
       portInputClass: "frp-node-port",
     });
+
+    const { container: selectorContainer } = selector;
+
+    // 保存验证函数引用
+    this.selectorValidation = {
+      isValid: selector.isValid,
+      getValidationError: selector.getValidationError,
+    };
 
     hiddenInput = (
       <input
@@ -234,56 +303,23 @@ class FrpNodeSelector extends L.form.Value {
       return L.uci.unset("portweaver", section_id, "frp_nodes");
     }
   }
-  validate(section_id: string, value: any) {
-    // 验证值的格式：应该是空或空格分隔的 "node:port" 对
-    if (!value) {
-      this.validationError = "";
-      this.isValidFlag = true;
-      return;
+
+  isValid(_section_id: string): boolean {
+    // 复用 createFrpNodeSelector 中的验证逻辑
+    if (this.selectorValidation) {
+      return this.selectorValidation.isValid();
     }
-
-    const valueStr = Array.isArray(value) ? value.join(" ") : String(value);
-    const parts = valueStr.split(/\s+/).filter(Boolean);
-
-    for (const part of parts) {
-      const [node, port] = part.split(":");
-
-      // 检查节点名称是否为空
-      if (!node) {
-        this.validationError = _("Invalid FRP node format");
-        this.isValidFlag = false;
-        return;
-      }
-
-      // 如果指定了端口，验证端口号
-      if (port) {
-        const portNum = parseInt(port, 10);
-        if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
-          this.validationError = _("Port must be a number between 1 and 65535");
-          this.isValidFlag = false;
-          return;
-        }
-      }
-    }
-
-    this.validationError = "";
-    this.isValidFlag = true;
+    return true;
   }
 
-  isValid(section_id: string): boolean {
-    const value = this.formvalue(section_id);
-    this.validate(section_id, value);
-    return this.isValidFlag ?? true;
-  }
-
-  getValidationError(section_id: string): string {
-    if (!this.isValid(section_id)) {
-      return this.validationError || _("Validation failed");
+  getValidationError(_section_id: string): string {
+    // 复用 createFrpNodeSelector 中的验证逻辑
+    if (this.selectorValidation && !this.selectorValidation.isValid()) {
+      return (
+        this.selectorValidation.getValidationError() || _("Validation failed")
+      );
     }
     return "";
   }
-
-  private validationError: string = "";
-  private isValidFlag: boolean = true;
 }
 export default FrpNodeSelector;
