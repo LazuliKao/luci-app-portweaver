@@ -14,26 +14,24 @@ declare namespace LuCI {
       ".create"?: string;
     }
   }
-  interface View {
-    load(): Promise<any>;
-    render?(data?: any): HTMLElement;
+  declare class View<T extends {} = any> {
+    load(): Promise<T>;
+    render?(data?: T): Promise<Node> | Node;
     handleSave?(): Promise<void>;
     handleSaveApply?(): Promise<void>;
     handleReset?(): Promise<void>;
-    extend(proto: Partial<View>): View;
   }
-
   interface Form {
-    Map: any;
-    NamedSection: any;
-    TypedSection: any;
-    Value: any;
-    Flag: any;
-    ListValue: any;
-    DynamicList: any;
-    Button: any;
-    GridSection: any;
-    DummyValue: any;
+    Value: typeof LuCI.form.CBIValue;
+    NamedSection: typeof LuCI.form.CBIValue;
+    TypedSection: typeof LuCI.form.CBIValue;
+    Flag: typeof LuCI.form.CBIValue;
+    ListValue: typeof LuCI.form.CBIValue;
+    DynamicList: typeof LuCI.form.CBIValue;
+    Button: typeof LuCI.form.CBIValue;
+    GridSection: typeof LuCI.form.CBIValue;
+    DummyValue: typeof LuCI.form.CBIValue;
+    Map: typeof LuCI.form.CBIMap;
   }
 
   interface UI {
@@ -59,6 +57,7 @@ declare namespace LuCI {
     load(config: string): Promise<void>;
     get(config: string, section: string, option?: string): any;
     set(config: string, section: string, option: string, value: any): void;
+    unset(config: string, section: string, option?: string): void;
     add(config: string, type: string, name?: string): string;
     remove(config: string, section: string): void;
     save(): Promise<void>;
@@ -72,7 +71,9 @@ declare namespace LuCI {
 
 // Global LuCI objects available via LuCI 'require' lines
 declare const L: {
-  view: LuCI.View;
+  view: typeof LuCI.View & {
+    extend<TN>(proto: Partial<View<TN>>): View<TN>;
+  };
   form: LuCI.Form;
   ui: LuCI.UI;
   rpc: LuCI.RPC;
