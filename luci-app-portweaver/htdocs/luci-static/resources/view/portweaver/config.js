@@ -674,18 +674,18 @@ const rpcClient = createRpcClient(main_rpc);
         ]);
     },
     render: function(data) {
-        var m, s, o;
-        var globalStatus = data[2] || {};
-        var projectStatuses = data[3] ? data[3].projects || [] : [];
-        var getProjectIndex = function(section_id) {
-            var sections = main_uci.sections('portweaver', 'project');
-            for(var i = 0; i < sections.length; i++){
+        let m, s, o;
+        let globalStatus = data[2] || {};
+        let projectStatuses = data[3] ? data[3].projects || [] : [];
+        const getProjectIndex = function(section_id) {
+            const sections = main_uci.sections('portweaver', 'project');
+            for(let i = 0; i < sections.length; i++){
                 if (sections[i]['.name'] === section_id) return i;
             }
             return -1;
         };
-        var getProjectStatus = function(section_id) {
-            var idx = getProjectIndex(section_id);
+        const getProjectStatus = function(section_id) {
+            const idx = getProjectIndex(section_id);
             return idx >= 0 && projectStatuses && projectStatuses[idx] ? projectStatuses[idx] : null;
         };
         function renderStatusElements(status, _section_id) {
@@ -694,11 +694,11 @@ const rpcClient = createRpcClient(main_rpc);
                     'style': 'color: gray;'
                 }, _('N/A'))
             ];
-            var startupFailed = status.startup_status === 'failed';
-            var statusColor = status.status === 'running' && !startupFailed ? 'green' : '#dc3545';
-            var errorMessage = null;
+            const startupFailed = status.startup_status === 'failed';
+            const statusColor = status.status === 'running' && !startupFailed ? 'green' : '#dc3545';
+            let errorMessage = null;
             if (startupFailed && status.error_code !== undefined && status.error_code !== 0) errorMessage = getErrorMessage(status.error_code);
-            var statusBadgeAttrs = {
+            const statusBadgeAttrs = {
                 'class': 'ifacebadge',
                 'style': ''
             };
@@ -706,7 +706,7 @@ const rpcClient = createRpcClient(main_rpc);
                 statusBadgeAttrs.title = errorMessage;
                 statusBadgeAttrs.style += ' cursor: help;';
             }
-            var statusElements = [
+            const statusElements = [
                 E('div', {}, [
                     E('span', statusBadgeAttrs, [
                         E('strong', {
@@ -734,8 +734,8 @@ const rpcClient = createRpcClient(main_rpc);
         m = new main_form.Map('portweaver', _('PortWeaver'), _('Port forwarding and NAT traversal configuration'));
         // Setup auto-refresh
         poll.add(function() {
-            var updateText = function(id, value) {
-                var elem = document.getElementById(id);
+            const updateText = function(id, value) {
+                const elem = document.getElementById(id);
                 if (elem) elem.textContent = String(value);
             };
             return Promise.all([
@@ -744,8 +744,8 @@ const rpcClient = createRpcClient(main_rpc);
             ]).then(function(results) {
                 globalStatus = results[0] || {};
                 projectStatuses = results[1] && results[1].projects ? results[1].projects : [];
-                var statusElem = document.getElementById('status-value');
-                var statusColors = {
+                const statusElem = document.getElementById('status-value');
+                const statusColors = {
                     'running': 'green',
                     'stopped': 'red',
                     'degraded': 'orange'
@@ -760,13 +760,14 @@ const rpcClient = createRpcClient(main_rpc);
                 updateText('traffic-in-value', formatBytes(globalStatus.total_bytes_in || 0));
                 updateText('traffic-out-value', formatBytes(globalStatus.total_bytes_out || 0));
                 (function() {
-                    var sections = main_uci.sections('portweaver', 'project') || [];
-                    for(var i = 0; i < sections.length; i++){
-                        var section_id = sections[i]['.name'];
-                        var status = getProjectStatus(section_id);
-                        var section = document.getElementById('project-status-' + section_id);
+                    const sections = main_uci.sections('portweaver', 'project') || [];
+                    for(let i = 0; i < sections.length; i++){
+                        const section_id = sections[i]['.name'];
+                        if (!section_id) continue;
+                        const status = getProjectStatus(section_id);
+                        const section = document.getElementById('project-status-' + section_id);
                         if (!section) continue;
-                        var newStatusElements = renderStatusElements(status, section_id);
+                        const newStatusElements = renderStatusElements(status, section_id);
                         section.replaceWith(E('div', {
                             'id': 'project-status-' + section_id
                         }, newStatusElements));
@@ -785,18 +786,18 @@ const rpcClient = createRpcClient(main_rpc);
         o = s.option(main_form.DummyValue, '_runtime_status', _('Runtime Status'));
         o.rawhtml = true;
         o.cfgvalue = function() {
-            var panel = new StatusPanel();
+            const panel = new StatusPanel();
             return panel.render(globalStatus);
         };
         // Helper to toggle runtime enable via RPC
-        var runtimeToggle = function(section_id) {
-            var idx = getProjectIndex(section_id);
+        const runtimeToggle = function(section_id) {
+            const idx = getProjectIndex(section_id);
             if (idx < 0) {
                 ui.addNotification(null, E('p', _('Could not determine project index')), 'error');
                 return Promise.resolve();
             }
-            var status = getProjectStatus(section_id);
-            var newEnabled = !(status && status.enabled);
+            const status = getProjectStatus(section_id);
+            const newEnabled = !(status && status.enabled);
             return rpcClient.setEnabled(idx, !!newEnabled).then(function() {
                 ui.addNotification(null, E('p', _('Runtime state updated to: ') + (newEnabled ? _('enabled') : _('disabled'))), 'info');
                 return Promise.all([
@@ -825,7 +826,7 @@ const rpcClient = createRpcClient(main_rpc);
         o = s.option(main_form.DummyValue, '_runtime_status', _('Status'));
         o.modalonly = false;
         o.textvalue = function(section_id) {
-            var status = getProjectStatus(section_id);
+            const status = getProjectStatus(section_id);
             return E('div', {
                 'id': 'project-status-' + section_id
             }, renderStatusElements(status, section_id));
@@ -835,7 +836,7 @@ const rpcClient = createRpcClient(main_rpc);
         o.modalonly = false;
         o.editable = true;
         o.inputtitle = function(section_id) {
-            var status = getProjectStatus(section_id);
+            const status = getProjectStatus(section_id);
             return status && status.enabled ? _('Disable') : _('Enable');
         };
         o.onclick = function(_ev, section_id) {
@@ -849,25 +850,25 @@ const rpcClient = createRpcClient(main_rpc);
         o = s.option(main_form.DummyValue, '_preview', _('Overview'));
         o.modalonly = false;
         o.textvalue = function(section_id) {
-            var protocol = main_uci.get('portweaver', section_id, 'protocol') || 'tcp';
-            var family = main_uci.get('portweaver', section_id, 'family') || 'any';
-            var listen_port = main_uci.get('portweaver', section_id, 'listen_port') || '';
-            var target_address = main_uci.get('portweaver', section_id, 'target_address') || '';
-            var target_port = main_uci.get('portweaver', section_id, 'target_port') || '';
-            var port_mappings = L.toArray(main_uci.get('portweaver', section_id, 'port_mapping'));
-            var src_zones = L.toArray(main_uci.get('portweaver', section_id, 'src_zone'));
-            var dest_zones = L.toArray(main_uci.get('portweaver', section_id, 'dest_zone'));
-            var proto_text = {
+            const protocol = main_uci.get('portweaver', section_id, 'protocol') || 'tcp';
+            const family = main_uci.get('portweaver', section_id, 'family') || 'any';
+            const listen_port = main_uci.get('portweaver', section_id, 'listen_port') || '';
+            const target_address = main_uci.get('portweaver', section_id, 'target_address') || '';
+            const target_port = main_uci.get('portweaver', section_id, 'target_port') || '';
+            const port_mappings = L.toArray(main_uci.get('portweaver', section_id, 'port_mapping'));
+            const src_zones = L.toArray(main_uci.get('portweaver', section_id, 'src_zone'));
+            const dest_zones = L.toArray(main_uci.get('portweaver', section_id, 'dest_zone'));
+            const proto_text = {
                 'both': _('TCP and UDP'),
                 'tcp': 'TCP',
                 'udp': 'UDP'
             }[protocol] || String(protocol).toUpperCase();
-            var family_text = {
+            const family_text = {
                 'any': _('IPv4 and IPv6'),
                 'ipv4': 'IPv4',
                 'ipv6': 'IPv6'
             }[family] || family;
-            var lines = [];
+            const lines = [];
             lines.push(E('span', {}, [
                 _('Incoming '),
                 E('var', {}, family_text),
@@ -875,7 +876,7 @@ const rpcClient = createRpcClient(main_rpc);
                 E('var', {}, proto_text)
             ]));
             if (src_zones.length > 0) {
-                var src_badges = src_zones.map(function(z) {
+                const src_badges = src_zones.map(function(z) {
                     return E('span', {
                         'class': 'zonebadge',
                         'style': fwmodel.getZoneColorStyle(z)
@@ -899,7 +900,7 @@ const rpcClient = createRpcClient(main_rpc);
                     E('var', {}, port_mappings.length),
                     _(' mapping(s)')
                 ]));
-                var first = port_mappings[0];
+                const first = port_mappings[0];
                 lines.push(E('br'));
                 lines.push(E('span', {}, [
                     _('e.g. '),
@@ -920,7 +921,7 @@ const rpcClient = createRpcClient(main_rpc);
                 _(' to ')
             ]));
             if (dest_zones.length > 0) {
-                var dest_badges = dest_zones.map(function(z) {
+                const dest_badges = dest_zones.map(function(z) {
                     return E('span', {
                         'class': 'zonebadge',
                         'style': fwmodel.getZoneColorStyle(z)
@@ -1015,7 +1016,7 @@ const rpcClient = createRpcClient(main_rpc);
         o.placeholder = '8080';
         o.depends('use_port_mappings', '0');
         o.validate = function(section_id, value) {
-            var use_mappings = main_uci.get('portweaver', section_id, 'use_port_mappings');
+            const use_mappings = main_uci.get('portweaver', section_id, 'use_port_mappings');
             if (use_mappings !== '1') {
                 if (!value || String(value).trim() === '') return _('This field is required in single port mode');
             }
@@ -1027,7 +1028,7 @@ const rpcClient = createRpcClient(main_rpc);
         o.placeholder = '80';
         o.depends('use_port_mappings', '0');
         o.validate = function(section_id, value) {
-            var use_mappings = main_uci.get('portweaver', section_id, 'use_port_mappings');
+            const use_mappings = main_uci.get('portweaver', section_id, 'use_port_mappings');
             if (use_mappings !== '1') {
                 if (!value || String(value).trim() === '') return _('This field is required in single port mode');
             }
@@ -1092,7 +1093,7 @@ const rpcClient = createRpcClient(main_rpc);
         o.placeholder = '7000';
         o.validate = function(_section_id, value) {
             if (!value || String(value).trim() === '') return _('Server port is required');
-            var port = parseInt(value, 10);
+            const port = parseInt(value, 10);
             if (isNaN(port) || port < 1 || port > 65535) return _('Port must be between 1 and 65535');
             return true;
         };
