@@ -14,18 +14,39 @@ src/
 
 ## Development
 
+### Local Development
 ```bash
-# Install dependencies
-npm install
+pnpm install
+pnpm dev
+```
 
-# Build once
-npm run build
+### Remote Development (Auto-upload to OpenWrt)
 
-# Watch mode for development
-npm run watch
+1. Copy `.env.example` to `.env` and configure SSH settings:
+```bash
+cp .env.example .env
+```
 
-# Clean build artifacts
-npm run clean
+2. Edit `.env`:
+```env
+SSH_HOST=192.168.1.1
+SSH_PORT=22
+SSH_USERNAME=root
+SSH_PASSWORD=your_password
+# Or use SSH key: SSH_PRIVATE_KEY_PATH=~/.ssh/id_rsa
+SSH_REMOTE_PATH=/www/luci-static/resources/view/portweaver
+```
+
+3. Start remote development:
+```bash
+pnpm dev:remote
+```
+
+This will auto-compile and upload changes to your OpenWrt device.
+
+### Build
+```bash
+pnpm build
 ```
 
 ## Build Output

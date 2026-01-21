@@ -367,9 +367,6 @@ class PortMappingEditor extends L.form.Value {
           targetInput.value = parsed.targetPort;
           protocolSelect.value = parsed.protocol as any;
 
-          // 重新创建选择器以更新状态（避免使用 querySelectorAll）
-          // 由于 FRP 节点选择器已经创建，我们需要手动同步状态
-          // 这里简化处理：直接调用 validateAndUpdate
           validateAndUpdate();
         }
       };
