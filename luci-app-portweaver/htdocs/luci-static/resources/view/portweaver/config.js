@@ -741,12 +741,12 @@ class PortMappingEditor extends L.form.Value {
                 class: "text-mode-input",
                 value: mapping_str,
                 placeholder: _("[8080][node1:9888]:80/tcp or 8080:80/tcp"),
-                style: "width: 100%; margin-bottom: 10px; padding: 5px; display: none;"
+                style: "width: 100%; margin-bottom: 6px; padding: 5px; display: none;"
             });
             const previewDiv = /*#__PURE__*/ createJsxElement("div", {
                 class: "portmapping-preview",
                 "data-index": index,
-                style: "margin-top: 8px; padding: 8px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
+                style: "margin-top: 6px; padding: 6px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
             }, _("Preview: "), this.buildString(mapping));
             const updatePreview = ()=>{
                 const listen = listenInput.value.trim();
@@ -775,15 +775,15 @@ class PortMappingEditor extends L.form.Value {
             const { container: selectorContainer, getSelectedNodes, isValid: isFrpValid, getValidationError: getFrpError } = selector;
             const frpContainer = /*#__PURE__*/ createJsxElement("div", {
                 class: "frp-nodes-select",
-                style: "display: block;"
+                style: "display: block; margin-top: 6px;"
             }, /*#__PURE__*/ createJsxElement("span", {
-                style: "display: block; margin-bottom: 8px; font-weight: bold;"
+                style: "display: block; margin-bottom: 6px; font-weight: bold;"
             }, _("FRP Nodes (Optional):")));
             frpContainer.appendChild(selectorContainer);
             const errorDiv = /*#__PURE__*/ createJsxElement("div", {
                 class: "portmapping-error",
                 "data-index": index,
-                style: "color: red; margin-top: 8px; min-height: 20px; font-size: 12px;"
+                style: "color: red; margin-top: 6px; font-size: 12px; display: none;"
             });
             const titleRow = /*#__PURE__*/ createJsxElement("div", {
                 style: "display: flex; gap: 10px; align-items: center;"
@@ -797,48 +797,50 @@ class PortMappingEditor extends L.form.Value {
             const modeToggleBtn = /*#__PURE__*/ createJsxElement("button", {
                 type: "button",
                 class: "btn cbi-button cbi-button-edit",
-                style: "margin-bottom: 10px; margin-right: 10px;"
+                style: "margin-right: 8px;"
             }, _("Text Edit"));
             const deleteBtn = /*#__PURE__*/ createJsxElement("button", {
                 type: "button",
                 class: "btn cbi-button cbi-button-remove",
                 "data-index": index,
-                "data-section": section_id,
-                style: "margin-top: 10px; margin-left: 10px;"
+                "data-section": section_id
             }, _("Delete"));
+            const buttonRow = /*#__PURE__*/ createJsxElement("div", {
+                style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"
+            }, /*#__PURE__*/ createJsxElement("div", null, modeToggleBtn), /*#__PURE__*/ createJsxElement("div", null, deleteBtn));
             const row = /*#__PURE__*/ createJsxElement("div", {
                 id: row_id,
                 class: "portmapping-row",
                 "data-index": index,
-                style: "margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;"
-            }, modeToggleBtn, deleteBtn, /*#__PURE__*/ createJsxElement("br", null), titleRow, textModeInput, frpContainer, errorDiv, previewDiv);
+                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;"
+            }, buttonRow, titleRow, textModeInput, frpContainer, errorDiv, previewDiv);
             const validateAndUpdate = ()=>{
                 const listen = listenInput.value.trim();
                 const target = targetInput.value.trim();
-                // 清除之前的错误
                 errorDiv.textContent = "";
-                // 验证监听端口
+                errorDiv.style.display = "none";
                 if (listen && !this.validatePortOrRange(listen)) {
                     errorDiv.textContent = _("Invalid listen port format");
+                    errorDiv.style.display = "block";
                     return;
                 }
-                // 验证目标端口
                 if (target && !this.validatePortOrRange(target)) {
                     errorDiv.textContent = _("Invalid target port format");
+                    errorDiv.style.display = "block";
                     return;
                 }
-                // 验证端口范围匹配
                 if (listen && target) {
                     const listenPorts = this.parsePortRange(listen);
                     const targetPorts = this.parsePortRange(target);
                     if (listenPorts.length !== targetPorts.length) {
                         errorDiv.textContent = _("Port ranges must have the same size");
+                        errorDiv.style.display = "block";
                         return;
                     }
                 }
-                // 验证 FRP 节点
                 if (!isFrpValid()) {
                     errorDiv.textContent = getFrpError();
+                    errorDiv.style.display = "block";
                     return;
                 }
                 updatePreview();
@@ -851,6 +853,7 @@ class PortMappingEditor extends L.form.Value {
             protocolSelect.onchange = validateAndUpdate;
             textModeInput.oninput = ()=>{
                 errorDiv.textContent = "";
+                errorDiv.style.display = "none";
             };
             textModeInput.onblur = (ev)=>{
                 const inputEl = ev.currentTarget;
