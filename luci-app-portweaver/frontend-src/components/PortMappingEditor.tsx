@@ -1,7 +1,9 @@
 import { createFrpNodeSelector } from "./FrpNodeSelector";
-import { ValidatedInput } from "./ValidatedInput";
+import ValidatedInput from "./ValidatedInput";
 class PortMappingEditor extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
+  private errorDivRefs: HTMLElement[] = [];
+  
   parseMapping(str: string) {
     if (!str || typeof str !== "string") return null;
     str = str.trim();
@@ -79,6 +81,9 @@ class PortMappingEditor extends L.form.Value {
     cfgvalue: string[] | string,
   ) {
     void _option_index;
+    
+    this.errorDivRefs = [];
+    
     const current_values: string[] = Array.isArray(cfgvalue)
       ? (cfgvalue as string[])
       : typeof cfgvalue === "string"
@@ -138,31 +143,35 @@ class PortMappingEditor extends L.form.Value {
       const row_id = `portmapping-row-${section_id}-${index}`;
       let isTextMode = true;
 
-      const listenInput = ValidatedInput({
-        type: "text",
-        className: "listen-port-input",
-        value: mapping.listenPort,
-        placeholder: _("8080 or 8080-8090"),
-        style: "width: 70px; min-width: 50px; margin-right: 10px;",
-        dataAttributes: { index: String(index), section: section_id },
-        onValidate: (value) => {
-          if (!value.trim()) return false;
-          return this.validatePortOrRange(value.trim());
-        },
-      }) as HTMLInputElement;
+      const listenInput = (
+        <ValidatedInput
+          type="text"
+          className="listen-port-input"
+          value={mapping.listenPort}
+          placeholder={_("8080 or 8080-8090")}
+          style="width: 70px; min-width: 50px; margin-right: 10px;"
+          dataAttributes={{ index: String(index), section: section_id }}
+          onValidate={(value) => {
+            if (!value.trim()) return false;
+            return this.validatePortOrRange(value.trim());
+          }}
+        />
+      ) as HTMLInputElement;
 
-      const targetInput = ValidatedInput({
-        type: "text",
-        className: "target-port-input",
-        value: mapping.targetPort,
-        placeholder: _("80 or 80-90"),
-        style: "width: 70px; min-width: 50px; margin-right: 10px;",
-        dataAttributes: { index: String(index), section: section_id },
-        onValidate: (value) => {
-          if (!value.trim()) return false;
-          return this.validatePortOrRange(value.trim());
-        },
-      }) as HTMLInputElement;
+      const targetInput = (
+        <ValidatedInput
+          type="text"
+          className="target-port-input"
+          value={mapping.targetPort}
+          placeholder={_("80 or 80-90")}
+          style="width: 70px; min-width: 50px; margin-right: 10px;"
+          dataAttributes={{ index: String(index), section: section_id }}
+          onValidate={(value) => {
+            if (!value.trim()) return false;
+            return this.validatePortOrRange(value.trim());
+          }}
+        />
+      ) as HTMLInputElement;
 
       const protocolSelect = (
         <select
@@ -184,12 +193,17 @@ class PortMappingEditor extends L.form.Value {
       ) as HTMLSelectElement;
 
       const textModeInput = (
-        <input
+        <ValidatedInput
           type="text"
-          class="text-mode-input"
+          className="text-mode-input"
           value={mapping_str}
           placeholder={_("[8080][node1:9888]:80/tcp or 8080:80/tcp")}
           style="width: 100%; margin-bottom: 6px; padding: 5px; display: none;"
+          validateOn="blur"
+          onValidate={(value) => {
+            const parsed = this.parseMapping(value);
+            return !!parsed;
+          }}
         />
       ) as HTMLInputElement;
 
@@ -254,6 +268,8 @@ class PortMappingEditor extends L.form.Value {
           style="color: red; margin-top: 6px; font-size: 12px; display: none;"
         ></div>
       ) as HTMLElement;
+
+      this.errorDivRefs.push(errorDiv);
 
       const titleRow = (
         <div style="display: flex; gap: 10px; align-items: center;">
@@ -327,36 +343,41 @@ class PortMappingEditor extends L.form.Value {
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
 
+        let hasError = false;
+
         if (listen && !this.validatePortOrRange(listen)) {
           errorDiv.textContent = _("Invalid listen port format");
           errorDiv.style.display = "block";
-          return;
+          hasError = true;
         }
 
-        if (target && !this.validatePortOrRange(target)) {
+        if (!hasError && target && !this.validatePortOrRange(target)) {
           errorDiv.textContent = _("Invalid target port format");
           errorDiv.style.display = "block";
-          return;
+          hasError = true;
         }
 
-        if (listen && target) {
+        if (!hasError && listen && target) {
           const listenPorts = this.parsePortRange(listen);
           const targetPorts = this.parsePortRange(target);
 
           if (listenPorts.length !== targetPorts.length) {
             errorDiv.textContent = _("Port ranges must have the same size");
             errorDiv.style.display = "block";
-            return;
+            hasError = true;
           }
         }
 
-        if (!isFrpValid()) {
+        if (!hasError && !isFrpValid()) {
           errorDiv.textContent = getFrpError();
           errorDiv.style.display = "block";
-          return;
+          hasError = true;
         }
 
-        updatePreview();
+        if (!hasError) {
+          updatePreview();
+        }
+
         updateHiddenValue();
       };
 
@@ -366,14 +387,13 @@ class PortMappingEditor extends L.form.Value {
       targetInput.onchange = validateAndUpdate;
       protocolSelect.onchange = validateAndUpdate;
 
-      textModeInput.oninput = () => {
-        errorDiv.textContent = "";
-        errorDiv.style.display = "none";
-      };
-
       textModeInput.onblur = (ev: Event) => {
         const inputEl = ev.currentTarget as HTMLInputElement | null;
         if (!inputEl) return;
+        
+        errorDiv.textContent = "";
+        errorDiv.style.display = "none";
+        
         const parsed = this.parseMapping(inputEl.value);
         if (parsed) {
           const tempListenHandler = listenInput.oninput;
@@ -393,6 +413,9 @@ class PortMappingEditor extends L.form.Value {
           protocolSelect.onchange = tempProtocolHandler;
 
           validateAndUpdate();
+        } else {
+          errorDiv.textContent = _("Invalid port mapping format");
+          errorDiv.style.display = "block";
         }
       };
       function setDisplay(element: HTMLElement, display: string) {
@@ -642,6 +665,18 @@ class PortMappingEditor extends L.form.Value {
   }
 
   isValid(section_id: string): boolean {
+    for (const errorEl of this.errorDivRefs) {
+      const isVisible = errorEl.style.display !== "none";
+      const hasText = errorEl.textContent && errorEl.textContent.trim() !== "";
+      
+      if (isVisible && hasText) {
+        this.validationError =
+          errorEl.textContent || _("Validation failed");
+        this.isValidFlag = false;
+        return false;
+      }
+    }
+
     const value = this.formvalue(section_id);
     this.validate(section_id, value);
     return this.isValidFlag ?? true;

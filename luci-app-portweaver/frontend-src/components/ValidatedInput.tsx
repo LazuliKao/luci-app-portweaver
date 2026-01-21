@@ -3,15 +3,16 @@
  * @param options 配置选项
  * @returns 返回 input 元素
  */
-export function ValidatedInput(options: {
+export default function ValidatedInput(options: {
   type?: string;
   className?: string;
   value?: string;
   placeholder?: string;
   style?: string;
   disabled?: boolean;
-  onValidate?: (value: string) => boolean; // 返回 true 表示验证通过
+  onValidate?: (value: string) => boolean;
   dataAttributes?: Record<string, string>;
+  validateOn?: "input" | "blur" | "change" | "both";
 }) {
   const {
     type = "text",
@@ -22,22 +23,26 @@ export function ValidatedInput(options: {
     disabled = false,
     onValidate,
     dataAttributes = {},
+    validateOn = "both",
   } = options;
 
-  const input = document.createElement("input");
-  input.type = type;
-  input.className = className;
-  input.value = value;
-  input.placeholder = placeholder;
-  input.style.cssText = style;
-  input.disabled = disabled;
-
-  // 设置数据属性
+  const dataAttrs: Record<string, string> = {};
   Object.entries(dataAttributes).forEach(([key, val]) => {
-    input.setAttribute(`data-${key}`, val);
+    dataAttrs[`data-${key}`] = val;
   });
 
-  // 验证函数
+  const input = (
+    <input
+      type={type}
+      class={className}
+      value={value}
+      placeholder={placeholder}
+      style={style}
+      disabled={disabled}
+      {...dataAttrs}
+    />
+  ) as HTMLInputElement;
+
   const validate = () => {
     if (onValidate) {
       const isValid = onValidate(input.value.trim());
@@ -49,8 +54,21 @@ export function ValidatedInput(options: {
     }
   };
 
-  input.addEventListener("input", validate);
-  input.addEventListener("change", validate);
+  const clearValidation = () => {
+    input.style.borderColor = "";
+  };
+
+  if (validateOn === "input") {
+    input.addEventListener("input", validate);
+  } else if (validateOn === "blur") {
+    input.addEventListener("input", clearValidation);
+    input.addEventListener("blur", validate);
+  } else if (validateOn === "change") {
+    input.addEventListener("change", validate);
+  } else if (validateOn === "both") {
+    input.addEventListener("input", validate);
+    input.addEventListener("change", validate);
+  }
 
   return input;
 }

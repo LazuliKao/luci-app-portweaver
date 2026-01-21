@@ -1,4 +1,4 @@
-import { ValidatedInput } from "./ValidatedInput";
+import ValidatedInput from "./ValidatedInput";
 
 /**
  * 创建可复用的 FRP 节点选择器 UI

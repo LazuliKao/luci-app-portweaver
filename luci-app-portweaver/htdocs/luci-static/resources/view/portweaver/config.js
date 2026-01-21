@@ -328,25 +328,26 @@ const frp_form = L.form;
 }
 
 ;// CONCATENATED MODULE: ./components/ValidatedInput.tsx
+
 /**
  * 创建带验证的通用 input 元素
  * @param options 配置选项
  * @returns 返回 input 元素
  */ function ValidatedInput(options) {
-    const { type = "text", className = "", value = "", placeholder = "", style = "", disabled = false, onValidate, dataAttributes = {} } = options;
-    const input = document.createElement("input");
-    input.type = type;
-    input.className = className;
-    input.value = value;
-    input.placeholder = placeholder;
-    input.style.cssText = style;
-    input.disabled = disabled;
-    // 设置数据属性
+    const { type = "text", className = "", value = "", placeholder = "", style = "", disabled = false, onValidate, dataAttributes = {}, validateOn = "both" } = options;
+    const dataAttrs = {};
     Object.entries(dataAttributes).forEach((param)=>{
         let [key, val] = param;
-        input.setAttribute("data-".concat(key), val);
+        dataAttrs["data-".concat(key)] = val;
     });
-    // 验证函数
+    const input = /*#__PURE__*/ createJsxElement("input", _object_spread({
+        type: type,
+        class: className,
+        value: value,
+        placeholder: placeholder,
+        style: style,
+        disabled: disabled
+    }, dataAttrs));
     const validate = ()=>{
         if (onValidate) {
             const isValid = onValidate(input.value.trim());
@@ -354,8 +355,18 @@ const frp_form = L.form;
             else input.style.borderColor = "";
         }
     };
-    input.addEventListener("input", validate);
-    input.addEventListener("change", validate);
+    const clearValidation = ()=>{
+        input.style.borderColor = "";
+    };
+    if (validateOn === "input") input.addEventListener("input", validate);
+    else if (validateOn === "blur") {
+        input.addEventListener("input", clearValidation);
+        input.addEventListener("blur", validate);
+    } else if (validateOn === "change") input.addEventListener("change", validate);
+    else if (validateOn === "both") {
+        input.addEventListener("input", validate);
+        input.addEventListener("change", validate);
+    }
     return input;
 }
 
@@ -657,6 +668,7 @@ class PortMappingEditor extends L.form.Value {
         return result;
     }
     renderWidget(section_id, _option_index, cfgvalue) {
+        this.errorDivRefs = [];
         const current_values = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === "string" ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
         const widget_id = this.cbid(section_id);
         const mappings_wrapper = /*#__PURE__*/ createJsxElement("div", {
@@ -691,7 +703,7 @@ class PortMappingEditor extends L.form.Value {
             };
             const row_id = "portmapping-row-".concat(section_id, "-").concat(index);
             let isTextMode = true;
-            const listenInput = ValidatedInput({
+            const listenInput = /*#__PURE__*/ createJsxElement(ValidatedInput, {
                 type: "text",
                 className: "listen-port-input",
                 value: mapping.listenPort,
@@ -706,7 +718,7 @@ class PortMappingEditor extends L.form.Value {
                     return this.validatePortOrRange(value.trim());
                 }
             });
-            const targetInput = ValidatedInput({
+            const targetInput = /*#__PURE__*/ createJsxElement(ValidatedInput, {
                 type: "text",
                 className: "target-port-input",
                 value: mapping.targetPort,
@@ -736,12 +748,17 @@ class PortMappingEditor extends L.form.Value {
                 value: "both",
                 selected: mapping.protocol === "both"
             }, "Both"));
-            const textModeInput = /*#__PURE__*/ createJsxElement("input", {
+            const textModeInput = /*#__PURE__*/ createJsxElement(ValidatedInput, {
                 type: "text",
-                class: "text-mode-input",
+                className: "text-mode-input",
                 value: mapping_str,
                 placeholder: _("[8080][node1:9888]:80/tcp or 8080:80/tcp"),
-                style: "width: 100%; margin-bottom: 6px; padding: 5px; display: none;"
+                style: "width: 100%; margin-bottom: 6px; padding: 5px; display: none;",
+                validateOn: "blur",
+                onValidate: (value)=>{
+                    const parsed = this.parseMapping(value);
+                    return !!parsed;
+                }
             });
             const previewDiv = /*#__PURE__*/ createJsxElement("div", {
                 class: "portmapping-preview",
@@ -785,6 +802,7 @@ class PortMappingEditor extends L.form.Value {
                 "data-index": index,
                 style: "color: red; margin-top: 6px; font-size: 12px; display: none;"
             });
+            this.errorDivRefs.push(errorDiv);
             const titleRow = /*#__PURE__*/ createJsxElement("div", {
                 style: "display: flex; gap: 10px; align-items: center;"
             }, /*#__PURE__*/ createJsxElement("span", {
@@ -819,31 +837,32 @@ class PortMappingEditor extends L.form.Value {
                 const target = targetInput.value.trim();
                 errorDiv.textContent = "";
                 errorDiv.style.display = "none";
+                let hasError = false;
                 if (listen && !this.validatePortOrRange(listen)) {
                     errorDiv.textContent = _("Invalid listen port format");
                     errorDiv.style.display = "block";
-                    return;
+                    hasError = true;
                 }
-                if (target && !this.validatePortOrRange(target)) {
+                if (!hasError && target && !this.validatePortOrRange(target)) {
                     errorDiv.textContent = _("Invalid target port format");
                     errorDiv.style.display = "block";
-                    return;
+                    hasError = true;
                 }
-                if (listen && target) {
+                if (!hasError && listen && target) {
                     const listenPorts = this.parsePortRange(listen);
                     const targetPorts = this.parsePortRange(target);
                     if (listenPorts.length !== targetPorts.length) {
                         errorDiv.textContent = _("Port ranges must have the same size");
                         errorDiv.style.display = "block";
-                        return;
+                        hasError = true;
                     }
                 }
-                if (!isFrpValid()) {
+                if (!hasError && !isFrpValid()) {
                     errorDiv.textContent = getFrpError();
                     errorDiv.style.display = "block";
-                    return;
+                    hasError = true;
                 }
-                updatePreview();
+                if (!hasError) updatePreview();
                 updateHiddenValue();
             };
             listenInput.oninput = validateAndUpdate;
@@ -851,13 +870,11 @@ class PortMappingEditor extends L.form.Value {
             targetInput.oninput = validateAndUpdate;
             targetInput.onchange = validateAndUpdate;
             protocolSelect.onchange = validateAndUpdate;
-            textModeInput.oninput = ()=>{
-                errorDiv.textContent = "";
-                errorDiv.style.display = "none";
-            };
             textModeInput.onblur = (ev)=>{
                 const inputEl = ev.currentTarget;
                 if (!inputEl) return;
+                errorDiv.textContent = "";
+                errorDiv.style.display = "none";
                 const parsed = this.parseMapping(inputEl.value);
                 if (parsed) {
                     const tempListenHandler = listenInput.oninput;
@@ -873,6 +890,9 @@ class PortMappingEditor extends L.form.Value {
                     targetInput.oninput = tempTargetHandler;
                     protocolSelect.onchange = tempProtocolHandler;
                     validateAndUpdate();
+                } else {
+                    errorDiv.textContent = _("Invalid port mapping format");
+                    errorDiv.style.display = "block";
                 }
             };
             function setDisplay(element, display) {
@@ -1059,6 +1079,15 @@ class PortMappingEditor extends L.form.Value {
     }
     isValid(section_id) {
         var _this_isValidFlag;
+        for (const errorEl of this.errorDivRefs){
+            const isVisible = errorEl.style.display !== "none";
+            const hasText = errorEl.textContent && errorEl.textContent.trim() !== "";
+            if (isVisible && hasText) {
+                this.validationError = errorEl.textContent || _("Validation failed");
+                this.isValidFlag = false;
+                return false;
+            }
+        }
         const value = this.formvalue(section_id);
         this.validate(section_id, value);
         return (_this_isValidFlag = this.isValidFlag) !== null && _this_isValidFlag !== void 0 ? _this_isValidFlag : true;
@@ -1068,7 +1097,7 @@ class PortMappingEditor extends L.form.Value {
         return "";
     }
     constructor(...args){
-        super(...args), _define_property(this, "hiddenInput", void 0), _define_property(this, "validationError", ""), _define_property(this, "isValidFlag", true);
+        super(...args), _define_property(this, "hiddenInput", void 0), _define_property(this, "errorDivRefs", []), _define_property(this, "validationError", ""), _define_property(this, "isValidFlag", true);
     }
 }
 /* export default */ const components_PortMappingEditor = (PortMappingEditor);
