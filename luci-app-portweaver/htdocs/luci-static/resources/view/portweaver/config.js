@@ -849,14 +849,26 @@ class PortMappingEditor extends L.form.Value {
             targetInput.oninput = validateAndUpdate;
             targetInput.onchange = validateAndUpdate;
             protocolSelect.onchange = validateAndUpdate;
-            textModeInput.oninput = (ev)=>{
+            textModeInput.oninput = ()=>{
+                errorDiv.textContent = "";
+            };
+            textModeInput.onblur = (ev)=>{
                 const inputEl = ev.currentTarget;
                 if (!inputEl) return;
                 const parsed = this.parseMapping(inputEl.value);
                 if (parsed) {
+                    const tempListenHandler = listenInput.oninput;
+                    const tempTargetHandler = targetInput.oninput;
+                    const tempProtocolHandler = protocolSelect.onchange;
+                    listenInput.oninput = null;
+                    targetInput.oninput = null;
+                    protocolSelect.onchange = null;
                     listenInput.value = parsed.listenPort;
                     targetInput.value = parsed.targetPort;
                     protocolSelect.value = parsed.protocol;
+                    listenInput.oninput = tempListenHandler;
+                    targetInput.oninput = tempTargetHandler;
+                    protocolSelect.onchange = tempProtocolHandler;
                     validateAndUpdate();
                 }
             };
