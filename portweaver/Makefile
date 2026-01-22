@@ -49,6 +49,7 @@ define Build/Compile
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
 			-Duci=true \
 			-Dubus=true \
+			-Dfrpc=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	else \
@@ -58,6 +59,7 @@ define Build/Compile
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
 			-Duci=true \
 			-Dubus=true \
+			-Dfrpc=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	fi
