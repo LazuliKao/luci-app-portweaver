@@ -45,8 +45,8 @@ define Build/Compile
 		echo "Go not found, downloading..."; \
 		mkdir -p $(GO_ROOT); \
 		cd $(STAGING_DIR_HOST) && \
-		wget -q -O portweaver-go.tar.gz https://go.dev/dl/go1.25.6.linux-amd64.tar.gz && \
-		tar xf portweaver-go.tar.gz -C $(GO_ROOT) --strip-components=1 && \
+		wget -q -O portweaver-go.tar.gz https://github.com/LazuliKao/build-golang/releases/download/go1.25.6/go1.25.6.linux-amd64.tar.gz && \
+		tar xzf portweaver-go.tar.gz -C $(GO_ROOT) --strip-components=1 && \
 		rm portweaver-go.tar.gz; \
 	fi
 	
