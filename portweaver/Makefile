@@ -22,6 +22,10 @@ include $(INCLUDE_DIR)/package.mk
 ZIG := $(STAGING_DIR_HOST)/bin/zig
 ZIG_TARGET := $(subst openwrt-,,$(GNU_TARGET_NAME))
 
+# Go configuration
+GO_ROOT := $(STAGING_DIR_HOST)/portweaver-go
+GO := $(GO_ROOT)/bin/go
+
 define Package/portweaver
   SECTION:=net
   CATEGORY:=Network
@@ -36,6 +40,16 @@ define Package/portweaver/description
 endef
 
 define Build/Compile
+	# Check if Go is available, download if not
+	@if [ ! -f "$(GO)" ]; then \
+		echo "Go not found, downloading..."; \
+		mkdir -p $(GO_ROOT); \
+		cd $(STAGING_DIR_HOST) && \
+		wget -q -O portweaver-go.tar.gz https://go.dev/dl/go1.25.6.linux-amd64.tar.gz && \
+		tar xf portweaver-go.tar.gz -C $(GO_ROOT) --strip-components=1 && \
+		rm portweaver-go.tar.gz; \
+	fi
+	
 	# Check if Zig is available, download if not
 	@if [ ! -f "$(ZIG)" ]; then \
 		echo "Zig not found, downloading..."; \
@@ -44,6 +58,7 @@ define Build/Compile
 		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
 		tar xf zig.tar.xz; \
 		cd $(PKG_BUILD_DIR) && \
+		GOROOT=$(GO_ROOT) PATH=$(GO_ROOT)/bin:$(PATH) \
 		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
@@ -54,6 +69,7 @@ define Build/Compile
 			--release=small; \
 	else \
 		cd $(PKG_BUILD_DIR) && \
+		GOROOT=$(GO_ROOT) PATH=$(GO_ROOT)/bin:$(PATH) \
 		$(ZIG) build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
