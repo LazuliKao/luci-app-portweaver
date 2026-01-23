@@ -27,7 +27,7 @@ define Package/portweaver
   CATEGORY:=Network
   TITLE:=Port forwarding and NAT traversal tool
   URL:=https://github.com/LazuliKao/portweaver
-  DEPENDS:=+libuci +kmod-ipt-nat +iptables-mod-ipopt
+  DEPENDS:=+libuci
 endef
 
 define Package/portweaver/description
