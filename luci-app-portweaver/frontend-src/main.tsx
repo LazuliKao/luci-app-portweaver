@@ -8,6 +8,7 @@ import type {
 import frp from "./modules/frp";
 import config from "./modules/config";
 import header from "./modules/header";
+import logs from "./modules/logs";
 
 const form = L.form;
 const uci = L.uci;
@@ -50,6 +51,7 @@ export class main extends L.view {
     const client = new Client([data[2], data[3], data[4]]);
     header(m, client);
     config(m, client);
+    logs(m);
     frp(m);
     return m.render();
   }

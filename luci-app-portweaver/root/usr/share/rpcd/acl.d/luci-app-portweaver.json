@@ -2,12 +2,19 @@
 	"luci-app-portweaver": {
 		"description": "Grant UCI and ubus access for LuCI PortWeaver app",
 		"read": {
+			"file": {
+				"/tmp/portweaver.log": ["read"],
+				"/etc/init.d/portweaver": ["exec"]
+			},
 			"uci": ["portweaver"],
 			"ubus": {
 				"portweaver": ["get_status", "list_projects", "get_frp_status", "get_frp_info"]
 			}
 		},
 		"write": {
+			"file": {
+				"/tmp/portweaver.log": ["write"]
+			},
 			"uci": ["portweaver"],
 			"ubus": {
 				"portweaver": ["set_enabled", "clear_frp_logs"]

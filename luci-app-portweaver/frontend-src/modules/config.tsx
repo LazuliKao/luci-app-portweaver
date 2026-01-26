@@ -1,6 +1,7 @@
 import FrpNodeSelector from "../components/FrpNodeSelector";
 import PortMappingEditor from "../components/PortMappingEditor";
 import type { Client } from "./client";
+import { rpcClient } from "./client";
 const form = L.form;
 const uci = L.uci;
 export default function (m: LuCI.form.CBIMap, client: Client) {
