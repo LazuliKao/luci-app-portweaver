@@ -48,11 +48,27 @@ export class main extends L.view {
       _("PortWeaver"),
       _("Port forwarding and NAT traversal configuration"),
     );
+    
+    const s = m.section(
+      form.NamedSection,
+      "global",
+      "portweaver",
+    );
+    s.anonymous = true;
+    s.addremove = false;
+
+    s.tab("settings", _("Global Settings"));
+    s.tab("projects", _("Port Forwarding"));
+    s.tab("logs", _("System Logs"));
+    s.tab("frp", _("FRP Tunnels"));
+
     const client = new Client([data[2], data[3], data[4]]);
-    header(m, client);
-    config(m, client);
-    logs(m);
-    frp(m);
+    
+    header(m, s, client, "settings");
+    config(m, s, client, "projects");
+    logs(m, s, "logs");
+    frp(m, s, "frp");
+    
     return m.render();
   }
 }

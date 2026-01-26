@@ -6,26 +6,27 @@ const nodeStatuses: Record<string, { status: string; last_error: string }> = {};
 const statusElements: Record<string, HTMLElement> = {};
 const actionButtons: Record<string, HTMLButtonElement> = {};
 
-export default function (m: LuCI.form.CBIMap) {
+export default function (
+  m: LuCI.form.CBIMap,
+  s: LuCI.form.CBIAbstractSection,
+  tab_id: string
+) {
   let o: LuCI.form.CBIAbstractValue;
-  // FRP Node Management section
-  const s = m.section(
-    form.GridSection,
-    "frp_node",
-    _("FRP Node Management"),
-    _("Configure FRP nodes for port forwarding tunneling"),
-  );
-  s.anonymous = true;
-  s.addremove = true;
-  s.sortable = true;
-  s.cloneable = true;
 
-  s.sectiontitle = (section_id: string) =>
+  o = s.taboption(tab_id, form.SectionValue, "_frp_nodes", form.GridSection, "frp_node");
+  
+  const ss = o.subsection;
+  ss.anonymous = true;
+  ss.addremove = true;
+  ss.sortable = true;
+  ss.cloneable = true;
+
+  ss.sectiontitle = (section_id: string) =>
     L.uci.get("portweaver", section_id, "name") ||
     section_id ||
     _("Unnamed node");
 
-  o = s.option(form.Value, "name", _("Node Name"));
+  o = ss.option(form.Value, "name", _("Node Name"));
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "string";
@@ -40,7 +41,7 @@ export default function (m: LuCI.form.CBIMap) {
     return true;
   };
 
-  o = s.option(form.DummyValue, "status", _("Status"));
+  o = ss.option(form.DummyValue, "status", _("Status"));
   o.modalonly = false;
   o.cfgvalue = (section_id: string) => {
     const info = nodeStatuses[section_id] || { status: "unavailable" };
@@ -63,7 +64,7 @@ export default function (m: LuCI.form.CBIMap) {
     return el;
   };
 
-  o = s.option(form.Value, "server", _("FRP Server Address"));
+  o = ss.option(form.Value, "server", _("FRP Server Address"));
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "host";
@@ -74,7 +75,7 @@ export default function (m: LuCI.form.CBIMap) {
     return true;
   };
 
-  o = s.option(form.Value, "port", _("FRP Server Port"));
+  o = ss.option(form.Value, "port", _("FRP Server Port"));
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "port";
@@ -88,13 +89,13 @@ export default function (m: LuCI.form.CBIMap) {
     return true;
   };
 
-  o = s.option(form.Value, "token", _("Authentication Token"));
+  o = ss.option(form.Value, "token", _("Authentication Token"));
   o.modalonly = true;
   o.password = true;
   o.rmempty = true;
   o.placeholder = "optional token for authentication";
 
-  o = s.option(form.DummyValue, "actions", _("Actions"));
+  o = ss.option(form.DummyValue, "actions", _("Actions"));
   o.modalonly = false;
   o.cfgvalue = (section_id: string) => {
     const isRunning =

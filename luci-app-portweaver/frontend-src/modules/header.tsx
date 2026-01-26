@@ -1,28 +1,26 @@
 import { StatusPanel } from "../components/StatusPanel";
 const form = L.form;
 import { type Client, rpcClient } from "./client";
-export default function (m: LuCI.form.CBIMap, client: Client) {
+
+export default function (
+  m: LuCI.form.CBIMap,
+  s: LuCI.form.CBIAbstractSection,
+  client: Client,
+  tab_id: string
+) {
   let o: LuCI.form.CBIAbstractValue;
-  // Global settings section
-  const s = m.section(
-    form.NamedSection,
-    "global",
-    "global",
-    _("Global Settings"),
-  );
-  o = s.option(form.Flag, "enabled", _("Enable PortWeaver"));
+
+  o = s.taboption(tab_id, form.Flag, "enabled", _("Enable PortWeaver"));
   o.default = "1";
   o.rmempty = false;
 
-  // Runtime status display (component)
-  o = s.option(form.DummyValue, "_runtime_status", _("Runtime Status"));
+  o = s.taboption(tab_id, form.DummyValue, "_runtime_status", _("Runtime Status"));
   o.rawhtml = true;
   o.cfgvalue = () => {
     const panel = new StatusPanel();
     return panel.render(client.globalStatus, client.frpStatus);
   };
 
-  // Helper to toggle runtime enable via RPC
   const runtimeToggle = async (section_id: string) => {
     const idx = client.getProjectIndex(section_id);
     if (idx < 0) {

@@ -1,27 +1,29 @@
 import FrpNodeSelector from "../components/FrpNodeSelector";
 import PortMappingEditor from "../components/PortMappingEditor";
 import type { Client } from "./client";
-import { rpcClient } from "./client";
 const form = L.form;
 const uci = L.uci;
-export default function (m: LuCI.form.CBIMap, client: Client) {
-  let o: LuCI.form.CBIAbstractValue;
-  // Port forwarding rules section
-  const s = m.section(
-    form.GridSection,
-    "project",
-    _("Port Forwarding Projects"),
-    _("Configure port forwarding projects for PortWeaver"),
-  );
-  s.anonymous = true;
-  s.addremove = true;
-  s.sortable = true;
-  s.cloneable = true;
 
-  s.sectiontitle = (section_id: string) =>
+export default function (
+  m: LuCI.form.CBIMap,
+  s: LuCI.form.CBIAbstractSection,
+  client: Client,
+  tab_id: string
+) {
+  let o: LuCI.form.CBIAbstractValue;
+
+  o = s.taboption(tab_id, form.SectionValue, "_projects", form.GridSection, "project");
+  
+  const ss = o.subsection;
+  ss.anonymous = true;
+  ss.addremove = true;
+  ss.sortable = true;
+  ss.cloneable = true;
+
+  ss.sectiontitle = (section_id: string) =>
     uci.get("portweaver", section_id, "remark") || _("Unnamed project");
-  // Runtime status indicator column
-  o = s.option(form.DummyValue, "_runtime_status", _("Status"));
+
+  o = ss.option(form.DummyValue, "_runtime_status", _("Status"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
     const status = client.getProjectStatus(section_id);
@@ -32,8 +34,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
     );
   };
 
-  // Runtime toggle column
-  o = s.option(form.Button, "_runtime_toggle", _("Toggle"));
+  o = ss.option(form.Button, "_runtime_toggle", _("Toggle"));
   o.modalonly = false;
   o.editable = true;
   o.inputtitle = (section_id: string) => {
@@ -43,13 +44,13 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   o.onclick = (_ev: any, section_id: string) =>
     (window as any).portweaverToggle(section_id);
 
-  o = s.option(form.Flag, "enabled", _("Enabled"));
+  o = ss.option(form.Flag, "enabled", _("Enabled"));
   o.modalonly = false;
   o.default = "1";
   o.editable = true;
 
   // Preview column
-  o = s.option(form.DummyValue, "_preview", _("Overview"));
+  o = ss.option(form.DummyValue, "_preview", _("Overview"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
     const protocol = uci.get("portweaver", section_id, "protocol") || "tcp";
@@ -171,7 +172,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   };
 
   // Modal configuration fields
-  o = s.option(form.Value, "remark", _("Remark"));
+  o = ss.option(form.Value, "remark", _("Remark"));
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "string";
@@ -182,11 +183,11 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   };
   o.placeholder = "My Project";
 
-  o = s.option(form.Flag, "enabled", _("Enabled"));
+  o = ss.option(form.Flag, "enabled", _("Enabled"));
   o.modalonly = true;
   o.default = "1";
 
-  o = s.option(widgets.ZoneSelect, "src_zone", _("Source Zones"));
+  o = ss.option(widgets.ZoneSelect, "src_zone", _("Source Zones"));
   o.modalonly = true;
   o.multiple = true;
   o.nocreate = false;
@@ -194,7 +195,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   o.default = "wan";
   o.rmempty = true;
 
-  o = s.option(widgets.ZoneSelect, "dest_zone", _("Destination Zones"));
+  o = ss.option(widgets.ZoneSelect, "dest_zone", _("Destination Zones"));
   o.modalonly = true;
   o.multiple = true;
   o.nocreate = false;
@@ -202,14 +203,14 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   o.default = "lan";
   o.rmempty = true;
 
-  o = s.option(form.ListValue, "family", _("Address Family"));
+  o = ss.option(form.ListValue, "family", _("Address Family"));
   o.modalonly = true;
   o.value("any", _("IPv4 and IPv6"));
   o.value("ipv4", "IPv4");
   o.value("ipv6", "IPv6");
   o.default = "any";
 
-  o = s.option(form.Value, "target_address", _("Target Address"));
+  o = ss.option(form.Value, "target_address", _("Target Address"));
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "host";
@@ -221,7 +222,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   };
 
   // Port mode switcher
-  o = s.option(form.Flag, "use_port_mappings", _("Use Port Mappings Mode"));
+  o = ss.option(form.Flag, "use_port_mappings", _("Use Port Mappings Mode"));
   o.modalonly = true;
   o.rmempty = true;
   o.default = "0";
@@ -230,7 +231,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   );
 
   // Single port mode
-  o = s.option(form.ListValue, "protocol", _("Protocol"));
+  o = ss.option(form.ListValue, "protocol", _("Protocol"));
   o.modalonly = true;
   o.value("both", _("TCP and UDP"));
   o.value("tcp", "TCP");
@@ -239,18 +240,18 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   o.depends("use_port_mappings", "0");
 
   // FRP node selector component factory
-  o = s.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
+  o = ss.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
   o.modalonly = true;
   o.rmempty = true;
   o.depends("use_port_mappings", "0");
   o.depends("enable_app_forward", "1");
 
   // Port Mapping Editor component factory
-  o = s.option(PortMappingEditor, "port_mapping", _("Port Mappings"));
+  o = ss.option(PortMappingEditor, "port_mapping", _("Port Mappings"));
   o.modalonly = true;
   o.depends("use_port_mappings", "1");
 
-  o = s.option(form.Value, "listen_port", _("Listen Port"));
+  o = ss.option(form.Value, "listen_port", _("Listen Port"));
   o.modalonly = true;
   o.datatype = "port";
   o.placeholder = "8080";
@@ -264,7 +265,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
     return true;
   };
 
-  o = s.option(form.Value, "target_port", _("Target Port"));
+  o = ss.option(form.Value, "target_port", _("Target Port"));
   o.modalonly = true;
   o.datatype = "port";
   o.placeholder = "80";
@@ -278,20 +279,20 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
     return true;
   };
 
-  o = s.option(form.Flag, "open_firewall_port", _("Open Firewall Port"));
+  o = ss.option(form.Flag, "open_firewall_port", _("Open Firewall Port"));
   o.modalonly = true;
   o.default = "1";
 
-  o = s.option(form.Flag, "enable_app_forward", _("Enable App Level Forward"));
+  o = ss.option(form.Flag, "enable_app_forward", _("Enable App Level Forward"));
   o.modalonly = true;
   o.default = "0";
 
-  o = s.option(form.Flag, "reuseaddr", _("Reuse Address"));
+  o = ss.option(form.Flag, "reuseaddr", _("Reuse Address"));
   o.modalonly = true;
   o.default = "1";
   o.depends("enable_app_forward", "1");
 
-  o = s.option(
+  o = ss.option(
     form.Flag,
     "enable_stats",
     _("Enable Statistics"),
@@ -304,7 +305,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   o.default = "0";
   o.depends("enable_app_forward", "1");
 
-  o = s.option(form.Flag, "add_firewall_forward", _("Add Firewall Forward"));
+  o = ss.option(form.Flag, "add_firewall_forward", _("Add Firewall Forward"));
   o.modalonly = true;
   o.default = "1";
   o.depends({ enable_app_forward: "0" });

@@ -5,22 +5,19 @@ const ui = L.ui;
 
 const LOG_FILE = '/tmp/portweaver.log';
 
-export default function (m: LuCI.form.CBIMap) {
-  const s = m.section(
-    form.TypedSection,
-    "global",
-    _("System Logs"),
-    _("View and manage PortWeaver system logs"),
-  );
-  s.anonymous = true;
-  s.addremove = false;
+export default function (
+  m: LuCI.form.CBIMap,
+  s: LuCI.form.CBIAbstractSection,
+  tab_id: string
+) {
+  let o: LuCI.form.CBIAbstractValue;
 
-  let o = s.option(form.Flag, "log_enabled", _("Enable Logging"));
+  o = s.taboption(tab_id, form.Flag, "log_enabled", _("Enable Logging"));
   o.default = "1";
   o.rmempty = false;
   o.description = _("Enable logging output to /tmp/portweaver.log");
 
-  o = s.option(form.DummyValue, "_logs_viewer");
+  o = s.taboption(tab_id, form.DummyValue, "_logs_viewer");
   o.rawhtml = true;
   
   let pollInterval: NodeJS.Timeout | null = null;
