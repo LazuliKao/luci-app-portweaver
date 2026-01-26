@@ -1,4 +1,11 @@
+import { LogViewer } from "../components/LogViewer";
+import { rpcClient } from "./client";
 const form = L.form;
+
+const nodeStatuses: Record<string, { status: string; last_error: string }> = {};
+const statusElements: Record<string, HTMLElement> = {};
+const actionButtons: Record<string, HTMLButtonElement> = {};
+
 export default function (m: LuCI.form.CBIMap) {
   let o: LuCI.form.CBIAbstractValue;
   // FRP Node Management section
@@ -33,6 +40,29 @@ export default function (m: LuCI.form.CBIMap) {
     return true;
   };
 
+  o = s.option(form.DummyValue, "status", _("Status"));
+  o.modalonly = false;
+  o.cfgvalue = (section_id: string) => {
+    const info = nodeStatuses[section_id] || { status: "unavailable" };
+    const statusColor =
+      {
+        connected: "#4CAF50",
+        connecting: "#FFC107",
+        error: "#F44336",
+        stopped: "#9E9E9E",
+        unavailable: "#9E9E9E",
+      }[info.status] || "#9E9E9E";
+
+    const el = (
+      <span
+        style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${statusColor}; margin-right:8px;`}
+      ></span>
+    ) as HTMLElement;
+    
+    statusElements[section_id] = el;
+    return el;
+  };
+
   o = s.option(form.Value, "server", _("FRP Server Address"));
   o.modalonly = true;
   o.rmempty = false;
@@ -63,4 +93,81 @@ export default function (m: LuCI.form.CBIMap) {
   o.password = true;
   o.rmempty = true;
   o.placeholder = "optional token for authentication";
+
+  o = s.option(form.DummyValue, "actions", _("Actions"));
+  o.modalonly = false;
+  o.cfgvalue = (section_id: string) => {
+    const isRunning =
+      (nodeStatuses[section_id]?.status || "stopped") !== "stopped";
+    
+    const btn = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-action"
+        onclick={() => {
+          const logViewer = new LogViewer(parseInt(section_id, 10));
+          logViewer.open();
+        }}
+        disabled={!isRunning}
+      >
+        {_("View Logs")}
+      </button>
+    ) as HTMLButtonElement;
+    
+    actionButtons[section_id] = btn;
+    return btn;
+  };
+
+  L.Poll.add(async () => {
+    try {
+      const sections = await L.uci.sections("portweaver", "frp_node");
+      const promises = sections.map((sec: any) =>
+        rpcClient
+          .getFrpInfo(sec[".name"])
+          .then((res) => {
+            const oldStatus = nodeStatuses[sec[".name"]]?.status;
+            nodeStatuses[sec[".name"]] = res;
+            
+            if (oldStatus !== res.status) {
+              const statusEl = statusElements[sec[".name"]];
+              if (statusEl) {
+                const statusColor = {
+                  connected: "#4CAF50",
+                  connecting: "#FFC107",
+                  error: "#F44336",
+                  stopped: "#9E9E9E",
+                  unavailable: "#9E9E9E",
+                }[res.status] || "#9E9E9E";
+                statusEl.style.backgroundColor = statusColor;
+              }
+
+              const actionBtn = actionButtons[sec[".name"]];
+              if (actionBtn) {
+                const isRunning = res.status !== "stopped";
+                actionBtn.disabled = !isRunning;
+              }
+            }
+          })
+          .catch(() => {
+            nodeStatuses[sec[".name"]] = {
+              status: "error",
+              last_error: "Failed to fetch status",
+            };
+            
+            const statusEl = statusElements[sec[".name"]];
+            if (statusEl) {
+              statusEl.style.backgroundColor = "#F44336";
+            }
+
+            const actionBtn = actionButtons[sec[".name"]];
+            if (actionBtn) {
+              actionBtn.disabled = true;
+            }
+          }),
+      );
+      await Promise.all(promises);
+    } catch (e) {
+      console.error("Polling for FRP status failed:", e);
+    }
+  }, 5);
 }

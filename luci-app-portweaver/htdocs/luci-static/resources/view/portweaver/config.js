@@ -170,11 +170,29 @@ function createRpcClient(rpc) {
         method: "get_frp_status",
         expect: {}
     });
+    const getFrpInfo = rpc.declare({
+        object: "portweaver",
+        method: "get_frp_info",
+        params: [
+            "id"
+        ],
+        expect: {}
+    });
+    const clearFrpLogs = rpc.declare({
+        object: "portweaver",
+        method: "clear_frp_logs",
+        params: [
+            "id"
+        ],
+        expect: {}
+    });
     return {
         getStatus,
         listProjects,
         setEnabled,
-        getFrpStatus
+        getFrpStatus,
+        getFrpInfo,
+        clearFrpLogs
     };
 }
 
@@ -301,8 +319,148 @@ class Client {
     }
 }
 
+;// CONCATENATED MODULE: ./components/LogViewer.tsx
+
+
+class LogViewer {
+    render() {
+        const statusColor = {
+            connected: "#4CAF50",
+            connecting: "#FFC107",
+            error: "#F44336",
+            stopped: "#9E9E9E",
+            unavailable: "#9E9E9E"
+        }[this.status] || "#9E9E9E";
+        return /*#__PURE__*/ createJsxElement("div", {
+            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
+            onclick: (e)=>{
+                if (e.target === e.currentTarget) this.close();
+            }
+        }, /*#__PURE__*/ createJsxElement("div", {
+            style: "background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;"
+        }, /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1.5em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
+        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h3", {
+            style: "margin: 0; font-size: 1.2em; font-weight: 600;"
+        }, "FRP Client Logs"), /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+        }, "Status:", " ", /*#__PURE__*/ createJsxElement("span", {
+            style: "color: ".concat(statusColor, "; font-weight: 600;")
+        }, this.status), this.lastError && /*#__PURE__*/ createJsxElement("div", {
+            style: "color: #F44336; margin-top: 0.3em;"
+        }, "Error: ", this.lastError))), /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            onclick: ()=>this.close(),
+            style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
+        }, "\xd7")), /*#__PURE__*/ createJsxElement("div", {
+            style: "flex: 1; overflow-y: auto; padding: 1em; background: #f8f9fa; font-family: monospace; font-size: 0.85em; line-height: 1.5;",
+            id: "logs-container-".concat(this.projectId)
+        }, this.logs.length === 0 ? /*#__PURE__*/ createJsxElement("div", {
+            style: "color: #6c757d; text-align: center; padding: 2em;"
+        }, "No logs available") : this.logs.map((log)=>/*#__PURE__*/ createJsxElement("div", {
+                style: "color: #333; word-break: break-word;"
+            }, log))), /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; border-top: 1px solid #dee2e6; display: flex; gap: 0.5em; justify-content: flex-end;"
+        }, /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            onclick: ()=>this.copyToClipboard(),
+            style: "padding: 0.5em 1em; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
+        }, "Copy to Clipboard"), /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            onclick: ()=>this.clearLogs(),
+            style: "padding: 0.5em 1em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
+        }, "Clear Logs"), /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            onclick: ()=>this.close(),
+            style: "padding: 0.5em 1em; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
+        }, "Close"))));
+    }
+    open() {
+        this.isOpen = true;
+        this.startPolling();
+        document.body.appendChild(this.render());
+    }
+    close() {
+        var _document_querySelector;
+        this.isOpen = false;
+        this.stopPolling();
+        const modal = (_document_querySelector = document.querySelector('[id^="logs-container-'.concat(this.projectId, '"]'))) === null || _document_querySelector === void 0 ? void 0 : _document_querySelector.closest("div");
+        if (modal === null || modal === void 0 ? void 0 : modal.parentElement) modal.parentElement.removeChild(modal);
+    }
+    startPolling() {
+        this.fetchLogs();
+        this.pollInterval = setInterval(()=>{
+            if (this.isOpen) this.fetchLogs();
+        }, 3000);
+    }
+    stopPolling() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+    }
+    fetchLogs() {
+        rpcClient.getFrpInfo(String(this.projectId)).then((response)=>{
+            this.status = response.status || "unavailable";
+            this.lastError = response.last_error || "";
+            this.logs = response.logs || [];
+            this.updateDisplay();
+        }).catch((err)=>{
+            console.error("Failed to fetch FRP logs:", err);
+            this.status = "error";
+            this.lastError = "Failed to fetch logs";
+        });
+    }
+    updateDisplay() {
+        const container = document.getElementById("logs-container-".concat(this.projectId));
+        if (container) {
+            container.innerHTML = "";
+            if (this.logs.length === 0) container.innerHTML = '<div style="color: #6c757d; text-align: center; padding: 2em;">No logs available</div>';
+            else this.logs.forEach((log)=>{
+                const logEl = document.createElement("div");
+                logEl.style.cssText = "color: #333; word-break: break-word; margin-bottom: 0.2em;";
+                logEl.textContent = log;
+                container.appendChild(logEl);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+    copyToClipboard() {
+        const text = this.logs.join("\n");
+        navigator.clipboard.writeText(text).then(()=>{
+            alert("Logs copied to clipboard");
+        }).catch((err)=>{
+            console.error("Failed to copy logs:", err);
+            alert("Failed to copy logs");
+        });
+    }
+    clearLogs() {
+        if (confirm("Are you sure you want to clear the logs?")) rpcClient.clearFrpLogs(String(this.projectId)).then(()=>{
+            this.logs = [];
+            this.updateDisplay();
+        }).catch((err)=>{
+            console.error("Failed to clear logs:", err);
+            alert("Failed to clear logs");
+        });
+    }
+    constructor(projectId){
+        _define_property(this, "projectId", void 0);
+        _define_property(this, "isOpen", false);
+        _define_property(this, "pollInterval", null);
+        _define_property(this, "logs", []);
+        _define_property(this, "status", "unavailable");
+        _define_property(this, "lastError", "");
+        this.projectId = projectId;
+    }
+}
+
 ;// CONCATENATED MODULE: ./modules/frp.tsx
+
+
 const frp_form = L.form;
+const nodeStatuses = {};
+const frp_statusElements = {};
+const actionButtons = {};
 /* export default */ function frp(m) {
     let o;
     // FRP Node Management section
@@ -321,6 +479,25 @@ const frp_form = L.form;
         if (!value || String(value).trim() === "") return _("Node name is required");
         if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _("Node name must contain only alphanumeric characters, underscore, or hyphen");
         return true;
+    };
+    o = s.option(frp_form.DummyValue, "status", _("Status"));
+    o.modalonly = false;
+    o.cfgvalue = (section_id)=>{
+        const info = nodeStatuses[section_id] || {
+            status: "unavailable"
+        };
+        const statusColor = {
+            connected: "#4CAF50",
+            connecting: "#FFC107",
+            error: "#F44336",
+            stopped: "#9E9E9E",
+            unavailable: "#9E9E9E"
+        }[info.status] || "#9E9E9E";
+        const el = /*#__PURE__*/ createJsxElement("span", {
+            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
+        });
+        frp_statusElements[section_id] = el;
+        return el;
     };
     o = s.option(frp_form.Value, "server", _("FRP Server Address"));
     o.modalonly = true;
@@ -347,6 +524,63 @@ const frp_form = L.form;
     o.password = true;
     o.rmempty = true;
     o.placeholder = "optional token for authentication";
+    o = s.option(frp_form.DummyValue, "actions", _("Actions"));
+    o.modalonly = false;
+    o.cfgvalue = (section_id)=>{
+        var _nodeStatuses_section_id;
+        const isRunning = (((_nodeStatuses_section_id = nodeStatuses[section_id]) === null || _nodeStatuses_section_id === void 0 ? void 0 : _nodeStatuses_section_id.status) || "stopped") !== "stopped";
+        const btn = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-action",
+            onclick: ()=>{
+                const logViewer = new LogViewer(parseInt(section_id, 10));
+                logViewer.open();
+            },
+            disabled: !isRunning
+        }, _("View Logs"));
+        actionButtons[section_id] = btn;
+        return btn;
+    };
+    L.Poll.add(async ()=>{
+        try {
+            const sections = await L.uci.sections("portweaver", "frp_node");
+            const promises = sections.map((sec)=>rpcClient.getFrpInfo(sec[".name"]).then((res)=>{
+                    var _nodeStatuses_sec_name;
+                    const oldStatus = (_nodeStatuses_sec_name = nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
+                    nodeStatuses[sec[".name"]] = res;
+                    if (oldStatus !== res.status) {
+                        const statusEl = frp_statusElements[sec[".name"]];
+                        if (statusEl) {
+                            const statusColor = {
+                                connected: "#4CAF50",
+                                connecting: "#FFC107",
+                                error: "#F44336",
+                                stopped: "#9E9E9E",
+                                unavailable: "#9E9E9E"
+                            }[res.status] || "#9E9E9E";
+                            statusEl.style.backgroundColor = statusColor;
+                        }
+                        const actionBtn = actionButtons[sec[".name"]];
+                        if (actionBtn) {
+                            const isRunning = res.status !== "stopped";
+                            actionBtn.disabled = !isRunning;
+                        }
+                    }
+                }).catch(()=>{
+                    nodeStatuses[sec[".name"]] = {
+                        status: "error",
+                        last_error: "Failed to fetch status"
+                    };
+                    const statusEl = frp_statusElements[sec[".name"]];
+                    if (statusEl) statusEl.style.backgroundColor = "#F44336";
+                    const actionBtn = actionButtons[sec[".name"]];
+                    if (actionBtn) actionBtn.disabled = true;
+                }));
+            await Promise.all(promises);
+        } catch (e) {
+            console.error("Polling for FRP status failed:", e);
+        }
+    }, 5);
 }
 
 ;// CONCATENATED MODULE: ./components/ValidatedInput.tsx

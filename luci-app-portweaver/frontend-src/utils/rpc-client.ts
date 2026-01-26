@@ -30,5 +30,19 @@ export function createRpcClient(rpc: any) {
     expect: {},
   }) as () => Promise<FrpStatus>;
 
-  return { getStatus, listProjects, setEnabled, getFrpStatus };
+  const getFrpInfo = rpc.declare({
+    object: "portweaver",
+    method: "get_frp_info",
+    params: ["id"],
+    expect: {},
+  }) as (id: string) => Promise<{ status: string; last_error: string; logs: string[] }>;
+
+  const clearFrpLogs = rpc.declare({
+    object: "portweaver",
+    method: "clear_frp_logs",
+    params: ["id"],
+    expect: {},
+  }) as (id: string) => Promise<any>;
+
+  return { getStatus, listProjects, setEnabled, getFrpStatus, getFrpInfo, clearFrpLogs };
 }
