@@ -60,7 +60,7 @@ jobs:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
           ARCH: x86_64-24.10.5
-          V: ${{ env.ACTIONS_RUNNER_DEBUG == 'true' && 's' || '' }}
+          V: ${{ runner.debug == '1' && 's' || '' }}
 
   build:
     name: ${{ matrix.arch }} (${{ matrix.openwrt_version }})
@@ -112,7 +112,7 @@ jobs:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
           ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
-          V: ${{ env.ACTIONS_RUNNER_DEBUG == 'true' && 's' || '' }}
+          V: ${{ runner.debug == '1' && 's' || '' }}
 
       - name: List built packages
         run: |
