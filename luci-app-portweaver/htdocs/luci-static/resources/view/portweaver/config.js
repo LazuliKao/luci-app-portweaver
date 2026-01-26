@@ -165,10 +165,16 @@ function createRpcClient(rpc) {
         ],
         expect: {}
     });
+    const getFrpStatus = rpc.declare({
+        object: "portweaver",
+        method: "get_frp_status",
+        expect: {}
+    });
     return {
         getStatus,
         listProjects,
-        setEnabled
+        setEnabled,
+        getFrpStatus
     };
 }
 
@@ -229,8 +235,12 @@ class Client {
     constructor(data){
         _define_property(this, "globalStatus", void 0);
         _define_property(this, "projectStatuses", void 0);
+        _define_property(this, "frpStatus", void 0);
         this.globalStatus = data[0] || {};
         this.projectStatuses = data[1] ? data[1].projects || [] : [];
+        this.frpStatus = data[2] || {
+            frp_enabled: false
+        };
         L.Poll.add(async ()=>{
             const updateText = (id, value)=>{
                 const elem = document.getElementById(id);
@@ -240,10 +250,14 @@ class Client {
                 var _results_;
                 const results = await Promise.all([
                     rpcClient.getStatus(),
-                    rpcClient.listProjects()
+                    rpcClient.listProjects(),
+                    rpcClient.getFrpStatus()
                 ]);
                 this.globalStatus = results[0] || {};
                 this.projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
+                this.frpStatus = results[2] || {
+                    frp_enabled: false
+                };
                 const statusElem = document.getElementById("status-value");
                 const statusColors = {
                     running: "green",
@@ -259,6 +273,13 @@ class Client {
                 updateText("uptime-value", formatUptime(this.globalStatus.uptime || 0));
                 updateText("traffic-in-value", formatBytes(this.globalStatus.total_bytes_in || 0));
                 updateText("traffic-out-value", formatBytes(this.globalStatus.total_bytes_out || 0));
+                const frpEnabledElem = document.getElementById("frp-enabled-value");
+                if (frpEnabledElem) {
+                    frpEnabledElem.textContent = this.frpStatus.frp_enabled ? _("Enabled") : _("Disabled");
+                    frpEnabledElem.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
+                }
+                const frpVersionElem = document.getElementById("frp-version-value");
+                if (frpVersionElem && this.frpStatus.frp_version) frpVersionElem.textContent = this.frpStatus.frp_version;
                 (()=>{
                     const sections = L.uci.sections("portweaver", "project") || [];
                     for(let i = 0; i < sections.length; i++){
@@ -1318,7 +1339,7 @@ const uci = L.uci;
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
 
 class StatusPanel {
-    render(status) {
+    render(status, frpStatus) {
         const statusColor = {
             running: "#28a745",
             stopped: "#dc3545",
@@ -1344,7 +1365,13 @@ class StatusPanel {
         }, formatBytes(status.total_bytes_in || 0))), this.card(_("Traffic Out"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "traffic-out-value"
-        }, formatBytes(status.total_bytes_out || 0))));
+        }, formatBytes(status.total_bytes_out || 0))), frpStatus && this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("strong", {
+            style: "font-size: 1.1em; font-weight: 600; color: ".concat(frpStatus.frp_enabled ? "#28a745" : "#6c757d", ";"),
+            id: "frp-enabled-value"
+        }, frpStatus.frp_enabled ? _("Enabled") : _("Disabled")), frpStatus.frp_version && /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+            id: "frp-version-value"
+        }, frpStatus.frp_version))));
     }
     card(label, valueEl) {
         return /*#__PURE__*/ createJsxElement("div", {
@@ -1371,7 +1398,7 @@ const header_form = L.form;
     o.rawhtml = true;
     o.cfgvalue = ()=>{
         const panel = new StatusPanel();
-        return panel.render(client.globalStatus);
+        return panel.render(client.globalStatus, client.frpStatus);
     };
     // Helper to toggle runtime enable via RPC
     const runtimeToggle = async (section_id)=>{
@@ -1424,6 +1451,14 @@ class main extends L.view {
                 return {
                     projects: []
                 };
+            }),
+            rpcClient.getFrpStatus().then((res)=>res || {
+                    frp_enabled: false
+                }).catch((err)=>{
+                console.warn("ubus get_frp_status failed:", err);
+                return {
+                    frp_enabled: false
+                };
             })
         ]);
     }
@@ -1431,7 +1466,8 @@ class main extends L.view {
         const m = new main_form.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration"));
         const client = new Client([
             data[2],
-            data[3]
+            data[3],
+            data[4]
         ]);
         header(m, client);
         config(m, client);

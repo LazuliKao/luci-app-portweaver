@@ -1,4 +1,8 @@
-import type { PortWeaverStatus, ProjectStatus } from "../types/portweaver";
+import type {
+  PortWeaverStatus,
+  ProjectStatus,
+  FrpStatus,
+} from "../types/portweaver";
 import {
   formatBytes,
   formatUptime,
@@ -9,9 +13,13 @@ export const rpcClient = createRpcClient(L.rpc);
 export class Client {
   globalStatus: PortWeaverStatus;
   projectStatuses: ProjectStatus[];
-  constructor(data: [PortWeaverStatus, { projects: ProjectStatus[] }]) {
+  frpStatus: FrpStatus;
+  constructor(
+    data: [PortWeaverStatus, { projects: ProjectStatus[] }, FrpStatus],
+  ) {
     this.globalStatus = data[0] || {};
     this.projectStatuses = data[1] ? data[1].projects || [] : [];
+    this.frpStatus = data[2] || { frp_enabled: false };
     L.Poll.add(async () => {
       const updateText = (id: string, value: any) => {
         const elem = document.getElementById(id);
@@ -22,9 +30,11 @@ export class Client {
         const results = await Promise.all([
           rpcClient.getStatus(),
           rpcClient.listProjects(),
+          rpcClient.getFrpStatus(),
         ]);
         this.globalStatus = results[0] || {};
         this.projectStatuses = results[1]?.projects ? results[1].projects : [];
+        this.frpStatus = results[2] || { frp_enabled: false };
 
         const statusElem = document.getElementById(
           "status-value",
@@ -54,6 +64,20 @@ export class Client {
           "traffic-out-value",
           formatBytes(this.globalStatus.total_bytes_out || 0),
         );
+
+        const frpEnabledElem = document.getElementById("frp-enabled-value");
+        if (frpEnabledElem) {
+          frpEnabledElem.textContent = this.frpStatus.frp_enabled
+            ? _("Enabled")
+            : _("Disabled");
+          frpEnabledElem.style.color = this.frpStatus.frp_enabled
+            ? "#28a745"
+            : "#6c757d";
+        }
+        const frpVersionElem = document.getElementById("frp-version-value");
+        if (frpVersionElem && this.frpStatus.frp_version) {
+          frpVersionElem.textContent = this.frpStatus.frp_version;
+        }
 
         (() => {
           const sections = L.uci.sections("portweaver", "project") || [];

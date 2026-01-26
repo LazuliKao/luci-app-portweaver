@@ -8,13 +8,18 @@ export interface PortWeaverStatus {
 }
 
 export interface ProjectStatus {
-  enabled?: boolean;
-  status?: string;
-  startup_status?: "failed" | string;
+  enabled: boolean;
+  status: string;
+  startup_status?: string;
   error_code?: number;
   active_ports?: number;
   bytes_in?: number;
   bytes_out?: number;
+}
+
+export interface FrpStatus {
+  frp_enabled: boolean;
+  frp_version?: string;
 }
 
 export interface PortMapping {

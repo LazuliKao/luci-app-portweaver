@@ -1,6 +1,10 @@
 import "./utils/jsx-factory";
 import { Client, rpcClient } from "./modules/client";
-import type { PortWeaverStatus, ProjectStatus } from "./types/portweaver";
+import type {
+  PortWeaverStatus,
+  ProjectStatus,
+  FrpStatus,
+} from "./types/portweaver";
 import frp from "./modules/frp";
 import config from "./modules/config";
 import header from "./modules/header";
@@ -27,6 +31,13 @@ export class main extends L.view {
           console.warn("ubus list_projects failed:", err);
           return { projects: [] } as { projects: ProjectStatus[] };
         }),
+      rpcClient
+        .getFrpStatus()
+        .then((res: FrpStatus) => res || { frp_enabled: false })
+        .catch((err: any) => {
+          console.warn("ubus get_frp_status failed:", err);
+          return { frp_enabled: false } as FrpStatus;
+        }),
     ]);
   }
 
@@ -36,7 +47,7 @@ export class main extends L.view {
       _("PortWeaver"),
       _("Port forwarding and NAT traversal configuration"),
     );
-    const client = new Client([data[2], data[3]]);
+    const client = new Client([data[2], data[3], data[4]]);
     header(m, client);
     config(m, client);
     frp(m);

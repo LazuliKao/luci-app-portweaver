@@ -1,8 +1,8 @@
-import type { PortWeaverStatus } from "../types/portweaver";
+import type { PortWeaverStatus, FrpStatus } from "../types/portweaver";
 import { formatBytes, formatUptime } from "../utils/formatters";
 
 export class StatusPanel {
-  render(status: PortWeaverStatus): HTMLElement {
+  render(status: PortWeaverStatus, frpStatus?: FrpStatus): HTMLElement {
     const statusColor =
       {
         running: "#28a745",
@@ -68,6 +68,27 @@ export class StatusPanel {
             {formatBytes(status.total_bytes_out || 0)}
           </strong>,
         )}
+
+        {frpStatus &&
+          this.card(
+            _("FRP Status"),
+            <div>
+              <strong
+                style={`font-size: 1.1em; font-weight: 600; color: ${frpStatus.frp_enabled ? "#28a745" : "#6c757d"};`}
+                id="frp-enabled-value"
+              >
+                {frpStatus.frp_enabled ? _("Enabled") : _("Disabled")}
+              </strong>
+              {frpStatus.frp_version && (
+                <div
+                  style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+                  id="frp-version-value"
+                >
+                  {frpStatus.frp_version}
+                </div>
+              )}
+            </div>,
+          )}
       </div>
     );
   }

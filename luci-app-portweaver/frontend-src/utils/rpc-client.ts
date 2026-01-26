@@ -1,4 +1,8 @@
-import type { PortWeaverStatus, ProjectStatus } from "../types/portweaver";
+import type {
+  PortWeaverStatus,
+  ProjectStatus,
+  FrpStatus,
+} from "../types/portweaver";
 
 export function createRpcClient(rpc: any) {
   const getStatus = rpc.declare({
@@ -20,5 +24,11 @@ export function createRpcClient(rpc: any) {
     expect: {},
   }) as (id: number, enabled: boolean) => Promise<any>;
 
-  return { getStatus, listProjects, setEnabled };
+  const getFrpStatus = rpc.declare({
+    object: "portweaver",
+    method: "get_frp_status",
+    expect: {},
+  }) as () => Promise<FrpStatus>;
+
+  return { getStatus, listProjects, setEnabled, getFrpStatus };
 }

@@ -4,7 +4,7 @@
 		"read": {
 			"uci": ["portweaver"],
 			"ubus": {
-				"portweaver": ["get_status", "list_projects"]
+				"portweaver": ["get_status", "list_projects", "get_frp_status"]
 			}
 		},
 		"write": {

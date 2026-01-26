@@ -3,7 +3,7 @@ import ValidatedInput from "./ValidatedInput";
 class PortMappingEditor extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
   private errorDivRefs: HTMLElement[] = [];
-  
+
   parseMapping(str: string) {
     if (!str || typeof str !== "string") return null;
     str = str.trim();
@@ -81,9 +81,9 @@ class PortMappingEditor extends L.form.Value {
     cfgvalue: string[] | string,
   ) {
     void _option_index;
-    
+
     this.errorDivRefs = [];
-    
+
     const current_values: string[] = Array.isArray(cfgvalue)
       ? (cfgvalue as string[])
       : typeof cfgvalue === "string"
@@ -311,12 +311,8 @@ class PortMappingEditor extends L.form.Value {
 
       const buttonRow = (
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div>
-            {modeToggleBtn}
-          </div>
-          <div>
-            {deleteBtn}
-          </div>
+          <div>{modeToggleBtn}</div>
+          <div>{deleteBtn}</div>
         </div>
       ) as HTMLElement;
 
@@ -390,10 +386,10 @@ class PortMappingEditor extends L.form.Value {
       textModeInput.onblur = (ev: Event) => {
         const inputEl = ev.currentTarget as HTMLInputElement | null;
         if (!inputEl) return;
-        
+
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
-        
+
         const parsed = this.parseMapping(inputEl.value);
         if (parsed) {
           const tempListenHandler = listenInput.oninput;
@@ -668,10 +664,9 @@ class PortMappingEditor extends L.form.Value {
     for (const errorEl of this.errorDivRefs) {
       const isVisible = errorEl.style.display !== "none";
       const hasText = errorEl.textContent && errorEl.textContent.trim() !== "";
-      
+
       if (isVisible && hasText) {
-        this.validationError =
-          errorEl.textContent || _("Validation failed");
+        this.validationError = errorEl.textContent || _("Validation failed");
         this.isValidFlag = false;
         return false;
       }

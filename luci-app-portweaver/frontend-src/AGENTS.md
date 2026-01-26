@@ -32,3 +32,17 @@ The `frontend-src/` directory is organized as follows:
 - **React Hooks/Patterns**: Do not use `useState`, `useEffect`, or other React-specific features.
 - **Direct DOM Manipulation**: Prefer re-rendering components over manually changing the DOM.
 - **Ignoring RPC Errors**: Always attach a `.catch()` handler to `rpcClient` calls.
+
+## Important Context
+
+### Package Manager
+
+**Always use pnpm, NOT npm** - This project uses pnpm for package management.
+
+- **Install dependencies**: `pnpm install`
+- **Build**: `pnpm build`
+- **Type check**: `pnpm check`
+- **Format**: `pnpm format`
+- **DO NOT**: Use `npm install`, `npm run build`, etc.
+- **DO**: Use `pnpm` for all package management and script execution
+

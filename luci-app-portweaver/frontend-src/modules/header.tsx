@@ -19,7 +19,7 @@ export default function (m: LuCI.form.CBIMap, client: Client) {
   o.rawhtml = true;
   o.cfgvalue = () => {
     const panel = new StatusPanel();
-    return panel.render(client.globalStatus);
+    return panel.render(client.globalStatus, client.frpStatus);
   };
 
   // Helper to toggle runtime enable via RPC
