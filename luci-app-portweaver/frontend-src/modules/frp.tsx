@@ -156,6 +156,16 @@ export default function (
   o.rmempty = true;
   o.placeholder = "optional token for authentication";
 
+  o = ss.option(form.ListValue, "log_level", _("Log Level"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.default = "info";
+  o.value("trace", "Trace");
+  o.value("debug", "Debug");
+  o.value("info", "Info");
+  o.value("warn", "Warning");
+  o.value("error", "Error");
+
   o = ss.option(form.DummyValue, "actions", _("Actions"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
