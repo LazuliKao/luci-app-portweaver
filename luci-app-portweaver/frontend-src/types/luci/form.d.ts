@@ -471,7 +471,7 @@ declare namespace LuCI.form {
      * The returned promise is rejected if any step of the save operation
      * failed.
      */
-    save(cb?: Function, silent?: boolean): Promise<void>;
+    save(cb?: (...args: any[]) => any, silent?: boolean): Promise<void>;
     /**
      * Reset the form by re-rendering its contents. This will revert all
      * unsaved user inputs to their initial form state.
@@ -527,7 +527,7 @@ declare namespace LuCI.form {
     map: any;
     config: any;
     deps: any[] | undefined;
-    initial: {} | undefined;
+    initial: Record<string, unknown> | undefined;
     rmempty: boolean | undefined;
     rawhtml: boolean | undefined;
     default: string | null | undefined;

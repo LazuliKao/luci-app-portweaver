@@ -2,7 +2,31 @@ import { LogViewer } from "../components/LogViewer";
 import { rpcClient } from "./client";
 const form = L.form;
 
-const nodeStatuses: Record<string, { status: string; last_error: string }> = {};
+type FrpState =
+  | "connected"
+  | "connecting"
+  | "error"
+  | "stopped"
+  | "unavailable";
+
+const STATUS_COLORS: Record<FrpState, string> = {
+  connected: "#4CAF50",
+  connecting: "#FFC107",
+  error: "#F44336",
+  stopped: "#9E9E9E",
+  unavailable: "#9E9E9E",
+};
+
+const STATUS_LABELS: Record<FrpState, string> = {
+  connected: _("Connected"),
+  connecting: _("Connecting"),
+  error: _("Error"),
+  stopped: _("Stopped"),
+  unavailable: _("Unavailable"),
+};
+
+const nodeStatuses: Record<string, { status: FrpState; last_error: string }> =
+  {};
 const statusElements: Record<string, HTMLElement> = {};
 const actionButtons: Record<string, HTMLButtonElement> = {};
 
@@ -170,13 +194,24 @@ export default function (
           .getFrpInfo(nodeName)
           .then((res) => {
             const oldStatus = nodeStatuses[sec[".name"]]?.status;
-            // Backend returns 'frp_status', map to 'status' for consistency
+            // Normalize backend response (support both 'frp_status' and 'status')
+            const rawStatus =
+              (res as any).frp_status ?? res.status ?? "unavailable";
+            const newStatus: FrpState = [
+              "connected",
+              "connecting",
+              "error",
+              "stopped",
+              "unavailable",
+            ].includes(rawStatus)
+              ? (rawStatus as FrpState)
+              : ("unavailable" as FrpState);
+
             nodeStatuses[sec[".name"]] = {
-              status: res.frp_status || res.status || "unavailable",
+              status: newStatus,
               last_error: res.last_error || "",
             };
 
-            const newStatus = res.frp_status || res.status || "unavailable";
             if (oldStatus !== newStatus) {
               const container = statusElements[sec[".name"]];
               if (container && container.childNodes.length >= 2) {
@@ -184,23 +219,10 @@ export default function (
                 const textSpan = container.childNodes[1] as HTMLElement;
 
                 const statusColor =
-                  {
-                    connected: "#4CAF50",
-                    connecting: "#FFC107",
-                    error: "#F44336",
-                    stopped: "#9E9E9E",
-                    unavailable: "#9E9E9E",
-                  }[newStatus] || "#9E9E9E";
+                  STATUS_COLORS[newStatus] || STATUS_COLORS.unavailable;
                 indicator.style.backgroundColor = statusColor;
 
-                const statusText =
-                  {
-                    connected: _("Connected"),
-                    connecting: _("Connecting"),
-                    error: _("Error"),
-                    stopped: _("Stopped"),
-                    unavailable: _("Unavailable"),
-                  }[newStatus] || newStatus;
+                const statusText = STATUS_LABELS[newStatus] || newStatus;
                 textSpan.textContent = statusText;
               }
 
