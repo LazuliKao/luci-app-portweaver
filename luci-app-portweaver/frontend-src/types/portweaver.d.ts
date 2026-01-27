@@ -63,3 +63,14 @@ export interface PortMapping {
   frpNodes: string[];
   protocol: "tcp" | "udp" | "both";
 }
+
+/** DDNS status for a single configuration */
+export interface DdnsStatus {
+  section: string;
+  name: string;
+  provider: string;
+  status: "success" | "updating" | "error" | "disabled" | "unknown";
+  last_update?: string;
+  last_ip?: string;
+  message?: string;
+}

@@ -10,6 +10,7 @@ import frp from "./modules/frp";
 import config from "./modules/config";
 import header from "./modules/header";
 import logs from "./modules/logs";
+import ddns from "./modules/ddns";
 
 const form = L.form;
 const uci = L.uci;
@@ -63,6 +64,7 @@ export class main extends L.view {
 
     s.tab("settings", _("Global Settings"));
     s.tab("projects", _("Port Forwarding"));
+    s.tab("ddns", _("DDNS"));
     s.tab("logs", _("System Logs"));
     s.tab("frp", _("FRP Tunnels"));
 
@@ -70,6 +72,7 @@ export class main extends L.view {
 
     header(m, s, client, "settings");
     config(m, s, client, "projects");
+    ddns(m, s, "ddns");
     logs(m, s, "logs");
     frp(m, s, "frp");
 
