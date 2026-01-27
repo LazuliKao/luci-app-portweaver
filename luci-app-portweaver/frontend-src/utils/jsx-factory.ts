@@ -24,9 +24,15 @@ export function createJsxElement(
   if (typeof tag === "function") {
     return tag({ ...props, children: filteredChildren });
   }
+  
   if (props) {
+    const eventHandlers: Record<string, any> = {};
+    
     for (const [key, value] of Object.entries(props)) {
-      if (typeof value === "boolean") {
+      if (key.startsWith("on") && typeof value === "function") {
+        eventHandlers[key] = value;
+        delete props[key];
+      } else if (typeof value === "boolean") {
         if (value) {
           props[key] = key;
         } else {
@@ -34,7 +40,19 @@ export function createJsxElement(
         }
       }
     }
+    
+    const element = props === null || Object.keys(props).length === 0
+      ? (filteredChildren.length > 1 ? E(tag, {}, filteredChildren) : E(tag, {}, filteredChildren[0]))
+      : (filteredChildren.length > 1 ? E(tag, props, filteredChildren) : E(tag, props, filteredChildren[0]));
+    
+    for (const [eventName, handler] of Object.entries(eventHandlers)) {
+      const eventType = eventName.slice(2).toLowerCase();
+      (element as HTMLElement).addEventListener(eventType, handler);
+    }
+    
+    return element;
   }
+  
   if (props === null) {
     props = {};
   }

@@ -95,10 +95,22 @@ function jsx_factory_createJsxElement(tag, props) {
         children: filteredChildren
     }));
     if (props) {
-        for (const [key, value] of Object.entries(props))if (typeof value === "boolean") {
-            if (value) props[key] = key;
-            else delete props[key];
+        const eventHandlers = {};
+        for (const [key, value] of Object.entries(props)){
+            if (key.startsWith("on") && typeof value === "function") {
+                eventHandlers[key] = value;
+                delete props[key];
+            } else if (typeof value === "boolean") {
+                if (value) props[key] = key;
+                else delete props[key];
+            }
         }
+        const element = props === null || Object.keys(props).length === 0 ? filteredChildren.length > 1 ? E(tag, {}, filteredChildren) : E(tag, {}, filteredChildren[0]) : filteredChildren.length > 1 ? E(tag, props, filteredChildren) : E(tag, props, filteredChildren[0]);
+        for (const [eventName, handler] of Object.entries(eventHandlers)){
+            const eventType = eventName.slice(2).toLowerCase();
+            element.addEventListener(eventType, handler);
+        }
+        return element;
     }
     if (props === null) props = {};
     if (filteredChildren.length > 1) return E(tag, props, filteredChildren);
@@ -244,7 +256,7 @@ class Client {
         }
         const statusElements = [
             /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("span", statusBadgeAttrs, /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1em; font-weight: 600; color: " + statusColor + ";"
+                style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
             }, startupFailed ? "failed" : status.status || "unknown")))
         ];
         if (errorMessage && status.status !== "stopped") statusElements.push(/*#__PURE__*/ createJsxElement("small", {
@@ -274,9 +286,9 @@ class Client {
                 style: "min-width: 45px;"
             }, ":", f.local_port), /*#__PURE__*/ createJsxElement("span", {
                 style: "color: #28a745;"
-            }, "\u2193" + formatBytes(f.bytes_in)), /*#__PURE__*/ createJsxElement("span", {
+            }, "\u2193".concat(formatBytes(f.bytes_in))), /*#__PURE__*/ createJsxElement("span", {
                 style: "color: #dc3545;"
-            }, "\u2191" + formatBytes(f.bytes_out))));
+            }, "\u2191".concat(formatBytes(f.bytes_out)))));
         return /*#__PURE__*/ createJsxElement("div", {
             style: "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;"
         }, rows);
@@ -299,7 +311,7 @@ class Client {
     updateFrpErrorDisplay() {
         const errorElem = document.getElementById("frp-error-value");
         if (errorElem && this.frpStatus.last_error) {
-            const truncated = this.frpStatus.last_error.length > 50 ? this.frpStatus.last_error.substring(0, 47) + "..." : this.frpStatus.last_error;
+            const truncated = this.frpStatus.last_error.length > 50 ? "".concat(this.frpStatus.last_error.substring(0, 47), "...") : this.frpStatus.last_error;
             errorElem.title = this.frpStatus.last_error;
             errorElem.innerHTML = "";
             errorElem.appendChild(/*#__PURE__*/ createJsxElement("strong", {
@@ -335,7 +347,7 @@ class Client {
         const color = eventColors[event.type] || "#6c757d";
         const icon = eventIcons[event.type] || "\u2022";
         const time = this.formatTimestamp(event.timestamp);
-        const truncatedMessage = event.message.length > 60 ? event.message.substring(0, 57) + "..." : event.message;
+        const truncatedMessage = event.message.length > 60 ? "".concat(event.message.substring(0, 57), "...") : event.message;
         return /*#__PURE__*/ createJsxElement("div", {
             style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;"
         }, /*#__PURE__*/ createJsxElement("span", {
@@ -616,10 +628,24 @@ class LogViewer {
 
 
 const frp_form = L.form;
+const STATUS_COLORS = {
+    connected: "#4CAF50",
+    connecting: "#FFC107",
+    error: "#F44336",
+    stopped: "#9E9E9E",
+    unavailable: "#9E9E9E"
+};
+const STATUS_LABELS = {
+    connected: _("Connected"),
+    connecting: _("Connecting"),
+    error: _("Error"),
+    stopped: _("Stopped"),
+    unavailable: _("Unavailable")
+};
 const nodeStatuses = {};
 const frp_statusElements = {};
 const actionButtons = {};
-/* export default */ function frp(m, s, tab_id) {
+/* export default */ function frp(_m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, frp_form.SectionValue, "_frp_nodes", frp_form.GridSection, "frp_node");
     const ss = o.subsection;
@@ -704,6 +730,15 @@ const actionButtons = {};
     o.password = true;
     o.rmempty = true;
     o.placeholder = "optional token for authentication";
+    o = ss.option(frp_form.ListValue, "log_level", _("Log Level"));
+    o.modalonly = true;
+    o.rmempty = true;
+    o.default = "info";
+    o.value("trace", "Trace");
+    o.value("debug", "Debug");
+    o.value("info", "Info");
+    o.value("warn", "Warning");
+    o.value("error", "Error");
     o = ss.option(frp_form.DummyValue, "actions", _("Actions"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
@@ -728,34 +763,30 @@ const actionButtons = {};
             const promises = sections.map((sec)=>{
                 const nodeName = sec.name;
                 return rpcClient.getFrpInfo(nodeName).then((res)=>{
+                    var _ref, _res_frp_status;
                     var _nodeStatuses_sec_name;
                     const oldStatus = (_nodeStatuses_sec_name = nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
-                    // Backend returns 'frp_status', map to 'status' for consistency
+                    // Normalize backend response (support both 'frp_status' and 'status')
+                    const rawStatus = (_ref = (_res_frp_status = res.frp_status) !== null && _res_frp_status !== void 0 ? _res_frp_status : res.status) !== null && _ref !== void 0 ? _ref : "unavailable";
+                    const newStatus = [
+                        "connected",
+                        "connecting",
+                        "error",
+                        "stopped",
+                        "unavailable"
+                    ].includes(rawStatus) ? rawStatus : "unavailable";
                     nodeStatuses[sec[".name"]] = {
-                        status: res.frp_status || res.status || "unavailable",
+                        status: newStatus,
                         last_error: res.last_error || ""
                     };
-                    const newStatus = res.frp_status || res.status || "unavailable";
                     if (oldStatus !== newStatus) {
                         const container = frp_statusElements[sec[".name"]];
                         if (container && container.childNodes.length >= 2) {
                             const indicator = container.childNodes[0];
                             const textSpan = container.childNodes[1];
-                            const statusColor = {
-                                connected: "#4CAF50",
-                                connecting: "#FFC107",
-                                error: "#F44336",
-                                stopped: "#9E9E9E",
-                                unavailable: "#9E9E9E"
-                            }[newStatus] || "#9E9E9E";
+                            const statusColor = STATUS_COLORS[newStatus] || STATUS_COLORS.unavailable;
                             indicator.style.backgroundColor = statusColor;
-                            const statusText = {
-                                connected: _("Connected"),
-                                connecting: _("Connecting"),
-                                error: _("Error"),
-                                stopped: _("Stopped"),
-                                unavailable: _("Unavailable")
-                            }[newStatus] || newStatus;
+                            const statusText = STATUS_LABELS[newStatus] || newStatus;
                             textSpan.textContent = statusText;
                         }
                         const actionBtn = actionButtons[sec[".name"]];
@@ -1423,7 +1454,7 @@ class PortMappingEditor extends L.form.Value {
         if (typeof value === "string") return String(value).split(/\s+/).filter(Boolean);
         return [];
     }
-    formvalue(section_id) {
+    formvalue(_section_id) {
         var _this_hiddenInput;
         if ((_this_hiddenInput = this.hiddenInput) === null || _this_hiddenInput === void 0 ? void 0 : _this_hiddenInput.value) return this.hiddenInput.value.split(/\s+/).filter(Boolean);
         return null;
@@ -1432,7 +1463,7 @@ class PortMappingEditor extends L.form.Value {
         if (formvalue && formvalue.length > 0) return L.uci.set("portweaver", section_id, "port_mapping", formvalue);
         else return L.uci.unset("portweaver", section_id, "port_mapping");
     }
-    validate(section_id, value) {
+    validate(_section_id, value) {
         // 验证端口映射格式
         if (!value) {
             this.validationError = "";
@@ -1567,7 +1598,7 @@ class PortMappingEditor extends L.form.Value {
 
 const config_form = L.form;
 const uci = L.uci;
-/* export default */ function config(m, s, client, tab_id) {
+/* export default */ function config(_m, s, client, tab_id) {
     let o;
     o = s.taboption(tab_id, config_form.SectionValue, "_projects", config_form.GridSection, "project");
     const ss = o.subsection;
@@ -1860,7 +1891,7 @@ class StatusPanel {
     }
     truncateError(error, maxLen) {
         if (error.length <= maxLen) return error;
-        return error.substring(0, maxLen - 3) + "...";
+        return "".concat(error.substring(0, maxLen - 3), "...");
     }
     renderActivityLog(events) {
         // Show last 5 events, most recent first
@@ -1925,7 +1956,7 @@ class StatusPanel {
 
 const header_form = L.form;
 
-/* export default */ function header(m, s, client, tab_id) {
+/* export default */ function header(_m, s, client, tab_id) {
     let o;
     o = s.taboption(tab_id, header_form.Flag, "enabled", _("Enable PortWeaver"));
     o.default = "1";
@@ -1968,7 +1999,7 @@ const fs = L.fs;
 L.uci;
 const ui = L.ui;
 const LOG_FILE = "/tmp/portweaver.log";
-/* export default */ function logs(m, s, tab_id) {
+/* export default */ function logs(_m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, logs_form.Flag, "log_enabled", _("Enable Logging"));
     o.default = "1";
@@ -1993,7 +2024,7 @@ const LOG_FILE = "/tmp/portweaver.log";
             await fs.write(LOG_FILE, "");
             ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
             updateLogs();
-        } catch (err) {
+        } catch (_err) {
             ui.addNotification(null, E("p", _("Failed to clear logs")), "error");
         }
     };
@@ -2005,11 +2036,11 @@ const LOG_FILE = "/tmp/portweaver.log";
             ]);
             ui.addNotification(null, E("p", _("Service restarted successfully")), "info");
             setTimeout(updateLogs, 2000);
-        } catch (err) {
+        } catch (_err) {
             ui.addNotification(null, E("p", _("Failed to restart service")), "error");
         }
     };
-    o.render = function() {
+    o.render = ()=>{
         if (pollInterval) clearInterval(pollInterval);
         pollInterval = setInterval(updateLogs, 3000);
         setTimeout(updateLogs, 100);
