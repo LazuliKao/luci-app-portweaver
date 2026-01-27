@@ -23,6 +23,7 @@ declare namespace LuCI {
   }
   interface Form {
     Value: typeof LuCI.form.CBIValue;
+    SectionValue: typeof LuCI.form.CBIValue;
     NamedSection: typeof LuCI.form.CBIValue;
     TypedSection: typeof LuCI.form.CBIValue;
     Flag: typeof LuCI.form.CBIValue;

@@ -442,7 +442,20 @@ class LogViewer {
             stopped: "#9E9E9E",
             unavailable: "#9E9E9E"
         }[this.status] || "#9E9E9E";
-        return /*#__PURE__*/ createJsxElement("div", {
+        // Store refs to DOM nodes directly (no querySelector/getElementById)
+        this.statusSpan = /*#__PURE__*/ createJsxElement("span", {
+            style: "color: ".concat(statusColor, "; font-weight: 600;")
+        }, this.status);
+        this.errorSpan = /*#__PURE__*/ createJsxElement("div", {
+            style: this.lastError ? "color: #F44336; margin-top: 0.3em; display:block" : "color: #F44336; margin-top: 0.3em; display:none"
+        }, this.lastError);
+        const placeholder = /*#__PURE__*/ createJsxElement("div", {
+            style: "color: #6c757d; text-align: center; padding: 2em;"
+        }, "No logs available");
+        this.logContainer = /*#__PURE__*/ createJsxElement("div", {
+            style: "flex: 1; overflow-y: auto; padding: 1em; background: #f8f9fa; font-family: monospace; font-size: 0.85em; line-height: 1.5;"
+        }, this.logs.length === 0 ? placeholder : null);
+        this.modal = /*#__PURE__*/ createJsxElement("div", {
             style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
             onclick: (e)=>{
                 if (e.target === e.currentTarget) this.close();
@@ -455,22 +468,11 @@ class LogViewer {
             style: "margin: 0; font-size: 1.2em; font-weight: 600;"
         }, "FRP Client Logs"), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, "Status:", " ", /*#__PURE__*/ createJsxElement("span", {
-            style: "color: ".concat(statusColor, "; font-weight: 600;")
-        }, this.status), this.lastError && /*#__PURE__*/ createJsxElement("div", {
-            style: "color: #F44336; margin-top: 0.3em;"
-        }, "Error: ", this.lastError))), /*#__PURE__*/ createJsxElement("button", {
+        }, "Status: ", this.statusSpan, this.errorSpan)), /*#__PURE__*/ createJsxElement("button", {
             type: "button",
             onclick: ()=>this.close(),
             style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-        }, "\xd7")), /*#__PURE__*/ createJsxElement("div", {
-            style: "flex: 1; overflow-y: auto; padding: 1em; background: #f8f9fa; font-family: monospace; font-size: 0.85em; line-height: 1.5;",
-            id: "logs-container-".concat(this.projectId)
-        }, this.logs.length === 0 ? /*#__PURE__*/ createJsxElement("div", {
-            style: "color: #6c757d; text-align: center; padding: 2em;"
-        }, "No logs available") : this.logs.map((log)=>/*#__PURE__*/ createJsxElement("div", {
-                style: "color: #333; word-break: break-word;"
-            }, log))), /*#__PURE__*/ createJsxElement("div", {
+        }, "\xd7")), this.logContainer, /*#__PURE__*/ createJsxElement("div", {
             style: "padding: 1em; border-top: 1px solid #dee2e6; display: flex; gap: 0.5em; justify-content: flex-end;"
         }, /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -485,22 +487,33 @@ class LogViewer {
             onclick: ()=>this.close(),
             style: "padding: 0.5em 1em; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
         }, "Close"))));
+        return this.modal;
     }
     open() {
+        if (this.isOpen) return;
         this.isOpen = true;
+        // Render and attach modal, then populate initial content
+        const node = this.render();
+        document.body.appendChild(node);
+        this.updateDisplay();
         this.startPolling();
-        document.body.appendChild(this.render());
     }
     close() {
-        var _document_querySelector;
+        var _this_modal_parentElement, _this_modal;
+        if (!this.isOpen) return;
         this.isOpen = false;
         this.stopPolling();
-        const modal = (_document_querySelector = document.querySelector('[id^="logs-container-'.concat(this.projectId, '"]'))) === null || _document_querySelector === void 0 ? void 0 : _document_querySelector.closest("div");
-        if (modal === null || modal === void 0 ? void 0 : modal.parentElement) modal.parentElement.removeChild(modal);
+        (_this_modal = this.modal) === null || _this_modal === void 0 ? void 0 : (_this_modal_parentElement = _this_modal.parentElement) === null || _this_modal_parentElement === void 0 ? void 0 : _this_modal_parentElement.removeChild(this.modal);
+        // Release DOM references to avoid retaining detached nodes
+        this.modal = null;
+        this.logContainer = null;
+        this.statusSpan = null;
+        this.errorSpan = null;
     }
     startPolling() {
         this.fetchLogs();
-        this.pollInterval = setInterval(()=>{
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        this.pollInterval = window.setInterval(()=>{
             if (this.isOpen) this.fetchLogs();
         }, 3000);
     }
@@ -512,7 +525,8 @@ class LogViewer {
     }
     fetchLogs() {
         rpcClient.getFrpInfo(String(this.projectId)).then((response)=>{
-            this.status = response.status || "unavailable";
+            // Backend returns 'frp_status', fallback to 'status' for compatibility
+            this.status = response.frp_status || response.status || "unavailable";
             this.lastError = response.last_error || "";
             this.logs = response.logs || [];
             this.updateDisplay();
@@ -520,20 +534,48 @@ class LogViewer {
             console.error("Failed to fetch FRP logs:", err);
             this.status = "error";
             this.lastError = "Failed to fetch logs";
+            this.updateDisplay();
         });
     }
     updateDisplay() {
-        const container = document.getElementById("logs-container-".concat(this.projectId));
-        if (container) {
-            container.innerHTML = "";
-            if (this.logs.length === 0) container.innerHTML = '<div style="color: #6c757d; text-align: center; padding: 2em;">No logs available</div>';
-            else this.logs.forEach((log)=>{
+        // Update status
+        if (this.statusSpan) {
+            this.statusSpan.textContent = this.status;
+            // update color
+            const color = {
+                connected: "#4CAF50",
+                connecting: "#FFC107",
+                error: "#F44336",
+                stopped: "#9E9E9E",
+                unavailable: "#9E9E9E"
+            }[this.status] || "#9E9E9E";
+            this.statusSpan.setAttribute("style", "color: ".concat(color, "; font-weight: 600;"));
+        }
+        // Update error
+        if (this.errorSpan) {
+            if (this.lastError) {
+                this.errorSpan.style.display = "";
+                this.errorSpan.textContent = this.lastError;
+            } else this.errorSpan.style.display = "none";
+        }
+        // Update logs
+        if (this.logContainer) {
+            // clear existing children
+            while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
+            if (this.logs.length === 0) {
+                var _this_logContainer;
+                const noLogs = document.createElement("div");
+                noLogs.style.cssText = "color: #6c757d; text-align: center; padding: 2em;";
+                noLogs.textContent = "No logs available";
+                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(noLogs);
+            } else this.logs.forEach((log)=>{
+                var _this_logContainer;
                 const logEl = document.createElement("div");
                 logEl.style.cssText = "color: #333; word-break: break-word; margin-bottom: 0.2em;";
                 logEl.textContent = log;
-                container.appendChild(logEl);
+                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(logEl);
             });
-            container.scrollTop = container.scrollHeight;
+            this.logContainer.scrollTop = this.logContainer.scrollHeight;
         }
     }
     copyToClipboard() {
@@ -556,11 +598,16 @@ class LogViewer {
     }
     constructor(projectId){
         _define_property(this, "projectId", void 0);
+        _define_property(this, "modal", null);
+        _define_property(this, "logContainer", null);
+        _define_property(this, "statusSpan", null);
+        _define_property(this, "errorSpan", null);
+        // Added state fields
+        _define_property(this, "status", "unavailable");
+        _define_property(this, "logs", []);
+        _define_property(this, "lastError", "");
         _define_property(this, "isOpen", false);
         _define_property(this, "pollInterval", null);
-        _define_property(this, "logs", []);
-        _define_property(this, "status", "unavailable");
-        _define_property(this, "lastError", "");
         this.projectId = projectId;
     }
 }
@@ -586,9 +633,18 @@ const actionButtons = {};
     o.rmempty = false;
     o.datatype = "string";
     o.placeholder = "node1";
-    o.validate = (_section_id, value)=>{
+    o.validate = (section_id, value)=>{
         if (!value || String(value).trim() === "") return _("Node name is required");
         if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _("Node name must contain only alphanumeric characters, underscore, or hyphen");
+        // Check for duplicate names
+        const sections = L.uci.sections("portweaver", "frp_node");
+        const trimmedValue = String(value).trim();
+        for (const sec of sections){
+            // Skip the current section being edited
+            if (sec[".name"] === section_id) continue;
+            const existingName = sec.name;
+            if (existingName && existingName.trim() === trimmedValue) return _("Node name already exists. Please choose a different name.");
+        }
         return true;
     };
     o = ss.option(frp_form.DummyValue, "status", _("Status"));
@@ -657,7 +713,8 @@ const actionButtons = {};
             type: "button",
             class: "cbi-button cbi-button-action",
             onclick: ()=>{
-                const logViewer = new LogViewer(parseInt(section_id, 10));
+                const nodeName = L.uci.get("portweaver", section_id, "name");
+                const logViewer = new LogViewer(nodeName);
                 logViewer.open();
             },
             disabled: !isRunning
@@ -668,11 +725,18 @@ const actionButtons = {};
     L.Poll.add(async ()=>{
         try {
             const sections = await L.uci.sections("portweaver", "frp_node");
-            const promises = sections.map((sec)=>rpcClient.getFrpInfo(sec[".name"]).then((res)=>{
+            const promises = sections.map((sec)=>{
+                const nodeName = sec.name;
+                return rpcClient.getFrpInfo(nodeName).then((res)=>{
                     var _nodeStatuses_sec_name;
                     const oldStatus = (_nodeStatuses_sec_name = nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
-                    nodeStatuses[sec[".name"]] = res;
-                    if (oldStatus !== res.status) {
+                    // Backend returns 'frp_status', map to 'status' for consistency
+                    nodeStatuses[sec[".name"]] = {
+                        status: res.frp_status || res.status || "unavailable",
+                        last_error: res.last_error || ""
+                    };
+                    const newStatus = res.frp_status || res.status || "unavailable";
+                    if (oldStatus !== newStatus) {
                         const container = frp_statusElements[sec[".name"]];
                         if (container && container.childNodes.length >= 2) {
                             const indicator = container.childNodes[0];
@@ -683,7 +747,7 @@ const actionButtons = {};
                                 error: "#F44336",
                                 stopped: "#9E9E9E",
                                 unavailable: "#9E9E9E"
-                            }[res.status] || "#9E9E9E";
+                            }[newStatus] || "#9E9E9E";
                             indicator.style.backgroundColor = statusColor;
                             const statusText = {
                                 connected: _("Connected"),
@@ -691,12 +755,12 @@ const actionButtons = {};
                                 error: _("Error"),
                                 stopped: _("Stopped"),
                                 unavailable: _("Unavailable")
-                            }[res.status] || res.status;
+                            }[newStatus] || newStatus;
                             textSpan.textContent = statusText;
                         }
                         const actionBtn = actionButtons[sec[".name"]];
                         if (actionBtn) {
-                            const isRunning = res.status !== "stopped";
+                            const isRunning = newStatus !== "stopped";
                             actionBtn.disabled = !isRunning;
                         }
                     }
@@ -714,7 +778,8 @@ const actionButtons = {};
                     }
                     const actionBtn = actionButtons[sec[".name"]];
                     if (actionBtn) actionBtn.disabled = true;
-                }));
+                });
+            });
             await Promise.all(promises);
         } catch (e) {
             console.error("Polling for FRP status failed:", e);

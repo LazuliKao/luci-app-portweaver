@@ -11,7 +11,7 @@ export default function (
   s: LuCI.form.CBIAbstractSection,
   tab_id: string,
 ) {
-  let o: LuCI.form.CBIAbstractValue;
+  let o: LuCI.form.CBIAbstractSectionValue;
 
   o = s.taboption(
     tab_id,
@@ -37,13 +37,27 @@ export default function (
   o.rmempty = false;
   o.datatype = "string";
   o.placeholder = "node1";
-  o.validate = (_section_id: string, value: string) => {
+  o.validate = (section_id: string, value: string) => {
     if (!value || String(value).trim() === "")
       return _("Node name is required");
     if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim()))
       return _(
         "Node name must contain only alphanumeric characters, underscore, or hyphen",
       );
+    
+    // Check for duplicate names
+    const sections = L.uci.sections("portweaver", "frp_node");
+    const trimmedValue = String(value).trim();
+    for (const sec of sections) {
+      // Skip the current section being edited
+      if (sec[".name"] === section_id) continue;
+      
+      const existingName = sec.name as string;
+      if (existingName && existingName.trim() === trimmedValue) {
+        return _("Node name already exists. Please choose a different name.");
+      }
+    }
+    
     return true;
   };
 
@@ -129,7 +143,8 @@ export default function (
         type="button"
         class="cbi-button cbi-button-action"
         onclick={() => {
-          const logViewer = new LogViewer(parseInt(section_id, 10));
+          const nodeName = L.uci.get("portweaver", section_id, "name") as string;
+          const logViewer = new LogViewer(nodeName);
           logViewer.open();
         }}
         disabled={!isRunning}
@@ -145,14 +160,20 @@ export default function (
   L.Poll.add(async () => {
     try {
       const sections = await L.uci.sections("portweaver", "frp_node");
-      const promises = sections.map((sec: any) =>
-        rpcClient
-          .getFrpInfo(sec[".name"])
+      const promises = sections.map((sec: any) => {
+        const nodeName = sec.name as string;
+        return rpcClient
+          .getFrpInfo(nodeName)
           .then((res) => {
             const oldStatus = nodeStatuses[sec[".name"]]?.status;
-            nodeStatuses[sec[".name"]] = res;
+            // Backend returns 'frp_status', map to 'status' for consistency
+            nodeStatuses[sec[".name"]] = {
+              status: res.frp_status || res.status || "unavailable",
+              last_error: res.last_error || ""
+            };
 
-            if (oldStatus !== res.status) {
+            const newStatus = res.frp_status || res.status || "unavailable";
+            if (oldStatus !== newStatus) {
               const container = statusElements[sec[".name"]];
               if (container && container.childNodes.length >= 2) {
                 const indicator = container.childNodes[0] as HTMLElement;
@@ -165,7 +186,7 @@ export default function (
                     error: "#F44336",
                     stopped: "#9E9E9E",
                     unavailable: "#9E9E9E",
-                  }[res.status] || "#9E9E9E";
+                  }[newStatus] || "#9E9E9E";
                 indicator.style.backgroundColor = statusColor;
 
                 const statusText =
@@ -175,13 +196,13 @@ export default function (
                     error: _("Error"),
                     stopped: _("Stopped"),
                     unavailable: _("Unavailable"),
-                  }[res.status] || res.status;
+                  }[newStatus] || newStatus;
                 textSpan.textContent = statusText;
               }
 
               const actionBtn = actionButtons[sec[".name"]];
               if (actionBtn) {
-                const isRunning = res.status !== "stopped";
+                const isRunning = newStatus !== "stopped";
                 actionBtn.disabled = !isRunning;
               }
             }
@@ -204,8 +225,8 @@ export default function (
             if (actionBtn) {
               actionBtn.disabled = true;
             }
-          }),
-      );
+          });
+      });
       await Promise.all(promises);
     } catch (e) {
       console.error("Polling for FRP status failed:", e);
