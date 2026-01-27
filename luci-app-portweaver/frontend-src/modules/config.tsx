@@ -8,12 +8,18 @@ export default function (
   m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
   client: Client,
-  tab_id: string
+  tab_id: string,
 ) {
   let o: LuCI.form.CBIAbstractValue;
 
-  o = s.taboption(tab_id, form.SectionValue, "_projects", form.GridSection, "project");
-  
+  o = s.taboption(
+    tab_id,
+    form.SectionValue,
+    "_projects",
+    form.GridSection,
+    "project",
+  );
+
   const ss = o.subsection;
   ss.anonymous = true;
   ss.addremove = true;

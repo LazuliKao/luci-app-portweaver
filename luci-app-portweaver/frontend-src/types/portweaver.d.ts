@@ -7,7 +7,17 @@ export interface PortWeaverStatus {
   total_bytes_out?: number;
 }
 
+/** Statistics for a single forwarder (port) */
+export interface ForwarderStats {
+  protocol: string;
+  local_port: number;
+  bytes_in: number;
+  bytes_out: number;
+}
+
 export interface ProjectStatus {
+  id?: number;
+  remark?: string;
   enabled: boolean;
   status: string;
   startup_status?: string;
@@ -15,11 +25,36 @@ export interface ProjectStatus {
   active_ports?: number;
   bytes_in?: number;
   bytes_out?: number;
+  /** Per-port statistics */
+  forwarders?: ForwarderStats[];
 }
 
 export interface FrpStatus {
   frp_enabled: boolean;
   frp_version?: string;
+  /** Current FRP client status: connected, connecting, error, stopped */
+  frp_status?: string;
+  /** Last error message from FRP client */
+  last_error?: string;
+  /** Number of active FRP clients */
+  client_count?: number;
+}
+
+/** A single event in the activity log */
+export interface ActivityEvent {
+  /** Unix timestamp in milliseconds */
+  timestamp: number;
+  /** Event type: project_started, project_stopped, frp_error, etc. */
+  type: string;
+  /** Event message */
+  message: string;
+  /** Project ID (-1 if not applicable) */
+  project_id: number;
+}
+
+/** Response from get_events API */
+export interface EventsResponse {
+  events: ActivityEvent[];
 }
 
 export interface PortMapping {

@@ -75,20 +75,25 @@ function _object_spread_props(target, source) {
 
 
 const JSXFragment = Symbol.for("jsx.fragment");
+function filterChildren(children) {
+    return children.filter((child)=>{
+        if (child === null || child === undefined || typeof child === "boolean") return false;
+        return true;
+    });
+}
 function jsx_factory_createJsxElement(tag, props) {
     for(var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++){
         children[_key - 2] = arguments[_key];
     }
+    const filteredChildren = filterChildren(children);
     if (tag === JSXFragment) {
         const fragment = document.createDocumentFragment();
-        fragment.append(...children);
+        fragment.append(...filteredChildren);
         return fragment;
     }
-    // fix custom componment
     if (typeof tag === "function") return tag(_object_spread_props(_object_spread({}, props), {
-        children
+        children: filteredChildren
     }));
-    // fix all boolean attributes
     if (props) {
         for (const [key, value] of Object.entries(props))if (typeof value === "boolean") {
             if (value) props[key] = key;
@@ -96,8 +101,8 @@ function jsx_factory_createJsxElement(tag, props) {
         }
     }
     if (props === null) props = {};
-    if (children.length > 1) return E(tag, props, children);
-    else return E(tag, props, children[0]);
+    if (filteredChildren.length > 1) return E(tag, props, filteredChildren);
+    else return E(tag, props, filteredChildren[0]);
 }
 jsx_factory_createJsxElement.Fragment = JSXFragment;
 globalThis.createJsxElement = jsx_factory_createJsxElement;
@@ -186,13 +191,19 @@ function createRpcClient(rpc) {
         ],
         expect: {}
     });
+    const getEvents = rpc.declare({
+        object: "portweaver",
+        method: "get_events",
+        expect: {}
+    });
     return {
         getStatus,
         listProjects,
         setEnabled,
         getFrpStatus,
         getFrpInfo,
-        clearFrpLogs
+        clearFrpLogs,
+        getEvents
     };
 }
 
@@ -241,41 +252,138 @@ class Client {
         }, "\u26A0 ".concat(errorMessage)));
         else {
             const elements = [];
-            if ((status.active_ports || 0) > 0) {
-                elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: ") + (status.active_ports || 0)));
-                elements.push(/*#__PURE__*/ createJsxElement("br", null));
+            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: ") + (status.active_ports || 0)));
+            if (status.bytes_in || 0 || status.bytes_out || 0) {
+                if (elements.length > 0) elements.push(/*#__PURE__*/ createJsxElement("br", null));
+                elements.push(/*#__PURE__*/ createJsxElement("span", null, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
             }
-            if ((status.bytes_in || 0) && (status.bytes_out || 0)) elements.push(/*#__PURE__*/ createJsxElement("span", null, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
-            statusElements.push(/*#__PURE__*/ createJsxElement("small", null, elements));
+            if (status.forwarders && status.forwarders.length > 0) {
+                if (elements.length > 0) elements.push(/*#__PURE__*/ createJsxElement("br", null));
+                elements.push(this.renderForwarderStats(status.forwarders));
+            }
+            if (elements.length > 0) statusElements.push(/*#__PURE__*/ createJsxElement("small", null, elements));
         }
         return statusElements;
+    }
+    renderForwarderStats(forwarders) {
+        const rows = forwarders.map((f)=>/*#__PURE__*/ createJsxElement("div", {
+                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;"
+            }, /*#__PURE__*/ createJsxElement("span", {
+                style: "min-width: 35px; color: #6c757d;"
+            }, f.protocol.toUpperCase()), /*#__PURE__*/ createJsxElement("span", {
+                style: "min-width: 45px;"
+            }, ":", f.local_port), /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #28a745;"
+            }, "\u2193" + formatBytes(f.bytes_in)), /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #dc3545;"
+            }, "\u2191" + formatBytes(f.bytes_out))));
+        return /*#__PURE__*/ createJsxElement("div", {
+            style: "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;"
+        }, rows);
+    }
+    updateProjectHealthIndicator() {
+        var _this_projectStatuses;
+        const enabledProjects = ((_this_projectStatuses = this.projectStatuses) === null || _this_projectStatuses === void 0 ? void 0 : _this_projectStatuses.filter((p)=>p.enabled)) || [];
+        const runningProjects = enabledProjects.filter((p)=>p.status === "running");
+        const healthElem = document.getElementById("project-health-value");
+        if (healthElem) {
+            const healthColor = runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545";
+            healthElem.innerHTML = "";
+            healthElem.appendChild(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600; color: ".concat(healthColor, ";")
+            }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+            }, _("projects running"))));
+        }
+    }
+    updateFrpErrorDisplay() {
+        const errorElem = document.getElementById("frp-error-value");
+        if (errorElem && this.frpStatus.last_error) {
+            const truncated = this.frpStatus.last_error.length > 50 ? this.frpStatus.last_error.substring(0, 47) + "..." : this.frpStatus.last_error;
+            errorElem.title = this.frpStatus.last_error;
+            errorElem.innerHTML = "";
+            errorElem.appendChild(/*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
+            }, truncated));
+        }
+    }
+    updateActivityLog() {
+        const logContainer = document.getElementById("activity-log-container");
+        if (logContainer && this.events && this.events.length > 0) {
+            const recentEvents = this.events.slice(-5).reverse();
+            logContainer.innerHTML = "";
+            for (const event of recentEvents)logContainer.appendChild(this.renderEventRow(event));
+        }
+    }
+    renderEventRow(event) {
+        const eventColors = {
+            project_started: "#28a745",
+            project_stopped: "#6c757d",
+            frp_error: "#dc3545",
+            frp_connected: "#28a745",
+            frp_disconnected: "#ffc107",
+            config_changed: "#17a2b8"
+        };
+        const eventIcons = {
+            project_started: "\u25B6",
+            project_stopped: "\u23F9",
+            frp_error: "\u26A0",
+            frp_connected: "\uD83D\uDD17",
+            frp_disconnected: "\uD83D\uDD0C",
+            config_changed: "\u2699"
+        };
+        const color = eventColors[event.type] || "#6c757d";
+        const icon = eventIcons[event.type] || "\u2022";
+        const time = this.formatTimestamp(event.timestamp);
+        const truncatedMessage = event.message.length > 60 ? event.message.substring(0, 57) + "..." : event.message;
+        return /*#__PURE__*/ createJsxElement("div", {
+            style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;"
+        }, /*#__PURE__*/ createJsxElement("span", {
+            style: "color: ".concat(color, "; margin-right: 0.5em; flex-shrink: 0;")
+        }, icon), /*#__PURE__*/ createJsxElement("span", {
+            style: "color: #6c757d; margin-right: 0.5em; flex-shrink: 0; min-width: 70px;"
+        }, time), /*#__PURE__*/ createJsxElement("span", {
+            style: "flex: 1; word-break: break-word;",
+            title: event.message
+        }, truncatedMessage));
+    }
+    formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const seconds = date.getSeconds().toString().padStart(2, "0");
+        return "".concat(hours, ":").concat(minutes, ":").concat(seconds);
     }
     constructor(data){
         _define_property(this, "globalStatus", void 0);
         _define_property(this, "projectStatuses", void 0);
         _define_property(this, "frpStatus", void 0);
+        _define_property(this, "events", void 0);
         this.globalStatus = data[0] || {};
         this.projectStatuses = data[1] ? data[1].projects || [] : [];
         this.frpStatus = data[2] || {
             frp_enabled: false
         };
+        this.events = data[3] || [];
         L.Poll.add(async ()=>{
             const updateText = (id, value)=>{
                 const elem = document.getElementById(id);
                 if (elem) elem.textContent = String(value);
             };
             try {
-                var _results_;
+                var _results_, _results_1;
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
-                    rpcClient.getFrpStatus()
+                    rpcClient.getFrpStatus(),
+                    rpcClient.getEvents()
                 ]);
                 this.globalStatus = results[0] || {};
                 this.projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
                 this.frpStatus = results[2] || {
                     frp_enabled: false
                 };
+                this.events = ((_results_1 = results[3]) === null || _results_1 === void 0 ? void 0 : _results_1.events) || [];
                 const statusElem = document.getElementById("status-value");
                 const statusColors = {
                     running: "green",
@@ -298,6 +406,9 @@ class Client {
                 }
                 const frpVersionElem = document.getElementById("frp-version-value");
                 if (frpVersionElem && this.frpStatus.frp_version) frpVersionElem.textContent = this.frpStatus.frp_version;
+                this.updateProjectHealthIndicator();
+                this.updateFrpErrorDisplay();
+                this.updateActivityLog();
                 (()=>{
                     const sections = L.uci.sections("portweaver", "project") || [];
                     for(let i = 0; i < sections.length; i++){
@@ -482,7 +593,7 @@ const actionButtons = {};
     };
     o = ss.option(frp_form.DummyValue, "status", _("Status"));
     o.modalonly = false;
-    o.cfgvalue = (section_id)=>{
+    o.textvalue = (section_id)=>{
         const info = nodeStatuses[section_id] || {
             status: "unavailable"
         };
@@ -493,11 +604,24 @@ const actionButtons = {};
             stopped: "#9E9E9E",
             unavailable: "#9E9E9E"
         }[info.status] || "#9E9E9E";
-        const el = /*#__PURE__*/ createJsxElement("span", {
+        const statusText = {
+            connected: _("Connected"),
+            connecting: _("Connecting"),
+            error: _("Error"),
+            stopped: _("Stopped"),
+            unavailable: _("Unavailable")
+        }[info.status] || info.status;
+        const indicator = /*#__PURE__*/ createJsxElement("span", {
             style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
         });
-        frp_statusElements[section_id] = el;
-        return el;
+        const textSpan = /*#__PURE__*/ createJsxElement("span", null, statusText);
+        const container = /*#__PURE__*/ createJsxElement("span", {
+            style: "display:flex; align-items:center;"
+        });
+        container.appendChild(indicator);
+        container.appendChild(textSpan);
+        frp_statusElements[section_id] = container;
+        return container;
     };
     o = ss.option(frp_form.Value, "server", _("FRP Server Address"));
     o.modalonly = true;
@@ -526,7 +650,7 @@ const actionButtons = {};
     o.placeholder = "optional token for authentication";
     o = ss.option(frp_form.DummyValue, "actions", _("Actions"));
     o.modalonly = false;
-    o.cfgvalue = (section_id)=>{
+    o.textvalue = (section_id)=>{
         var _nodeStatuses_section_id;
         const isRunning = (((_nodeStatuses_section_id = nodeStatuses[section_id]) === null || _nodeStatuses_section_id === void 0 ? void 0 : _nodeStatuses_section_id.status) || "stopped") !== "stopped";
         const btn = /*#__PURE__*/ createJsxElement("button", {
@@ -549,8 +673,10 @@ const actionButtons = {};
                     const oldStatus = (_nodeStatuses_sec_name = nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
                     nodeStatuses[sec[".name"]] = res;
                     if (oldStatus !== res.status) {
-                        const statusEl = frp_statusElements[sec[".name"]];
-                        if (statusEl) {
+                        const container = frp_statusElements[sec[".name"]];
+                        if (container && container.childNodes.length >= 2) {
+                            const indicator = container.childNodes[0];
+                            const textSpan = container.childNodes[1];
                             const statusColor = {
                                 connected: "#4CAF50",
                                 connecting: "#FFC107",
@@ -558,7 +684,15 @@ const actionButtons = {};
                                 stopped: "#9E9E9E",
                                 unavailable: "#9E9E9E"
                             }[res.status] || "#9E9E9E";
-                            statusEl.style.backgroundColor = statusColor;
+                            indicator.style.backgroundColor = statusColor;
+                            const statusText = {
+                                connected: _("Connected"),
+                                connecting: _("Connecting"),
+                                error: _("Error"),
+                                stopped: _("Stopped"),
+                                unavailable: _("Unavailable")
+                            }[res.status] || res.status;
+                            textSpan.textContent = statusText;
                         }
                         const actionBtn = actionButtons[sec[".name"]];
                         if (actionBtn) {
@@ -571,8 +705,13 @@ const actionButtons = {};
                         status: "error",
                         last_error: "Failed to fetch status"
                     };
-                    const statusEl = frp_statusElements[sec[".name"]];
-                    if (statusEl) statusEl.style.backgroundColor = "#F44336";
+                    const container = frp_statusElements[sec[".name"]];
+                    if (container && container.childNodes.length >= 2) {
+                        const indicator = container.childNodes[0];
+                        const textSpan = container.childNodes[1];
+                        indicator.style.backgroundColor = "#F44336";
+                        textSpan.textContent = _("Error");
+                    }
                     const actionBtn = actionButtons[sec[".name"]];
                     if (actionBtn) actionBtn.disabled = true;
                 }));
@@ -1571,13 +1710,17 @@ const uci = L.uci;
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
 
 class StatusPanel {
-    render(status, frpStatus) {
+    render(status, frpStatus, projectStatuses, events) {
         const statusColor = {
             running: "#28a745",
             stopped: "#dc3545",
             degraded: "#ffc107"
         }[status.status || ""] || "#6c757d";
-        return /*#__PURE__*/ createJsxElement("div", {
+        // Calculate project health stats
+        const enabledProjects = (projectStatuses === null || projectStatuses === void 0 ? void 0 : projectStatuses.filter((p)=>p.enabled)) || [];
+        const runningProjects = enabledProjects.filter((p)=>p.status === "running");
+        const hasEnabledProjects = enabledProjects.length > 0;
+        return /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("div", {
             style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;"
         }, this.card(_("Status"), /*#__PURE__*/ createJsxElement("strong", {
             style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
@@ -1597,13 +1740,112 @@ class StatusPanel {
         }, formatBytes(status.total_bytes_in || 0))), this.card(_("Traffic Out"), /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600;",
             id: "traffic-out-value"
-        }, formatBytes(status.total_bytes_out || 0))), frpStatus && this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600; color: ".concat(frpStatus.frp_enabled ? "#28a745" : "#6c757d", ";"),
+        }, formatBytes(status.total_bytes_out || 0))), hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
+            id: "project-health-value"
+        }, /*#__PURE__*/ createJsxElement("strong", {
+            style: "font-size: 1.1em; font-weight: 600; color: ".concat(runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545", ";")
+        }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+        }, _("projects running")))), frpStatus && this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("strong", {
+            style: "font-size: 1.1em; font-weight: 600; color: ".concat(this.getFrpStatusColor(frpStatus), ";"),
             id: "frp-enabled-value"
-        }, frpStatus.frp_enabled ? _("Enabled") : _("Disabled")), frpStatus.frp_version && /*#__PURE__*/ createJsxElement("div", {
+        }, this.getFrpStatusText(frpStatus)), frpStatus.frp_version && /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
             id: "frp-version-value"
-        }, frpStatus.frp_version))));
+        }, frpStatus.frp_version), frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
+        }, frpStatus.client_count, " ", _("client(s)")))), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && this.card(_("FRP Error"), /*#__PURE__*/ createJsxElement("div", {
+            style: "cursor: help;",
+            title: frpStatus.last_error,
+            id: "frp-error-value"
+        }, /*#__PURE__*/ createJsxElement("strong", {
+            style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
+        }, this.truncateError(frpStatus.last_error, 50))))), events && events.length > 0 && this.renderActivityLog(events));
+    }
+    getFrpStatusColor(frpStatus) {
+        if (!frpStatus.frp_enabled) return "#6c757d";
+        switch(frpStatus.frp_status){
+            case "connected":
+                return "#28a745";
+            case "connecting":
+                return "#ffc107";
+            case "error":
+                return "#dc3545";
+            case "stopped":
+                return "#6c757d";
+            default:
+                return frpStatus.frp_enabled ? "#28a745" : "#6c757d";
+        }
+    }
+    getFrpStatusText(frpStatus) {
+        if (!frpStatus.frp_enabled) return _("Disabled");
+        if (frpStatus.frp_status) switch(frpStatus.frp_status){
+            case "connected":
+                return _("Connected");
+            case "connecting":
+                return _("Connecting");
+            case "error":
+                return _("Error");
+            case "stopped":
+                return _("Stopped");
+            default:
+                return frpStatus.frp_status;
+        }
+        return _("Enabled");
+    }
+    truncateError(error, maxLen) {
+        if (error.length <= maxLen) return error;
+        return error.substring(0, maxLen - 3) + "...";
+    }
+    renderActivityLog(events) {
+        // Show last 5 events, most recent first
+        const recentEvents = events.slice(-5).reverse();
+        return /*#__PURE__*/ createJsxElement("div", {
+            style: "margin-top: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;"
+        }, /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;"
+        }, _("Recent Activity")), /*#__PURE__*/ createJsxElement("div", {
+            style: "max-height: 150px; overflow-y: auto;",
+            id: "activity-log-container"
+        }, recentEvents.map((event)=>this.renderEventRow(event))));
+    }
+    renderEventRow(event) {
+        const eventColors = {
+            project_started: "#28a745",
+            project_stopped: "#6c757d",
+            frp_error: "#dc3545",
+            frp_connected: "#28a745",
+            frp_disconnected: "#ffc107",
+            config_changed: "#17a2b8"
+        };
+        const eventIcons = {
+            project_started: "\u25B6",
+            project_stopped: "\u23F9",
+            frp_error: "\u26A0",
+            frp_connected: "\uD83D\uDD17",
+            frp_disconnected: "\uD83D\uDD0C",
+            config_changed: "\u2699"
+        };
+        const color = eventColors[event.type] || "#6c757d";
+        const icon = eventIcons[event.type] || "\u2022";
+        const time = this.formatTimestamp(event.timestamp);
+        return /*#__PURE__*/ createJsxElement("div", {
+            style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;"
+        }, /*#__PURE__*/ createJsxElement("span", {
+            style: "color: ".concat(color, "; margin-right: 0.5em; flex-shrink: 0;")
+        }, icon), /*#__PURE__*/ createJsxElement("span", {
+            style: "color: #6c757d; margin-right: 0.5em; flex-shrink: 0; min-width: 70px;"
+        }, time), /*#__PURE__*/ createJsxElement("span", {
+            style: "flex: 1; word-break: break-word;",
+            title: event.message
+        }, this.truncateError(event.message, 60)));
+    }
+    formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const seconds = date.getSeconds().toString().padStart(2, "0");
+        return "".concat(hours, ":").concat(minutes, ":").concat(seconds);
     }
     card(label, valueEl) {
         return /*#__PURE__*/ createJsxElement("div", {
@@ -1627,7 +1869,7 @@ const header_form = L.form;
     o.rawhtml = true;
     o.cfgvalue = ()=>{
         const panel = new StatusPanel();
-        return panel.render(client.globalStatus, client.frpStatus);
+        return panel.render(client.globalStatus, client.frpStatus, client.projectStatuses, client.events);
     };
     const runtimeToggle = async (section_id)=>{
         const idx = client.getProjectIndex(section_id);
@@ -1660,7 +1902,7 @@ const logs_form = L.form;
 const fs = L.fs;
 L.uci;
 const ui = L.ui;
-const LOG_FILE = '/tmp/portweaver.log';
+const LOG_FILE = "/tmp/portweaver.log";
 /* export default */ function logs(m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, logs_form.Flag, "log_enabled", _("Enable Logging"));
@@ -1671,74 +1913,74 @@ const LOG_FILE = '/tmp/portweaver.log';
     o.rawhtml = true;
     let pollInterval = null;
     const updateLogs = ()=>{
-        const container = document.getElementById('portweaver-log-container');
+        const container = document.getElementById("portweaver-log-container");
         if (!container) return;
-        fs.read_direct(LOG_FILE, 'text').then((res)=>{
-            container.textContent = res.trim() || _('Log is empty.');
+        fs.read_direct(LOG_FILE, "text").then((res)=>{
+            container.textContent = res.trim() || _("Log is empty.");
         }).catch((err)=>{
-            if (err.toString().includes('NotFoundError')) container.textContent = _('Log file does not exist.');
-            else container.textContent = _('Error reading log: %s').format(err.toString());
+            if (err.toString().includes("NotFoundError")) container.textContent = _("Log file does not exist.");
+            else container.textContent = _("Error reading log: %s").format(err.toString());
         });
     };
     const clearLogs = async ()=>{
-        if (!confirm(_('Are you sure you want to clear all logs?'))) return;
+        if (!confirm(_("Are you sure you want to clear all logs?"))) return;
         try {
-            await fs.write(LOG_FILE, '');
-            ui.addNotification(null, E('p', _('Logs cleared successfully')), 'info');
+            await fs.write(LOG_FILE, "");
+            ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
             updateLogs();
         } catch (err) {
-            ui.addNotification(null, E('p', _('Failed to clear logs')), 'error');
+            ui.addNotification(null, E("p", _("Failed to clear logs")), "error");
         }
     };
     const restartService = async ()=>{
-        if (!confirm(_('Are you sure you want to restart PortWeaver service?'))) return;
+        if (!confirm(_("Are you sure you want to restart PortWeaver service?"))) return;
         try {
-            await fs.exec('/etc/init.d/portweaver', [
-                'restart'
+            await fs.exec("/etc/init.d/portweaver", [
+                "restart"
             ]);
-            ui.addNotification(null, E('p', _('Service restarted successfully')), 'info');
+            ui.addNotification(null, E("p", _("Service restarted successfully")), "info");
             setTimeout(updateLogs, 2000);
         } catch (err) {
-            ui.addNotification(null, E('p', _('Failed to restart service')), 'error');
+            ui.addNotification(null, E("p", _("Failed to restart service")), "error");
         }
     };
     o.render = function() {
         if (pollInterval) clearInterval(pollInterval);
         pollInterval = setInterval(updateLogs, 3000);
         setTimeout(updateLogs, 100);
-        return E('div', {
-            'class': 'cbi-section'
+        return E("div", {
+            class: "cbi-section"
         }, [
-            E('div', {
-                'style': 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;'
+            E("div", {
+                style: "display: flex; gap: 10px; margin-bottom: 10px; align-items: center;"
             }, [
-                E('button', {
-                    'class': 'btn cbi-button cbi-button-action',
-                    'click': updateLogs
+                E("button", {
+                    class: "btn cbi-button cbi-button-action",
+                    click: updateLogs
                 }, [
-                    _('Refresh')
+                    _("Refresh")
                 ]),
-                E('button', {
-                    'class': 'btn cbi-button cbi-button-remove',
-                    'click': clearLogs
+                E("button", {
+                    class: "btn cbi-button cbi-button-remove",
+                    click: clearLogs
                 }, [
-                    _('Clear logs')
+                    _("Clear logs")
                 ]),
-                E('button', {
-                    'class': 'btn cbi-button cbi-button-apply',
-                    'click': restartService
+                E("button", {
+                    class: "btn cbi-button cbi-button-apply",
+                    click: restartService
                 }, [
-                    _('Restart service')
+                    _("Restart service")
                 ]),
-                E('small', {
-                    'style': 'color: #666; margin-left: auto;'
-                }, _('Auto-refresh every 3 seconds'))
+                E("small", {
+                    style: "color: #666; margin-left: auto;"
+                }, _("Auto-refresh every 3 seconds"))
             ]),
-            E('pre', {
-                'id': 'portweaver-log-container',
-                'style': 'padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;'
+            E("pre", {
+                id: "portweaver-log-container",
+                style: "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;"
             }, [
-                _('Loading logs...')
+                _("Loading logs...")
             ])
         ]);
     };
@@ -1777,6 +2019,10 @@ class main extends L.view {
                 return {
                     frp_enabled: false
                 };
+            }),
+            rpcClient.getEvents().then((res)=>(res === null || res === void 0 ? void 0 : res.events) || []).catch((err)=>{
+                console.warn("ubus get_events failed:", err);
+                return [];
             })
         ]);
     }
@@ -1792,7 +2038,8 @@ class main extends L.view {
         const client = new Client([
             data[2],
             data[3],
-            data[4]
+            data[4],
+            data[5]
         ]);
         header(m, s, client, "settings");
         config(m, s, client, "projects");

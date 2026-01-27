@@ -6,7 +6,7 @@ export default function (
   m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
   client: Client,
-  tab_id: string
+  tab_id: string,
 ) {
   let o: LuCI.form.CBIAbstractValue;
 
@@ -14,11 +14,21 @@ export default function (
   o.default = "1";
   o.rmempty = false;
 
-  o = s.taboption(tab_id, form.DummyValue, "_runtime_status", _("Runtime Status"));
+  o = s.taboption(
+    tab_id,
+    form.DummyValue,
+    "_runtime_status",
+    _("Runtime Status"),
+  );
   o.rawhtml = true;
   o.cfgvalue = () => {
     const panel = new StatusPanel();
-    return panel.render(client.globalStatus, client.frpStatus);
+    return panel.render(
+      client.globalStatus,
+      client.frpStatus,
+      client.projectStatuses,
+      client.events,
+    );
   };
 
   const runtimeToggle = async (section_id: string) => {

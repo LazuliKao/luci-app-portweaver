@@ -2,6 +2,7 @@ import type {
   PortWeaverStatus,
   ProjectStatus,
   FrpStatus,
+  EventsResponse,
 } from "../types/portweaver";
 
 export function createRpcClient(rpc: any) {
@@ -35,7 +36,9 @@ export function createRpcClient(rpc: any) {
     method: "get_frp_info",
     params: ["id"],
     expect: {},
-  }) as (id: string) => Promise<{ status: string; last_error: string; logs: string[] }>;
+  }) as (
+    id: string,
+  ) => Promise<{ status: string; last_error: string; logs: string[] }>;
 
   const clearFrpLogs = rpc.declare({
     object: "portweaver",
@@ -44,5 +47,19 @@ export function createRpcClient(rpc: any) {
     expect: {},
   }) as (id: string) => Promise<any>;
 
-  return { getStatus, listProjects, setEnabled, getFrpStatus, getFrpInfo, clearFrpLogs };
+  const getEvents = rpc.declare({
+    object: "portweaver",
+    method: "get_events",
+    expect: {},
+  }) as () => Promise<EventsResponse>;
+
+  return {
+    getStatus,
+    listProjects,
+    setEnabled,
+    getFrpStatus,
+    getFrpInfo,
+    clearFrpLogs,
+    getEvents,
+  };
 }

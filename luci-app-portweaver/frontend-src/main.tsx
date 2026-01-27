@@ -4,6 +4,7 @@ import type {
   PortWeaverStatus,
   ProjectStatus,
   FrpStatus,
+  ActivityEvent,
 } from "./types/portweaver";
 import frp from "./modules/frp";
 import config from "./modules/config";
@@ -39,6 +40,13 @@ export class main extends L.view {
           console.warn("ubus get_frp_status failed:", err);
           return { frp_enabled: false } as FrpStatus;
         }),
+      rpcClient
+        .getEvents()
+        .then((res: { events: ActivityEvent[] }) => res?.events || [])
+        .catch((err: any) => {
+          console.warn("ubus get_events failed:", err);
+          return [] as ActivityEvent[];
+        }),
     ]);
   }
 
@@ -48,12 +56,8 @@ export class main extends L.view {
       _("PortWeaver"),
       _("Port forwarding and NAT traversal configuration"),
     );
-    
-    const s = m.section(
-      form.NamedSection,
-      "global",
-      "portweaver",
-    );
+
+    const s = m.section(form.NamedSection, "global", "portweaver");
     s.anonymous = true;
     s.addremove = false;
 
@@ -62,13 +66,13 @@ export class main extends L.view {
     s.tab("logs", _("System Logs"));
     s.tab("frp", _("FRP Tunnels"));
 
-    const client = new Client([data[2], data[3], data[4]]);
-    
+    const client = new Client([data[2], data[3], data[4], data[5]]);
+
     header(m, s, client, "settings");
     config(m, s, client, "projects");
     logs(m, s, "logs");
     frp(m, s, "frp");
-    
+
     return m.render();
   }
 }

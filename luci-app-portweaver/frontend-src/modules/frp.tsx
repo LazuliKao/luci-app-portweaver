@@ -9,12 +9,18 @@ const actionButtons: Record<string, HTMLButtonElement> = {};
 export default function (
   m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
-  tab_id: string
+  tab_id: string,
 ) {
   let o: LuCI.form.CBIAbstractValue;
 
-  o = s.taboption(tab_id, form.SectionValue, "_frp_nodes", form.GridSection, "frp_node");
-  
+  o = s.taboption(
+    tab_id,
+    form.SectionValue,
+    "_frp_nodes",
+    form.GridSection,
+    "frp_node",
+  );
+
   const ss = o.subsection;
   ss.anonymous = true;
   ss.addremove = true;
@@ -43,7 +49,7 @@ export default function (
 
   o = ss.option(form.DummyValue, "status", _("Status"));
   o.modalonly = false;
-  o.cfgvalue = (section_id: string) => {
+  o.textvalue = (section_id: string) => {
     const info = nodeStatuses[section_id] || { status: "unavailable" };
     const statusColor =
       {
@@ -54,14 +60,31 @@ export default function (
         unavailable: "#9E9E9E",
       }[info.status] || "#9E9E9E";
 
-    const el = (
+    const statusText =
+      {
+        connected: _("Connected"),
+        connecting: _("Connecting"),
+        error: _("Error"),
+        stopped: _("Stopped"),
+        unavailable: _("Unavailable"),
+      }[info.status] || info.status;
+
+    const indicator = (
       <span
         style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${statusColor}; margin-right:8px;`}
       ></span>
     ) as HTMLElement;
-    
-    statusElements[section_id] = el;
-    return el;
+
+    const textSpan = (<span>{statusText}</span>) as HTMLElement;
+
+    const container = (
+      <span style="display:flex; align-items:center;"></span>
+    ) as HTMLElement;
+    container.appendChild(indicator);
+    container.appendChild(textSpan);
+
+    statusElements[section_id] = container;
+    return container;
   };
 
   o = ss.option(form.Value, "server", _("FRP Server Address"));
@@ -97,10 +120,10 @@ export default function (
 
   o = ss.option(form.DummyValue, "actions", _("Actions"));
   o.modalonly = false;
-  o.cfgvalue = (section_id: string) => {
+  o.textvalue = (section_id: string) => {
     const isRunning =
       (nodeStatuses[section_id]?.status || "stopped") !== "stopped";
-    
+
     const btn = (
       <button
         type="button"
@@ -114,7 +137,7 @@ export default function (
         {_("View Logs")}
       </button>
     ) as HTMLButtonElement;
-    
+
     actionButtons[section_id] = btn;
     return btn;
   };
@@ -128,18 +151,32 @@ export default function (
           .then((res) => {
             const oldStatus = nodeStatuses[sec[".name"]]?.status;
             nodeStatuses[sec[".name"]] = res;
-            
+
             if (oldStatus !== res.status) {
-              const statusEl = statusElements[sec[".name"]];
-              if (statusEl) {
-                const statusColor = {
-                  connected: "#4CAF50",
-                  connecting: "#FFC107",
-                  error: "#F44336",
-                  stopped: "#9E9E9E",
-                  unavailable: "#9E9E9E",
-                }[res.status] || "#9E9E9E";
-                statusEl.style.backgroundColor = statusColor;
+              const container = statusElements[sec[".name"]];
+              if (container && container.childNodes.length >= 2) {
+                const indicator = container.childNodes[0] as HTMLElement;
+                const textSpan = container.childNodes[1] as HTMLElement;
+
+                const statusColor =
+                  {
+                    connected: "#4CAF50",
+                    connecting: "#FFC107",
+                    error: "#F44336",
+                    stopped: "#9E9E9E",
+                    unavailable: "#9E9E9E",
+                  }[res.status] || "#9E9E9E";
+                indicator.style.backgroundColor = statusColor;
+
+                const statusText =
+                  {
+                    connected: _("Connected"),
+                    connecting: _("Connecting"),
+                    error: _("Error"),
+                    stopped: _("Stopped"),
+                    unavailable: _("Unavailable"),
+                  }[res.status] || res.status;
+                textSpan.textContent = statusText;
               }
 
               const actionBtn = actionButtons[sec[".name"]];
@@ -154,10 +191,13 @@ export default function (
               status: "error",
               last_error: "Failed to fetch status",
             };
-            
-            const statusEl = statusElements[sec[".name"]];
-            if (statusEl) {
-              statusEl.style.backgroundColor = "#F44336";
+
+            const container = statusElements[sec[".name"]];
+            if (container && container.childNodes.length >= 2) {
+              const indicator = container.childNodes[0] as HTMLElement;
+              const textSpan = container.childNodes[1] as HTMLElement;
+              indicator.style.backgroundColor = "#F44336";
+              textSpan.textContent = _("Error");
             }
 
             const actionBtn = actionButtons[sec[".name"]];
