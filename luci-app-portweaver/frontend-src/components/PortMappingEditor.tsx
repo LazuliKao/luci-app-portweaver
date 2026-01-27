@@ -509,7 +509,7 @@ class PortMappingEditor extends L.form.Value {
       return String(value).split(/\s+/).filter(Boolean);
     return [];
   }
-  formvalue(section_id: string) {
+  formvalue(_section_id: string) {
     if (this.hiddenInput?.value)
       return this.hiddenInput.value.split(/\s+/).filter(Boolean);
     return null;
@@ -521,7 +521,7 @@ class PortMappingEditor extends L.form.Value {
       return L.uci.unset("portweaver", section_id, "port_mapping");
     }
   }
-  validate(section_id: string, value: any) {
+  validate(_section_id: string, value: any) {
     // 验证端口映射格式
     if (!value) {
       this.validationError = "";

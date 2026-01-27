@@ -7,7 +7,7 @@ const statusElements: Record<string, HTMLElement> = {};
 const actionButtons: Record<string, HTMLButtonElement> = {};
 
 export default function (
-  m: LuCI.form.CBIMap,
+  _m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
   tab_id: string,
 ) {
@@ -44,20 +44,20 @@ export default function (
       return _(
         "Node name must contain only alphanumeric characters, underscore, or hyphen",
       );
-    
+
     // Check for duplicate names
     const sections = L.uci.sections("portweaver", "frp_node");
     const trimmedValue = String(value).trim();
     for (const sec of sections) {
       // Skip the current section being edited
       if (sec[".name"] === section_id) continue;
-      
+
       const existingName = sec.name as string;
       if (existingName && existingName.trim() === trimmedValue) {
         return _("Node name already exists. Please choose a different name.");
       }
     }
-    
+
     return true;
   };
 
@@ -143,7 +143,11 @@ export default function (
         type="button"
         class="cbi-button cbi-button-action"
         onclick={() => {
-          const nodeName = L.uci.get("portweaver", section_id, "name") as string;
+          const nodeName = L.uci.get(
+            "portweaver",
+            section_id,
+            "name",
+          ) as string;
           const logViewer = new LogViewer(nodeName);
           logViewer.open();
         }}
@@ -169,7 +173,7 @@ export default function (
             // Backend returns 'frp_status', map to 'status' for consistency
             nodeStatuses[sec[".name"]] = {
               status: res.frp_status || res.status || "unavailable",
-              last_error: res.last_error || ""
+              last_error: res.last_error || "",
             };
 
             const newStatus = res.frp_status || res.status || "unavailable";

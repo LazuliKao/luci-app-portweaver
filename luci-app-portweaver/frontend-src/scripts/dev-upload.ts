@@ -1,9 +1,9 @@
 import { Client, type ConnectConfig } from "ssh2";
 import { watch } from "chokidar";
-import { readFileSync, existsSync } from "fs";
-import { resolve, join, dirname } from "path";
-import { homedir } from "os";
-import { fileURLToPath } from "url";
+import { readFileSync, existsSync } from "node:fs";
+import { resolve, join, dirname } from "node:path";
+import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,7 +41,7 @@ const env = loadEnv();
 const getSSHConfig = (): ConnectConfig => {
   const config: ConnectConfig = {
     host: env.SSH_HOST,
-    port: parseInt(env.SSH_PORT || "22"),
+    port: parseInt(env.SSH_PORT || "22", 10),
     username: env.SSH_USERNAME,
   };
 

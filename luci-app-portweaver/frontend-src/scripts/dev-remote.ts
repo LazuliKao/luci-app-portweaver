@@ -1,6 +1,6 @@
-import { spawn, type ChildProcess } from "child_process";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { spawn, type ChildProcess } from "node:child_process";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -165,7 +165,10 @@ declare namespace LuCI.form {
      * @returns {LuCI.form.AbstractValue}
      * Returns the instantiated option class instance.
      */
-    taboption(tabName: string, ...args: any[]): LuCI.form.CBIAbstractSectionValue;
+    taboption(
+      tabName: string,
+      ...args: any[]
+    ): LuCI.form.CBIAbstractSectionValue;
     /**
      * Query underlying option configuration values.
      *
@@ -514,7 +517,7 @@ declare namespace LuCI.form {
     private checkDepends;
     private isDependencySatisfied;
   }
-  class CBIAbstractSectionValue extends  CBIAbstractValue{
+  class CBIAbstractSectionValue extends CBIAbstractValue {
     subsection: any;
   }
   class CBIAbstractValue {
@@ -1045,7 +1048,7 @@ declare namespace LuCI.form {
      */
     remove(section_id: string): void;
   }
-     
+
   class CBIValue extends CBIAbstractValue {
     /**
      * If set to `true`, the field is rendered as a password input, otherwise

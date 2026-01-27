@@ -192,7 +192,7 @@ export class StatusPanel {
 
   private truncateError(error: string, maxLen: number): string {
     if (error.length <= maxLen) return error;
-    return error.substring(0, maxLen - 3) + "...";
+    return `${error.substring(0, maxLen - 3)}...`;
   }
 
   private renderActivityLog(events: ActivityEvent[]): HTMLElement {

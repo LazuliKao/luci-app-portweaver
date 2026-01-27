@@ -5,7 +5,7 @@ const form = L.form;
 const uci = L.uci;
 
 export default function (
-  m: LuCI.form.CBIMap,
+  _m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
   client: Client,
   tab_id: string,

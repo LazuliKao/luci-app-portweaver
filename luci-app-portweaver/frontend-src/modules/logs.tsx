@@ -1,12 +1,12 @@
 const form = L.form;
 const fs = L.fs;
-const uci = L.uci;
+const _uci = L.uci;
 const ui = L.ui;
 
 const LOG_FILE = "/tmp/portweaver.log";
 
 export default function (
-  m: LuCI.form.CBIMap,
+  _m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
   tab_id: string,
 ) {
@@ -50,7 +50,7 @@ export default function (
       await fs.write(LOG_FILE, "");
       ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
       updateLogs();
-    } catch (err) {
+    } catch (_err) {
       ui.addNotification(null, E("p", _("Failed to clear logs")), "error");
     }
   };
@@ -68,12 +68,12 @@ export default function (
         "info",
       );
       setTimeout(updateLogs, 2000);
-    } catch (err) {
+    } catch (_err) {
       ui.addNotification(null, E("p", _("Failed to restart service")), "error");
     }
   };
 
-  o.render = function () {
+  o.render = () => {
     if (pollInterval) {
       clearInterval(pollInterval);
     }

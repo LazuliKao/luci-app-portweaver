@@ -167,9 +167,7 @@ export class Client {
       <div>
         <span {...statusBadgeAttrs}>
           <strong
-            style={
-              "font-size: 1em; font-weight: 600; color: " + statusColor + ";"
-            }
+            style={`font-size: 1em; font-weight: 600; color: ${statusColor};`}
           >
             {startupFailed ? "failed" : status.status || "unknown"}
           </strong>
@@ -221,10 +219,10 @@ export class Client {
         </span>
         <span style="min-width: 45px;">:{f.local_port}</span>
         <span style="color: #28a745;">
-          {"\u2193" + formatBytes(f.bytes_in)}
+          {`\u2193${formatBytes(f.bytes_in)}`}
         </span>
         <span style="color: #dc3545;">
-          {"\u2191" + formatBytes(f.bytes_out)}
+          {`\u2191${formatBytes(f.bytes_out)}`}
         </span>
       </div>
     ));
@@ -271,7 +269,7 @@ export class Client {
     if (errorElem && this.frpStatus.last_error) {
       const truncated =
         this.frpStatus.last_error.length > 50
-          ? this.frpStatus.last_error.substring(0, 47) + "..."
+          ? `${this.frpStatus.last_error.substring(0, 47)}...`
           : this.frpStatus.last_error;
       errorElem.title = this.frpStatus.last_error;
       errorElem.innerHTML = "";
@@ -318,7 +316,7 @@ export class Client {
     const time = this.formatTimestamp(event.timestamp);
     const truncatedMessage =
       event.message.length > 60
-        ? event.message.substring(0, 57) + "..."
+        ? `${event.message.substring(0, 57)}...`
         : event.message;
 
     return (
