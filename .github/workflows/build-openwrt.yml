@@ -82,12 +82,12 @@ jobs:
           - arm_cortex-a9_neon
           - arm_cortex-a9_vfpv3-d16
           - arm_cortex-a15_neon-vfpv4
-          - mips_24kc
-          - mips_4kec
-          - mips_mips32
-          - mipsel_24kc
-          - mipsel_74kc
-          - mipsel_mips32
+          # - mips_24kc
+          # - mips_4kec
+          # - mips_mips32
+          # - mipsel_24kc
+          # - mipsel_74kc
+          # - mipsel_mips32
         openwrt_version:
           - "24.10.5"
           - "SNAPSHOT"
