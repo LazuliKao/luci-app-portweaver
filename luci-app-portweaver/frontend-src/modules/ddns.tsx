@@ -3,19 +3,66 @@ import type { DdnsStatus } from "../types/portweaver";
 
 const form = L.form;
 const uci = L.uci;
-const ui = L.ui;
+
+const DNS_PROVIDERS_CONFIG: Record<string, {
+  idLabel: string;
+  secretLabel: string;
+  extParamLabel: string;
+}> = {
+  // Providers requiring DnsID (16 total)
+  alidns: { idLabel: "AccessKey ID", secretLabel: "AccessKey Secret", extParamLabel: "" },
+  aliesa: { idLabel: "AccessKey ID", secretLabel: "AccessKey Secret", extParamLabel: "" },
+  tencentcloud: { idLabel: "SecretId", secretLabel: "SecretKey", extParamLabel: "" },
+  dnspod: { idLabel: "ID", secretLabel: "Token", extParamLabel: "" },
+  huaweicloud: { idLabel: "Access Key Id", secretLabel: "Secret Access Key", extParamLabel: "" },
+  callback: { idLabel: "URL", secretLabel: "RequestBody", extParamLabel: "" },
+  baiducloud: { idLabel: "AccessKey ID", secretLabel: "AccessKey Secret", extParamLabel: "" },
+  porkbun: { idLabel: "API Key", secretLabel: "Secret Key", extParamLabel: "" },
+  godaddy: { idLabel: "Key", secretLabel: "Secret", extParamLabel: "" },
+  trafficroute: { idLabel: "AccessKey", secretLabel: "SecretAccessKey", extParamLabel: "" },
+  spaceship: { idLabel: "API Key", secretLabel: "API Secret", extParamLabel: "" },
+  dnsla: { idLabel: "APIID", secretLabel: "API密钥", extParamLabel: "" },
+  nowcn: { idLabel: "auth-userid", secretLabel: "api-key", extParamLabel: "" },
+  eranet: { idLabel: "auth-userid", secretLabel: "api-key", extParamLabel: "" },
+  edgeone: { idLabel: "SecretId", secretLabel: "SecretKey", extParamLabel: "" },
+  name_com: { idLabel: "username", secretLabel: "token", extParamLabel: "" },
+
+  // Providers NOT requiring DnsID (8 total)
+  cloudflare: { idLabel: "", secretLabel: "Token", extParamLabel: "" },
+  namecheap: { idLabel: "", secretLabel: "Password", extParamLabel: "" },
+  namesilo: { idLabel: "", secretLabel: "Password", extParamLabel: "" },
+  vercel: { idLabel: "", secretLabel: "Token", extParamLabel: "Team ID" },
+  dynadot: { idLabel: "", secretLabel: "Password", extParamLabel: "" },
+  dynv6: { idLabel: "", secretLabel: "Token", extParamLabel: "" },
+  gcore: { idLabel: "", secretLabel: "API Key", extParamLabel: "" },
+  nsone: { idLabel: "", secretLabel: "API Key", extParamLabel: "" },
+};
 
 const DNS_PROVIDERS = [
-  { value: "cloudflare", label: "Cloudflare" },
   { value: "alidns", label: "Alibaba Cloud DNS" },
+  { value: "aliesa", label: "Alibaba Cloud ESA" },
   { value: "tencentcloud", label: "Tencent Cloud DNS" },
   { value: "dnspod", label: "DNSPod" },
   { value: "huaweicloud", label: "Huawei Cloud DNS" },
+  { value: "callback", label: "Callback (Webhook)" },
+  { value: "baiducloud", label: "Baidu Cloud DNS" },
+  { value: "porkbun", label: "Porkbun" },
   { value: "godaddy", label: "GoDaddy" },
   { value: "namecheap", label: "Namecheap" },
   { value: "namesilo", label: "NameSilo" },
-  { value: "cloudns", label: "ClouDNS" },
-  { value: "he", label: "Hurricane Electric" },
+  { value: "vercel", label: "Vercel" },
+  { value: "dynadot", label: "Dynadot" },
+  { value: "dynv6", label: "Dynv6" },
+  { value: "trafficroute", label: "TrafficRoute (Volcengine)" },
+  { value: "spaceship", label: "Spaceship" },
+  { value: "dnsla", label: "DNSLA" },
+  { value: "nowcn", label: "Nowcn (Era Networks)" },
+  { value: "eranet", label: "Eranet" },
+  { value: "gcore", label: "Gcore" },
+  { value: "edgeone", label: "EdgeOne" },
+  { value: "nsone", label: "IBM NS1 Connect" },
+  { value: "name_com", label: "name.com" },
+  { value: "cloudflare", label: "Cloudflare" },
 ];
 
 const GET_TYPES = [
@@ -24,17 +71,17 @@ const GET_TYPES = [
   { value: "cmd", label: _("Command") },
 ];
 
-const TTL_OPTIONS = [
-  { value: "60", label: "1 " + _("minute") },
-  { value: "300", label: "5 " + _("minutes") },
-  { value: "600", label: "10 " + _("minutes") },
-  { value: "1800", label: "30 " + _("minutes") },
-  { value: "3600", label: "1 " + _("hour") },
-  { value: "7200", label: "2 " + _("hours") },
-  { value: "14400", label: "4 " + _("hours") },
-  { value: "43200", label: "12 " + _("hours") },
-  { value: "86400", label: "24 " + _("hours") },
-];
+  const TTL_OPTIONS = [
+    { value: "60", label: `1 ${_("minute")}` },
+    { value: "300", label: `5 ${_("minutes")}` },
+    { value: "600", label: `10 ${_("minutes")}` },
+    { value: "1800", label: `30 ${_("minutes")}` },
+    { value: "3600", label: `1 ${_("hour")}` },
+    { value: "7200", label: `2 ${_("hours")}` },
+    { value: "14400", label: `4 ${_("hours")}` },
+    { value: "28800", label: `8 ${_("hours")}` },
+    { value: "86400", label: `1 ${_("day")}` },
+  ];
 
 const ddnsStatuses: Record<string, DdnsStatus> = {};
 const statusElements: Record<string, HTMLElement> = {};
@@ -44,7 +91,7 @@ export default function (
   s: LuCI.form.CBIAbstractSection,
   tab_id: string,
 ) {
-  let o: LuCI.form.CBIAbstractValue;
+  let o: LuCI.form.CBIAbstractSectionValue;
 
   o = s.taboption(
     tab_id,
@@ -134,7 +181,7 @@ export default function (
       const errorMsg = (
         <small style="color:#F44336;" title={status.message}>
           {status.message.length > 40
-            ? status.message.substring(0, 37) + "..."
+            ? `${status.message.substring(0, 37)}...`
             : status.message}
         </small>
       ) as HTMLElement;
@@ -185,26 +232,56 @@ export default function (
   }
   o.default = "cloudflare";
 
-  o = ss.option(form.Value, "dns_id", _("DNS ID / API Key"));
-  o.modalonly = true;
-  o.rmempty = true;
-  o.placeholder = "API Key or Account ID";
-  o.description = _(
-    "API Key, Account ID, or Access Key depending on provider",
+  const dnsIdOption = ss.option(form.Value, "dns_id", _("DNS ID / API Key"));
+  dnsIdOption.modalonly = true;
+  dnsIdOption.rmempty = true;
+  dnsIdOption.placeholder = "API Key or Account ID";
+  dnsIdOption.description = _(
+    "Field name varies by provider: AccessKey ID (Aliyun), ID (DNSPod), API Key (Porkbun), etc.",
+  );
+  // Providers requiring DnsID (16 total)
+  dnsIdOption.depends("dns_provider", "alidns");
+  dnsIdOption.depends("dns_provider", "aliesa");
+  dnsIdOption.depends("dns_provider", "tencentcloud");
+  dnsIdOption.depends("dns_provider", "dnspod");
+  dnsIdOption.depends("dns_provider", "huaweicloud");
+  dnsIdOption.depends("dns_provider", "callback");
+  dnsIdOption.depends("dns_provider", "baiducloud");
+  dnsIdOption.depends("dns_provider", "porkbun");
+  dnsIdOption.depends("dns_provider", "godaddy");
+  dnsIdOption.depends("dns_provider", "trafficroute");
+  dnsIdOption.depends("dns_provider", "spaceship");
+  dnsIdOption.depends("dns_provider", "dnsla");
+  dnsIdOption.depends("dns_provider", "nowcn");
+  dnsIdOption.depends("dns_provider", "eranet");
+  dnsIdOption.depends("dns_provider", "edgeone");
+  dnsIdOption.depends("dns_provider", "name_com");
+
+  const dnsSecretOption = ss.option(
+    form.Value,
+    "dns_secret",
+    _("DNS Secret / Token"),
+  );
+  dnsSecretOption.modalonly = true;
+  dnsSecretOption.password = true;
+  dnsSecretOption.rmempty = true;
+  dnsSecretOption.placeholder = "API Token or Secret Key";
+  dnsSecretOption.description = _(
+    "Field name varies by provider: Token (Cloudflare/DNSPod), AccessKey Secret (Aliyun), Password (Namecheap), etc.",
   );
 
-  o = ss.option(form.Value, "dns_secret", _("DNS Secret / Token"));
-  o.modalonly = true;
-  o.password = true;
-  o.rmempty = true;
-  o.placeholder = "API Token or Secret Key";
-  o.description = _("API Token, Secret Key, or Password depending on provider");
-
-  o = ss.option(form.Value, "dns_ext_param", _("Extended Parameters"));
-  o.modalonly = true;
-  o.rmempty = true;
-  o.placeholder = "zone_id or additional parameters";
-  o.description = _("Additional provider-specific parameters (e.g., Zone ID)");
+  const dnsExtParamOption = ss.option(
+    form.Value,
+    "dns_ext_param",
+    _("Extended Parameters"),
+  );
+  dnsExtParamOption.modalonly = true;
+  dnsExtParamOption.rmempty = true;
+  dnsExtParamOption.placeholder = "Team ID or additional parameters";
+  dnsExtParamOption.description = _(
+    "Additional provider-specific parameters (e.g., Team ID for Vercel)",
+  );
+  dnsExtParamOption.depends("dns_provider", "vercel");
 
   o = ss.option(form.ListValue, "ttl", _("TTL (Time To Live)"));
   o.modalonly = true;
@@ -354,7 +431,10 @@ export default function (
               statusColors[status.status] || statusColors.unknown;
             const statusText = statusLabels[status.status] || status.status;
 
-            container.innerHTML = "";
+            // Clear container by removing all children
+            while (container.firstChild) {
+              container.removeChild(container.firstChild);
+            }
 
             const statusRow = (
               <div style="display:flex; align-items:center;"></div>
@@ -396,7 +476,7 @@ export default function (
               const errorMsg = (
                 <small style="color:#F44336;" title={status.message}>
                   {status.message.length > 40
-                    ? status.message.substring(0, 37) + "..."
+                    ? `${status.message.substring(0, 37)}...`
                     : status.message}
                 </small>
               ) as HTMLElement;

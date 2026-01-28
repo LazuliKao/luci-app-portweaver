@@ -519,6 +519,7 @@ declare namespace LuCI.form {
   }
   class CBIAbstractSectionValue extends CBIAbstractValue {
     subsection: any;
+    rows: number;
   }
   class CBIAbstractValue {
     __init__(map: any, section: any, option: any, ...args: any[]): void;

@@ -41,6 +41,7 @@ declare global {
       textarea: JSXElement<HTMLTextAreaElement>;
       var: JSXElement<HTMLElement>;
       small: JSXElement<HTMLElement>;
+      code: JSXElement<HTMLElement>;
       p: JSXElement<HTMLParagraphElement>;
     }
   }

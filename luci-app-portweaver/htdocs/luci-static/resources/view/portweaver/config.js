@@ -2092,15 +2092,14 @@ const LOG_FILE = "/tmp/portweaver.log";
 
 const ddns_form = L.form;
 const ddns_uci = L.uci;
-L.ui;
 const DNS_PROVIDERS = [
-    {
-        value: "cloudflare",
-        label: "Cloudflare"
-    },
     {
         value: "alidns",
         label: "Alibaba Cloud DNS"
+    },
+    {
+        value: "aliesa",
+        label: "Alibaba Cloud ESA"
     },
     {
         value: "tencentcloud",
@@ -2115,6 +2114,18 @@ const DNS_PROVIDERS = [
         label: "Huawei Cloud DNS"
     },
     {
+        value: "callback",
+        label: "Callback (Webhook)"
+    },
+    {
+        value: "baiducloud",
+        label: "Baidu Cloud DNS"
+    },
+    {
+        value: "porkbun",
+        label: "Porkbun"
+    },
+    {
         value: "godaddy",
         label: "GoDaddy"
     },
@@ -2127,12 +2138,56 @@ const DNS_PROVIDERS = [
         label: "NameSilo"
     },
     {
-        value: "cloudns",
-        label: "ClouDNS"
+        value: "vercel",
+        label: "Vercel"
     },
     {
-        value: "he",
-        label: "Hurricane Electric"
+        value: "dynadot",
+        label: "Dynadot"
+    },
+    {
+        value: "dynv6",
+        label: "Dynv6"
+    },
+    {
+        value: "trafficroute",
+        label: "TrafficRoute (Volcengine)"
+    },
+    {
+        value: "spaceship",
+        label: "Spaceship"
+    },
+    {
+        value: "dnsla",
+        label: "DNSLA"
+    },
+    {
+        value: "nowcn",
+        label: "Nowcn (Era Networks)"
+    },
+    {
+        value: "eranet",
+        label: "Eranet"
+    },
+    {
+        value: "gcore",
+        label: "Gcore"
+    },
+    {
+        value: "edgeone",
+        label: "EdgeOne"
+    },
+    {
+        value: "nsone",
+        label: "IBM NS1 Connect"
+    },
+    {
+        value: "name_com",
+        label: "name.com"
+    },
+    {
+        value: "cloudflare",
+        label: "Cloudflare"
     }
 ];
 const GET_TYPES = [
@@ -2152,39 +2207,39 @@ const GET_TYPES = [
 const TTL_OPTIONS = [
     {
         value: "60",
-        label: "1 " + _("minute")
+        label: "1 ".concat(_("minute"))
     },
     {
         value: "300",
-        label: "5 " + _("minutes")
+        label: "5 ".concat(_("minutes"))
     },
     {
         value: "600",
-        label: "10 " + _("minutes")
+        label: "10 ".concat(_("minutes"))
     },
     {
         value: "1800",
-        label: "30 " + _("minutes")
+        label: "30 ".concat(_("minutes"))
     },
     {
         value: "3600",
-        label: "1 " + _("hour")
+        label: "1 ".concat(_("hour"))
     },
     {
         value: "7200",
-        label: "2 " + _("hours")
+        label: "2 ".concat(_("hours"))
     },
     {
         value: "14400",
-        label: "4 " + _("hours")
+        label: "4 ".concat(_("hours"))
     },
     {
-        value: "43200",
-        label: "12 " + _("hours")
+        value: "28800",
+        label: "8 ".concat(_("hours"))
     },
     {
         value: "86400",
-        label: "24 " + _("hours")
+        label: "1 ".concat(_("day"))
     }
 ];
 const ddnsStatuses = {};
@@ -2251,7 +2306,7 @@ const ddns_statusElements = {};
             const errorMsg = /*#__PURE__*/ createJsxElement("small", {
                 style: "color:#F44336;",
                 title: status.message
-            }, status.message.length > 40 ? status.message.substring(0, 37) + "..." : status.message);
+            }, status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message);
             container.appendChild(errorMsg);
         }
         ddns_statusElements[section_id] = container;
@@ -2289,22 +2344,40 @@ const ddns_statusElements = {};
     o.rmempty = false;
     for (const provider of DNS_PROVIDERS)o.value(provider.value, provider.label);
     o.default = "cloudflare";
-    o = ss.option(ddns_form.Value, "dns_id", _("DNS ID / API Key"));
-    o.modalonly = true;
-    o.rmempty = true;
-    o.placeholder = "API Key or Account ID";
-    o.description = _("API Key, Account ID, or Access Key depending on provider");
-    o = ss.option(ddns_form.Value, "dns_secret", _("DNS Secret / Token"));
-    o.modalonly = true;
-    o.password = true;
-    o.rmempty = true;
-    o.placeholder = "API Token or Secret Key";
-    o.description = _("API Token, Secret Key, or Password depending on provider");
-    o = ss.option(ddns_form.Value, "dns_ext_param", _("Extended Parameters"));
-    o.modalonly = true;
-    o.rmempty = true;
-    o.placeholder = "zone_id or additional parameters";
-    o.description = _("Additional provider-specific parameters (e.g., Zone ID)");
+    const dnsIdOption = ss.option(ddns_form.Value, "dns_id", _("DNS ID / API Key"));
+    dnsIdOption.modalonly = true;
+    dnsIdOption.rmempty = true;
+    dnsIdOption.placeholder = "API Key or Account ID";
+    dnsIdOption.description = _("Field name varies by provider: AccessKey ID (Aliyun), ID (DNSPod), API Key (Porkbun), etc.");
+    // Providers requiring DnsID (16 total)
+    dnsIdOption.depends("dns_provider", "alidns");
+    dnsIdOption.depends("dns_provider", "aliesa");
+    dnsIdOption.depends("dns_provider", "tencentcloud");
+    dnsIdOption.depends("dns_provider", "dnspod");
+    dnsIdOption.depends("dns_provider", "huaweicloud");
+    dnsIdOption.depends("dns_provider", "callback");
+    dnsIdOption.depends("dns_provider", "baiducloud");
+    dnsIdOption.depends("dns_provider", "porkbun");
+    dnsIdOption.depends("dns_provider", "godaddy");
+    dnsIdOption.depends("dns_provider", "trafficroute");
+    dnsIdOption.depends("dns_provider", "spaceship");
+    dnsIdOption.depends("dns_provider", "dnsla");
+    dnsIdOption.depends("dns_provider", "nowcn");
+    dnsIdOption.depends("dns_provider", "eranet");
+    dnsIdOption.depends("dns_provider", "edgeone");
+    dnsIdOption.depends("dns_provider", "name_com");
+    const dnsSecretOption = ss.option(ddns_form.Value, "dns_secret", _("DNS Secret / Token"));
+    dnsSecretOption.modalonly = true;
+    dnsSecretOption.password = true;
+    dnsSecretOption.rmempty = true;
+    dnsSecretOption.placeholder = "API Token or Secret Key";
+    dnsSecretOption.description = _("Field name varies by provider: Token (Cloudflare/DNSPod), AccessKey Secret (Aliyun), Password (Namecheap), etc.");
+    const dnsExtParamOption = ss.option(ddns_form.Value, "dns_ext_param", _("Extended Parameters"));
+    dnsExtParamOption.modalonly = true;
+    dnsExtParamOption.rmempty = true;
+    dnsExtParamOption.placeholder = "Team ID or additional parameters";
+    dnsExtParamOption.description = _("Additional provider-specific parameters (e.g., Team ID for Vercel)");
+    dnsExtParamOption.depends("dns_provider", "vercel");
     o = ss.option(ddns_form.ListValue, "ttl", _("TTL (Time To Live)"));
     o.modalonly = true;
     o.rmempty = true;
@@ -2441,7 +2514,8 @@ const ddns_statusElements = {};
                         };
                         const statusColor = statusColors[status.status] || statusColors.unknown;
                         const statusText = statusLabels[status.status] || status.status;
-                        container.innerHTML = "";
+                        // Clear container by removing all children
+                        while(container.firstChild)container.removeChild(container.firstChild);
                         const statusRow = /*#__PURE__*/ createJsxElement("div", {
                             style: "display:flex; align-items:center;"
                         });
@@ -2468,7 +2542,7 @@ const ddns_statusElements = {};
                             const errorMsg = /*#__PURE__*/ createJsxElement("small", {
                                 style: "color:#F44336;",
                                 title: status.message
-                            }, status.message.length > 40 ? status.message.substring(0, 37) + "..." : status.message);
+                            }, status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message);
                             container.appendChild(errorMsg);
                         }
                     }
