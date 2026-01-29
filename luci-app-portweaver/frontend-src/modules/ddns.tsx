@@ -1,26 +1,58 @@
+import { LogViewer } from "../components/LogViewer";
 import { rpcClient } from "./client";
 import type { DdnsStatus } from "../types/portweaver";
 
 const form = L.form;
 const uci = L.uci;
 
-const DNS_PROVIDERS_CONFIG: Record<string, {
-  idLabel: string;
-  secretLabel: string;
-  extParamLabel: string;
-}> = {
+const _DNS_PROVIDERS_CONFIG: Record<
+  string,
+  {
+    idLabel: string;
+    secretLabel: string;
+    extParamLabel: string;
+  }
+> = {
   // Providers requiring DnsID (16 total)
-  alidns: { idLabel: "AccessKey ID", secretLabel: "AccessKey Secret", extParamLabel: "" },
-  aliesa: { idLabel: "AccessKey ID", secretLabel: "AccessKey Secret", extParamLabel: "" },
-  tencentcloud: { idLabel: "SecretId", secretLabel: "SecretKey", extParamLabel: "" },
+  alidns: {
+    idLabel: "AccessKey ID",
+    secretLabel: "AccessKey Secret",
+    extParamLabel: "",
+  },
+  aliesa: {
+    idLabel: "AccessKey ID",
+    secretLabel: "AccessKey Secret",
+    extParamLabel: "",
+  },
+  tencentcloud: {
+    idLabel: "SecretId",
+    secretLabel: "SecretKey",
+    extParamLabel: "",
+  },
   dnspod: { idLabel: "ID", secretLabel: "Token", extParamLabel: "" },
-  huaweicloud: { idLabel: "Access Key Id", secretLabel: "Secret Access Key", extParamLabel: "" },
+  huaweicloud: {
+    idLabel: "Access Key Id",
+    secretLabel: "Secret Access Key",
+    extParamLabel: "",
+  },
   callback: { idLabel: "URL", secretLabel: "RequestBody", extParamLabel: "" },
-  baiducloud: { idLabel: "AccessKey ID", secretLabel: "AccessKey Secret", extParamLabel: "" },
+  baiducloud: {
+    idLabel: "AccessKey ID",
+    secretLabel: "AccessKey Secret",
+    extParamLabel: "",
+  },
   porkbun: { idLabel: "API Key", secretLabel: "Secret Key", extParamLabel: "" },
   godaddy: { idLabel: "Key", secretLabel: "Secret", extParamLabel: "" },
-  trafficroute: { idLabel: "AccessKey", secretLabel: "SecretAccessKey", extParamLabel: "" },
-  spaceship: { idLabel: "API Key", secretLabel: "API Secret", extParamLabel: "" },
+  trafficroute: {
+    idLabel: "AccessKey",
+    secretLabel: "SecretAccessKey",
+    extParamLabel: "",
+  },
+  spaceship: {
+    idLabel: "API Key",
+    secretLabel: "API Secret",
+    extParamLabel: "",
+  },
   dnsla: { idLabel: "APIID", secretLabel: "API密钥", extParamLabel: "" },
   nowcn: { idLabel: "auth-userid", secretLabel: "api-key", extParamLabel: "" },
   eranet: { idLabel: "auth-userid", secretLabel: "api-key", extParamLabel: "" },
@@ -71,17 +103,17 @@ const GET_TYPES = [
   { value: "cmd", label: _("Command") },
 ];
 
-  const TTL_OPTIONS = [
-    { value: "60", label: `1 ${_("minute")}` },
-    { value: "300", label: `5 ${_("minutes")}` },
-    { value: "600", label: `10 ${_("minutes")}` },
-    { value: "1800", label: `30 ${_("minutes")}` },
-    { value: "3600", label: `1 ${_("hour")}` },
-    { value: "7200", label: `2 ${_("hours")}` },
-    { value: "14400", label: `4 ${_("hours")}` },
-    { value: "28800", label: `8 ${_("hours")}` },
-    { value: "86400", label: `1 ${_("day")}` },
-  ];
+const TTL_OPTIONS = [
+  { value: "60", label: `1 ${_("minute")}` },
+  { value: "300", label: `5 ${_("minutes")}` },
+  { value: "600", label: `10 ${_("minutes")}` },
+  { value: "1800", label: `30 ${_("minutes")}` },
+  { value: "3600", label: `1 ${_("hour")}` },
+  { value: "7200", label: `2 ${_("hours")}` },
+  { value: "14400", label: `4 ${_("hours")}` },
+  { value: "28800", label: `8 ${_("hours")}` },
+  { value: "86400", label: `1 ${_("day")}` },
+];
 
 const ddnsStatuses: Record<string, DdnsStatus> = {};
 const statusElements: Record<string, HTMLElement> = {};
@@ -211,6 +243,28 @@ export default function (
       .split(/[,\s]+/)
       .filter(Boolean);
     return domains.length > 0 ? domains.slice(0, 3).join(", ") : "-";
+  };
+
+  o = ss.option(form.DummyValue, "_actions", _("Actions"));
+  o.modalonly = false;
+  o.textvalue = (section_id: string) => {
+    const viewLogsBtn = (
+      <button class="btn cbi-button cbi-button-action" type="button">
+        {_("View Logs")}
+      </button>
+    ) as HTMLButtonElement;
+
+    viewLogsBtn.onclick = () => {
+      const viewer = new LogViewer({
+        name: section_id,
+        title: "DDNS Logs",
+        fetcher: (name) => rpcClient.getDdnsInfo(name),
+        clearer: (name) => rpcClient.clearDdnsLogs(name),
+      });
+      viewer.open();
+    };
+
+    return viewLogsBtn;
   };
 
   o = ss.option(form.Value, "name", _("Configuration Name"));

@@ -612,7 +612,7 @@ class PortMappingEditor extends L.form.Value {
         parsed.protocol &&
         !["tcp", "udp", "both"].includes(parsed.protocol)
       ) {
-        this.validationError = _("Protocol must be tcp, udp, or both");
+        this.validationError = _("Protocol must be `tcp`, `udp`, or `both`");
         this.isValidFlag = false;
         return;
       }

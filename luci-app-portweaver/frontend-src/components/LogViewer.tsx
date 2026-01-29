@@ -1,7 +1,18 @@
-import { rpcClient } from "../modules/client";
+export interface LogInfo {
+  status: string;
+  last_error: string;
+  logs: string[];
+}
+
+export interface LogViewerProps {
+  name: string;
+  title: string;
+  fetcher: (name: string) => Promise<LogInfo>;
+  clearer: (name: string) => Promise<void>;
+}
 
 export class LogViewer {
-  private projectId: string;
+  private props: LogViewerProps;
   private modal: HTMLElement | null = null;
   private logContainer: HTMLElement | null = null;
   private statusSpan: HTMLElement | null = null;
@@ -14,8 +25,8 @@ export class LogViewer {
   private isOpen: boolean = false;
   private pollInterval: number | null = null;
 
-  constructor(projectId: string) {
-    this.projectId = projectId;
+  constructor(props: LogViewerProps) {
+    this.props = props;
   }
 
   render(): HTMLElement {
@@ -71,7 +82,7 @@ export class LogViewer {
           <div style="padding: 1.5em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
             <div>
               <h3 style="margin: 0; font-size: 1.2em; font-weight: 600;">
-                FRP Client Logs
+                {this.props.title}
               </h3>
               <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;">
                 Status: {this.statusSpan}
@@ -163,17 +174,16 @@ export class LogViewer {
   }
 
   private fetchLogs(): void {
-    rpcClient
-      .getFrpInfo(String(this.projectId))
-      .then((response: any) => {
-        // Backend returns 'frp_status', fallback to 'status' for compatibility
-        this.status = response.frp_status || response.status || "unavailable";
+    this.props
+      .fetcher(this.props.name)
+      .then((response: LogInfo) => {
+        this.status = response.status || "unavailable";
         this.lastError = response.last_error || "";
         this.logs = response.logs || [];
         this.updateDisplay();
       })
       .catch((err: any) => {
-        console.error("Failed to fetch FRP logs:", err);
+        console.error("Failed to fetch logs:", err);
         this.status = "error";
         this.lastError = "Failed to fetch logs";
         this.updateDisplay();
@@ -249,8 +259,8 @@ export class LogViewer {
 
   private clearLogs(): void {
     if (confirm("Are you sure you want to clear the logs?")) {
-      rpcClient
-        .clearFrpLogs(String(this.projectId))
+      this.props
+        .clearer(this.props.name)
         .then(() => {
           this.logs = [];
           this.updateDisplay();

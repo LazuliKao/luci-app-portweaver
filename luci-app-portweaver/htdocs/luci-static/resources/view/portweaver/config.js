@@ -213,6 +213,22 @@ function createRpcClient(rpc) {
         method: "get_ddns_statuses",
         expect: {}
     });
+    const getDdnsInfo = rpc.declare({
+        object: "portweaver",
+        method: "get_ddns_info",
+        params: [
+            "name"
+        ],
+        expect: {}
+    });
+    const clearDdnsLogs = rpc.declare({
+        object: "portweaver",
+        method: "clear_ddns_logs",
+        params: [
+            "name"
+        ],
+        expect: {}
+    });
     return {
         getStatus,
         listProjects,
@@ -221,7 +237,9 @@ function createRpcClient(rpc) {
         getFrpInfo,
         clearFrpLogs,
         getEvents,
-        getDdnsStatuses
+        getDdnsStatuses,
+        getDdnsInfo,
+        clearDdnsLogs
     };
 }
 
@@ -436,9 +454,9 @@ class Client {
                         const section = document.getElementById("project-status-".concat(section_id));
                         if (!section) continue;
                         const newStatusElements = this.renderStatusElements(status, section_id);
-                        section.replaceWith(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("div", {
-                            id: "project-status-".concat(section_id)
-                        }, newStatusElements)));
+                        newStatusElements.forEach((el)=>{
+                            section.appendChild(el);
+                        });
                     }
                 })();
             } catch (err) {
@@ -449,7 +467,6 @@ class Client {
 }
 
 ;// CONCATENATED MODULE: ./components/LogViewer.tsx
-
 
 class LogViewer {
     render() {
@@ -484,7 +501,7 @@ class LogViewer {
             style: "padding: 1.5em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
         }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h3", {
             style: "margin: 0; font-size: 1.2em; font-weight: 600;"
-        }, "FRP Client Logs"), /*#__PURE__*/ createJsxElement("div", {
+        }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
         }, "Status: ", this.statusSpan, this.errorSpan)), /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -542,14 +559,13 @@ class LogViewer {
         }
     }
     fetchLogs() {
-        rpcClient.getFrpInfo(String(this.projectId)).then((response)=>{
-            // Backend returns 'frp_status', fallback to 'status' for compatibility
-            this.status = response.frp_status || response.status || "unavailable";
+        this.props.fetcher(this.props.name).then((response)=>{
+            this.status = response.status || "unavailable";
             this.lastError = response.last_error || "";
             this.logs = response.logs || [];
             this.updateDisplay();
         }).catch((err)=>{
-            console.error("Failed to fetch FRP logs:", err);
+            console.error("Failed to fetch logs:", err);
             this.status = "error";
             this.lastError = "Failed to fetch logs";
             this.updateDisplay();
@@ -606,7 +622,7 @@ class LogViewer {
         });
     }
     clearLogs() {
-        if (confirm("Are you sure you want to clear the logs?")) rpcClient.clearFrpLogs(String(this.projectId)).then(()=>{
+        if (confirm("Are you sure you want to clear the logs?")) this.props.clearer(this.props.name).then(()=>{
             this.logs = [];
             this.updateDisplay();
         }).catch((err)=>{
@@ -614,8 +630,8 @@ class LogViewer {
             alert("Failed to clear logs");
         });
     }
-    constructor(projectId){
-        _define_property(this, "projectId", void 0);
+    constructor(props){
+        _define_property(this, "props", void 0);
         _define_property(this, "modal", null);
         _define_property(this, "logContainer", null);
         _define_property(this, "statusSpan", null);
@@ -626,7 +642,7 @@ class LogViewer {
         _define_property(this, "lastError", "");
         _define_property(this, "isOpen", false);
         _define_property(this, "pollInterval", null);
-        this.projectId = projectId;
+        this.props = props;
     }
 }
 
@@ -1538,7 +1554,7 @@ class PortMappingEditor extends L.form.Value {
                 "udp",
                 "both"
             ].includes(parsed.protocol)) {
-                this.validationError = _("Protocol must be tcp, udp, or both");
+                this.validationError = _("Protocol must be `tcp`, `udp`, or `both`");
                 this.isValidFlag = false;
                 return;
             }
@@ -2090,6 +2106,7 @@ const LOG_FILE = "/tmp/portweaver.log";
 
 ;// CONCATENATED MODULE: ./modules/ddns.tsx
 
+
 const ddns_form = L.form;
 const ddns_uci = L.uci;
 const DNS_PROVIDERS = [
@@ -2329,6 +2346,24 @@ const ddns_statusElements = {};
             ipv6Domains
         ].filter(Boolean).join(", ").split(/[,\s]+/).filter(Boolean);
         return domains.length > 0 ? domains.slice(0, 3).join(", ") : "-";
+    };
+    o = ss.option(ddns_form.DummyValue, "_actions", _("Actions"));
+    o.modalonly = false;
+    o.textvalue = (section_id)=>{
+        const viewLogsBtn = /*#__PURE__*/ createJsxElement("button", {
+            class: "btn cbi-button cbi-button-action",
+            type: "button"
+        }, _("View Logs"));
+        viewLogsBtn.onclick = ()=>{
+            const viewer = new LogViewer({
+                name: section_id,
+                title: "DDNS Logs",
+                fetcher: (name)=>rpcClient.getDdnsInfo(name),
+                clearer: (name)=>rpcClient.clearDdnsLogs(name)
+            });
+            viewer.open();
+        };
+        return viewLogsBtn;
     };
     o = ss.option(ddns_form.Value, "name", _("Configuration Name"));
     o.modalonly = true;

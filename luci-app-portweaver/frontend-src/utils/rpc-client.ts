@@ -4,6 +4,7 @@ import type {
   FrpStatus,
   EventsResponse,
   DdnsStatus,
+  DdnsInfo,
 } from "../types/portweaver";
 
 export function createRpcClient(rpc: any) {
@@ -60,6 +61,20 @@ export function createRpcClient(rpc: any) {
     expect: {},
   }) as () => Promise<{ statuses: DdnsStatus[] }>;
 
+  const getDdnsInfo = rpc.declare({
+    object: "portweaver",
+    method: "get_ddns_info",
+    params: ["name"],
+    expect: {},
+  }) as (name: string) => Promise<DdnsInfo>;
+
+  const clearDdnsLogs = rpc.declare({
+    object: "portweaver",
+    method: "clear_ddns_logs",
+    params: ["name"],
+    expect: {},
+  }) as (name: string) => Promise<any>;
+
   return {
     getStatus,
     listProjects,
@@ -69,5 +84,7 @@ export function createRpcClient(rpc: any) {
     clearFrpLogs,
     getEvents,
     getDdnsStatuses,
+    getDdnsInfo,
+    clearDdnsLogs,
   };
 }

@@ -74,3 +74,17 @@ export interface DdnsStatus {
   last_ip?: string;
   message?: string;
 }
+
+/** DDNS detailed information including logs */
+export interface DdnsInfo {
+  status: string;
+  last_error: string;
+  logs: string[];
+}
+
+/** Response from get_ddns_info UBUS endpoint */
+export interface DdnsInfoResponse {
+  status: string;
+  last_error: string;
+  logs: string[];
+}
