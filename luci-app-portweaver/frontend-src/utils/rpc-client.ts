@@ -55,9 +55,9 @@ export function createRpcClient(rpc: any) {
     expect: {},
   }) as () => Promise<EventsResponse>;
 
-  const getDdnsStatuses = rpc.declare({
+  const getDdnsStatus = rpc.declare({
     object: "portweaver",
-    method: "get_ddns_statuses",
+    method: "get_ddns_status",
     expect: {},
   }) as () => Promise<{ statuses: DdnsStatus[] }>;
 
@@ -83,7 +83,7 @@ export function createRpcClient(rpc: any) {
     getFrpInfo,
     clearFrpLogs,
     getEvents,
-    getDdnsStatuses,
+    getDdnsStatus,
     getDdnsInfo,
     clearDdnsLogs,
   };

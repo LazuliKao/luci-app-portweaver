@@ -91,7 +91,10 @@ declare const L: {
 declare const E: (...args: any[]) => HTMLElement;
 
 // i18n translate function
-declare function _(text: string, ...args: any[]): string;
+declare function _(
+  text: string,
+  ...args: any[]
+): string & { format(...args: any[]): string };
 
 declare const widgets: any;
 declare const fwmodel: { getZoneColorStyle(zone: string): string };

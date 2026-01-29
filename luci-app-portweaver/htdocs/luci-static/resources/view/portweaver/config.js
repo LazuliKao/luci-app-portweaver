@@ -208,9 +208,9 @@ function createRpcClient(rpc) {
         method: "get_events",
         expect: {}
     });
-    const getDdnsStatuses = rpc.declare({
+    const getDdnsStatus = rpc.declare({
         object: "portweaver",
-        method: "get_ddns_statuses",
+        method: "get_ddns_status",
         expect: {}
     });
     const getDdnsInfo = rpc.declare({
@@ -237,7 +237,7 @@ function createRpcClient(rpc) {
         getFrpInfo,
         clearFrpLogs,
         getEvents,
-        getDdnsStatuses,
+        getDdnsStatus,
         getDdnsInfo,
         clearDdnsLogs
     };
@@ -454,9 +454,9 @@ class Client {
                         const section = document.getElementById("project-status-".concat(section_id));
                         if (!section) continue;
                         const newStatusElements = this.renderStatusElements(status, section_id);
-                        newStatusElements.forEach((el)=>{
-                            section.appendChild(el);
-                        });
+                        section.replaceWith(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("div", {
+                            id: "project-status-".concat(section_id)
+                        }, newStatusElements)));
                     }
                 })();
             } catch (err) {
@@ -771,7 +771,12 @@ const actionButtons = {};
             class: "cbi-button cbi-button-action",
             onclick: ()=>{
                 const nodeName = L.uci.get("portweaver", section_id, "name");
-                const logViewer = new LogViewer(nodeName);
+                const logViewer = new LogViewer({
+                    name: nodeName,
+                    title: _("FRP Logs - %s").format(nodeName),
+                    fetcher: async ()=>await rpcClient.getFrpInfo(String(nodeName)),
+                    clearer: rpcClient.clearFrpLogs.bind(rpcClient)
+                });
                 logViewer.open();
             },
             disabled: !isRunning
@@ -2354,10 +2359,11 @@ const ddns_statusElements = {};
             class: "btn cbi-button cbi-button-action",
             type: "button"
         }, _("View Logs"));
+        const nodeName = L.uci.get("portweaver", section_id, "name");
         viewLogsBtn.onclick = ()=>{
             const viewer = new LogViewer({
-                name: section_id,
-                title: "DDNS Logs",
+                name: nodeName,
+                title: _("DDNS Logs - %s").format(nodeName),
                 fetcher: (name)=>rpcClient.getDdnsInfo(name),
                 clearer: (name)=>rpcClient.clearDdnsLogs(name)
             });
@@ -2525,7 +2531,7 @@ const ddns_statusElements = {};
     });
     L.Poll.add(async ()=>{
         try {
-            const result = await rpcClient.getDdnsStatuses();
+            const result = await rpcClient.getDdnsStatus();
             const statuses = (result === null || result === void 0 ? void 0 : result.statuses) || [];
             for (const status of statuses){
                 const oldStatus = ddnsStatuses[status.section];

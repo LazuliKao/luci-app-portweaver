@@ -106,14 +106,17 @@ export class Client {
               `project-status-${section_id}`,
             );
             if (!section) continue;
-
             const newStatusElements = this.renderStatusElements(
               status,
               section_id,
             );
-            newStatusElements.forEach((el) => {
-              section.appendChild(el);
-            });
+            section.replaceWith(
+              <span>
+                <div id={`project-status-${section_id}`}>
+                  {newStatusElements}
+                </div>
+              </span>,
+            );
           }
         })();
       } catch (err) {

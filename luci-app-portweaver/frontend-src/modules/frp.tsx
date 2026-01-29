@@ -182,7 +182,12 @@ export default function (
             section_id,
             "name",
           ) as string;
-          const logViewer = new LogViewer(nodeName);
+          const logViewer = new LogViewer({
+            name: nodeName,
+            title: _("FRP Logs - %s").format(nodeName),
+            fetcher: async () => await rpcClient.getFrpInfo(String(nodeName)),
+            clearer: rpcClient.clearFrpLogs.bind(rpcClient),
+          });
           logViewer.open();
         }}
         disabled={!isRunning}

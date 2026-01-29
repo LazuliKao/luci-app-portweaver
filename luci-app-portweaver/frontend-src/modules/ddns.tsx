@@ -254,10 +254,11 @@ export default function (
       </button>
     ) as HTMLButtonElement;
 
+    const nodeName = L.uci.get("portweaver", section_id, "name") as string;
     viewLogsBtn.onclick = () => {
       const viewer = new LogViewer({
-        name: section_id,
-        title: "DDNS Logs",
+        name: nodeName,
+        title: _("DDNS Logs - %s").format(nodeName),
         fetcher: (name) => rpcClient.getDdnsInfo(name),
         clearer: (name) => rpcClient.clearDdnsLogs(name),
       });
@@ -450,7 +451,7 @@ export default function (
 
   L.Poll.add(async () => {
     try {
-      const result = await rpcClient.getDdnsStatuses();
+      const result = await rpcClient.getDdnsStatus();
       const statuses = result?.statuses || [];
 
       for (const status of statuses) {
