@@ -40,6 +40,31 @@ export interface FrpStatus {
   client_count?: number;
 }
 
+/** Full FRP proxy status including all available fields */
+export interface FrpProxyStats {
+  name: string;
+  type: string;
+  status: string;
+  err: string;
+  remote_addr: string;
+  cfg: {
+    name: string;
+    type: string;
+    local_ip: string;
+    local_port: number;
+    remote_port: number;
+    use_encryption: boolean;
+    use_compression: boolean;
+    bandwidth_limit: string;
+    [key: string]: any;
+  };
+}
+
+/** Response containing all proxies for a client */
+export interface FrpClientStats {
+  proxies: FrpProxyStats[];
+}
+
 /** A single event in the activity log */
 export interface ActivityEvent {
   /** Unix timestamp in milliseconds */

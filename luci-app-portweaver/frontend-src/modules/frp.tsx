@@ -1,4 +1,5 @@
 import { LogViewer } from "../components/LogViewer";
+import { ProxyStatsViewer } from "../components/ProxyStatsViewer";
 import { rpcClient } from "./client";
 const form = L.form;
 
@@ -198,6 +199,26 @@ export default function (
 
     actionButtons[section_id] = btn;
     return btn;
+  };
+
+  o = ss.option(form.DummyValue, "proxy_stats", _("Proxy Stats"));
+  o.modalonly = false;
+  o.textvalue = (section_id: string) => {
+    const nodeName = L.uci.get("portweaver", section_id, "name") as string;
+    const container = document.createElement("div");
+    container.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap;";
+
+    // Create stats viewer for the client (now shows all proxies)
+    const statsViewer = new ProxyStatsViewer({
+      clientId: nodeName,
+      clientName: nodeName,
+      rpcClient: rpcClient,
+    });
+    const statsEl = statsViewer.render();
+    statsEl.style.cssText = `flex: 1; min-width: 300px; ${statsEl.style.cssText}`;
+    container.appendChild(statsEl);
+
+    return container;
   };
 
   L.Poll.add(async () => {

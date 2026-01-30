@@ -11,27 +11,140 @@ export interface LogViewerProps {
   clearer: (name: string) => Promise<void>;
 }
 
+const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
+const REGEX_PORT = /:\d{2,5}\b/g;
+const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
+const REGEX_SUCCESS = /\b(success|ok|done|complete)\b/gi;
+const REGEX_UUID =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
 export class LogViewer {
   private props: LogViewerProps;
   private modal: HTMLElement | null = null;
   private logContainer: HTMLElement | null = null;
   private statusSpan: HTMLElement | null = null;
   private errorSpan: HTMLElement | null = null;
+  private searchInput: HTMLInputElement | null = null;
+  private pauseButton: HTMLElement | null = null;
+  private followButton: HTMLElement | null = null;
+  private wrapButton: HTMLElement | null = null;
 
-  // Added state fields
   private status: string = "unavailable";
   private logs: string[] = [];
   private lastError: string = "";
   private isOpen: boolean = false;
   private pollInterval: number | null = null;
+  private searchFilter: string = "";
+  private filteredLogs: string[] = [];
+  private isPaused: boolean = false;
+  private isFollowing: boolean = true;
+  private selectedLines: Set<number> = new Set();
+  private wrapText: boolean = true;
 
   constructor(props: LogViewerProps) {
     this.props = props;
   }
 
+  private highlightLog(text: string): string {
+    let result = text;
+    const matches: Array<{ start: number; end: number; html: string }> = [];
+
+    const addMatch = (regex: RegExp, replacement: string) => {
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          html: replacement.replace("$&", match[0]),
+        });
+      }
+    };
+
+    addMatch(REGEX_IP, '<strong class="text-primary">$&</strong>');
+    addMatch(REGEX_PORT, '<strong class="text-success">$&</strong>');
+    addMatch(REGEX_ERROR, '<strong class="text-danger">$&</strong>');
+    addMatch(REGEX_UUID, "<code>$&</code>");
+
+    matches.sort((a, b) => a.start - b.start);
+
+    let offset = 0;
+    for (const match of matches) {
+      const before = result.slice(0, match.start + offset);
+      const after = result.slice(match.end + offset);
+      result = before + match.html + after;
+      offset += match.html.length - (match.end - match.start);
+    }
+
+    return result;
+  }
+
+  private applyFilters(): void {
+    let filtered = this.logs;
+
+    if (this.searchFilter.trim()) {
+      const query = this.searchFilter.toLowerCase();
+      filtered = filtered.filter((log) => log.toLowerCase().includes(query));
+    }
+
+    this.filteredLogs = filtered;
+  }
+
+  private toggleLineSelection(index: number): void {
+    if (this.selectedLines.has(index)) {
+      this.selectedLines.delete(index);
+    } else {
+      this.selectedLines.add(index);
+    }
+  }
+
+  private selectRange(endIndex: number): void {
+    if (this.selectedLines.size === 0) {
+      this.selectedLines.add(endIndex);
+      return;
+    }
+
+    const indices = Array.from(this.selectedLines);
+    const startIndex = Math.max(...indices);
+    const min = Math.min(startIndex, endIndex);
+    const max = Math.max(startIndex, endIndex);
+
+    for (let i = min; i <= max; i++) {
+      this.selectedLines.add(i);
+    }
+  }
+
+  private exportSelected(): void {
+    let text: string;
+    if (this.selectedLines.size > 0) {
+      const indices = Array.from(this.selectedLines).sort((a, b) => a - b);
+      text = indices.map((i) => this.filteredLogs[i]).join("\n");
+    } else {
+      text = this.filteredLogs.join("\n");
+    }
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${this.props.name}-logs.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private toggleWrap(): void {
+    this.wrapText = !this.wrapText;
+    if (this.logContainer) {
+      this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
+    }
+    if (this.wrapButton) {
+      this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
+    }
+  }
+
   render(): HTMLElement {
     const statusColor =
       {
+        running: "#4CAF50",
         connected: "#4CAF50",
         connecting: "#FFC107",
         error: "#F44336",
@@ -39,9 +152,10 @@ export class LogViewer {
         unavailable: "#9E9E9E",
       }[this.status] || "#9E9E9E";
 
-    // Store refs to DOM nodes directly (no querySelector/getElementById)
     this.statusSpan = (
-      <span style={`color: ${statusColor}; font-weight: 600;`}>
+      <span
+        style={`display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ${statusColor}; color: white; font-weight: 600; font-size: 0.85em;`}
+      >
         {this.status}
       </span>
     );
@@ -58,15 +172,205 @@ export class LogViewer {
       </div>
     );
 
-    const placeholder = (
-      <div style="color: #6c757d; text-align: center; padding: 2em;">
-        No logs available
-      </div>
+    this.searchInput = (
+      <input
+        type="text"
+        class="cbi-input-text"
+        placeholder="Search logs..."
+        style="flex: 1;"
+        oninput={(e: Event) => {
+          const target = e.target as HTMLInputElement;
+          this.searchFilter = target.value;
+          this.applyFilters();
+          this.updateDisplay();
+        }}
+      />
+    );
+
+    const refreshButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-neutral"
+        onclick={() => this.fetchLogs()}
+      >
+        REFRESH
+      </button>
+    );
+
+    this.pauseButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-neutral"
+        onclick={() => {
+          this.isPaused = !this.isPaused;
+          if (this.pauseButton) {
+            this.pauseButton.textContent = this.isPaused ? "PAUSED" : "PAUSE";
+          }
+          if (this.isPaused) {
+            this.stopPolling();
+          } else {
+            this.startPolling();
+          }
+        }}
+      >
+        PAUSE
+      </button>
+    );
+
+    this.followButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-neutral"
+        onclick={() => {
+          this.isFollowing = !this.isFollowing;
+          if (this.followButton) {
+            this.followButton.textContent = this.isFollowing
+              ? "FOLLOW: ON"
+              : "FOLLOW: OFF";
+          }
+        }}
+      >
+        FOLLOW: ON
+      </button>
+    );
+
+    this.wrapButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-neutral"
+        onclick={() => this.toggleWrap()}
+      >
+        WRAP: ON
+      </button>
     );
 
     this.logContainer = (
-      <div style="flex: 1; overflow-y: auto; padding: 1em; background: #f8f9fa; font-family: monospace; font-size: 0.85em; line-height: 1.5;">
-        {this.logs.length === 0 ? placeholder : null}
+      <div
+        class="cbi-value-field"
+        style="flex: 1; overflow-y: auto; padding: 1em; font-family: monospace; font-size: 0.85em; line-height: 1.5; white-space: pre-wrap;"
+      >
+        {this.logs.length === 0 ? "No logs available" : null}
+      </div>
+    );
+
+    const copyButton = (
+      <button
+        type="button"
+        class="cbi-button"
+        onclick={() => this.copyToClipboard()}
+      >
+        COPY
+      </button>
+    );
+
+    const copySelectedButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-positive"
+        onclick={() => {
+          if (this.selectedLines.size > 0) {
+            const indices = Array.from(this.selectedLines).sort(
+              (a, b) => a - b,
+            );
+            const text = indices.map((i) => this.filteredLogs[i]).join("\n");
+            navigator.clipboard
+              .writeText(text)
+              .then(() => alert("Selected logs copied to clipboard"))
+              .catch((err: any) => {
+                console.error("Failed to copy logs:", err);
+                alert("Failed to copy logs");
+              });
+          } else {
+            alert("No lines selected");
+          }
+        }}
+      >
+        COPY SELECTED
+      </button>
+    );
+
+    const exportButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-positive"
+        onclick={() => this.exportSelected()}
+      >
+        EXPORT
+      </button>
+    );
+
+    const clearButton = (
+      <button
+        type="button"
+        class="cbi-button"
+        onclick={() => this.clearLogs()}
+        style="background: #dc3545; color: white;"
+      >
+        CLEAR
+      </button>
+    );
+
+    const closeButton = (
+      <button type="button" class="cbi-button" onclick={() => this.close()}>
+        CLOSE
+      </button>
+    );
+
+    const footer = (
+      <div
+        class="button-row"
+        style="padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end;"
+      >
+        {copyButton}
+        {copySelectedButton}
+        {exportButton}
+        {clearButton}
+        {closeButton}
+      </div>
+    );
+
+    const header = (
+      <div style="padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.2em; font-weight: 600;">
+            {this.props.title}
+          </h4>
+          <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;">
+            Status: {this.statusSpan}
+            {this.errorSpan}
+          </div>
+        </div>
+        <button
+          type="button"
+          onclick={() => this.close()}
+          style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
+        >
+          ×
+        </button>
+      </div>
+    );
+
+    const searchBar = (
+      <div style="padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center;">
+        {this.searchInput}
+        {refreshButton}
+        {this.pauseButton}
+        {this.followButton}
+        {this.wrapButton}
+      </div>
+    );
+
+    const content = (
+      <div
+        class="modal cbi-modal cbi-section-node"
+        role="dialog"
+        aria-modal="true"
+        style="width: 90%; max-width: 900px; max-height: 85vh;"
+      >
+        {header}
+        {searchBar}
+        {this.logContainer}
+        {footer}
       </div>
     );
 
@@ -77,55 +381,7 @@ export class LogViewer {
           if (e.target === e.currentTarget) this.close();
         }}
       >
-        <div style="background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
-          {/* Header */}
-          <div style="padding: 1.5em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h3 style="margin: 0; font-size: 1.2em; font-weight: 600;">
-                {this.props.title}
-              </h3>
-              <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;">
-                Status: {this.statusSpan}
-                {this.errorSpan}
-              </div>
-            </div>
-            <button
-              type="button"
-              onclick={() => this.close()}
-              style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Logs Container (stored in this.logContainer) */}
-          {this.logContainer}
-
-          {/* Footer */}
-          <div style="padding: 1em; border-top: 1px solid #dee2e6; display: flex; gap: 0.5em; justify-content: flex-end;">
-            <button
-              type="button"
-              onclick={() => this.copyToClipboard()}
-              style="padding: 0.5em 1em; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-            >
-              Copy to Clipboard
-            </button>
-            <button
-              type="button"
-              onclick={() => this.clearLogs()}
-              style="padding: 0.5em 1em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-            >
-              Clear Logs
-            </button>
-            <button
-              type="button"
-              onclick={() => this.close()}
-              style="padding: 0.5em 1em; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        {content}
       </div>
     );
 
@@ -135,7 +391,6 @@ export class LogViewer {
   open(): void {
     if (this.isOpen) return;
     this.isOpen = true;
-    // Render and attach modal, then populate initial content
     const node = this.render();
     document.body.appendChild(node);
     this.updateDisplay();
@@ -147,11 +402,14 @@ export class LogViewer {
     this.isOpen = false;
     this.stopPolling();
     this.modal?.parentElement?.removeChild(this.modal);
-    // Release DOM references to avoid retaining detached nodes
     this.modal = null;
     this.logContainer = null;
     this.statusSpan = null;
     this.errorSpan = null;
+    this.searchInput = null;
+    this.pauseButton = null;
+    this.followButton = null;
+    this.wrapButton = null;
   }
 
   private startPolling(): void {
@@ -160,7 +418,7 @@ export class LogViewer {
       clearInterval(this.pollInterval);
     }
     this.pollInterval = window.setInterval(() => {
-      if (this.isOpen) {
+      if (this.isOpen && !this.isPaused) {
         this.fetchLogs();
       }
     }, 3000);
@@ -180,6 +438,7 @@ export class LogViewer {
         this.status = response.status || "unavailable";
         this.lastError = response.last_error || "";
         this.logs = response.logs || [];
+        this.applyFilters();
         this.updateDisplay();
       })
       .catch((err: any) => {
@@ -191,10 +450,8 @@ export class LogViewer {
   }
 
   private updateDisplay(): void {
-    // Update status
     if (this.statusSpan) {
       this.statusSpan.textContent = this.status;
-      // update color
       const color =
         {
           connected: "#4CAF50",
@@ -209,7 +466,6 @@ export class LogViewer {
       );
     }
 
-    // Update error
     if (this.errorSpan) {
       if (this.lastError) {
         this.errorSpan.style.display = "";
@@ -219,33 +475,63 @@ export class LogViewer {
       }
     }
 
-    // Update logs
     if (this.logContainer) {
-      // clear existing children
+      const wasAtBottom =
+        this.logContainer.scrollHeight - this.logContainer.scrollTop <=
+        this.logContainer.clientHeight + 50;
+
       while (this.logContainer.firstChild) {
         this.logContainer.removeChild(this.logContainer.firstChild);
       }
-      if (this.logs.length === 0) {
+
+      if (this.filteredLogs.length === 0) {
         const noLogs = document.createElement("div");
         noLogs.style.cssText =
           "color: #6c757d; text-align: center; padding: 2em;";
-        noLogs.textContent = "No logs available";
-        this.logContainer?.appendChild(noLogs);
+        noLogs.textContent = this.searchFilter
+          ? "No logs match your search"
+          : "No logs available";
+        this.logContainer.appendChild(noLogs);
       } else {
-        this.logs.forEach((log) => {
-          const logEl = document.createElement("div");
-          logEl.style.cssText =
-            "color: #333; word-break: break-word; margin-bottom: 0.2em;";
-          logEl.textContent = log;
-          this.logContainer?.appendChild(logEl);
+        this.filteredLogs.forEach((log, index) => {
+          const isSelected = this.selectedLines.has(index);
+
+          const lineDiv = document.createElement("div");
+          lineDiv.style.cssText = `cursor: pointer; padding: 0.2em; ${isSelected ? "background: #e3f2fd;" : ""}`;
+          lineDiv.onclick = (e: MouseEvent) => {
+            if (e.ctrlKey || e.metaKey) {
+              this.toggleLineSelection(index);
+            } else if (e.shiftKey && this.selectedLines.size > 0) {
+              this.selectRange(index);
+            } else {
+              this.selectedLines.clear();
+              this.toggleLineSelection(index);
+            }
+            this.updateDisplay();
+          };
+
+          const lineNum = document.createElement("span");
+          lineNum.style.cssText = "color: #999; margin-right: 1em;";
+          lineNum.textContent = `${index + 1}`;
+
+          const content = document.createElement("span");
+          content.innerHTML = this.highlightLog(log);
+
+          lineDiv.appendChild(lineNum);
+          lineDiv.appendChild(content);
+
+          this.logContainer.appendChild(lineDiv);
         });
       }
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
+
+      if (this.isFollowing && wasAtBottom) {
+        this.logContainer.scrollTop = this.logContainer.scrollHeight;
+      }
     }
   }
 
   private copyToClipboard(): void {
-    const text = this.logs.join("\n");
+    const text = this.filteredLogs.join("\n");
     navigator.clipboard
       .writeText(text)
       .then(() => {
@@ -263,6 +549,8 @@ export class LogViewer {
         .clearer(this.props.name)
         .then(() => {
           this.logs = [];
+          this.filteredLogs = [];
+          this.selectedLines.clear();
           this.updateDisplay();
         })
         .catch((err: any) => {

@@ -203,6 +203,14 @@ function createRpcClient(rpc) {
         ],
         expect: {}
     });
+    const getFrpProxyStats = rpc.declare({
+        object: "portweaver",
+        method: "get_frp_proxy_stats",
+        params: [
+            "id"
+        ],
+        expect: {}
+    });
     const getEvents = rpc.declare({
         object: "portweaver",
         method: "get_events",
@@ -235,6 +243,7 @@ function createRpcClient(rpc) {
         setEnabled,
         getFrpStatus,
         getFrpInfo,
+        getFrpProxyStats,
         clearFrpLogs,
         getEvents,
         getDdnsStatus,
@@ -318,10 +327,10 @@ class Client {
         }, rows);
     }
     updateProjectHealthIndicator() {
-        var _this_projectStatuses;
+        var _this_projectStatuses, _this_statusPanel;
         const enabledProjects = ((_this_projectStatuses = this.projectStatuses) === null || _this_projectStatuses === void 0 ? void 0 : _this_projectStatuses.filter((p)=>p.enabled)) || [];
         const runningProjects = enabledProjects.filter((p)=>p.status === "running");
-        const healthElem = document.getElementById("project-health-value");
+        const healthElem = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.projectHealthEl;
         if (healthElem) {
             const healthColor = runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545";
             healthElem.innerHTML = "";
@@ -333,7 +342,8 @@ class Client {
         }
     }
     updateFrpErrorDisplay() {
-        const errorElem = document.getElementById("frp-error-value");
+        var _this_statusPanel;
+        const errorElem = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.frpErrorEl;
         if (errorElem && this.frpStatus.last_error) {
             const truncated = this.frpStatus.last_error.length > 50 ? "".concat(this.frpStatus.last_error.substring(0, 47), "...") : this.frpStatus.last_error;
             errorElem.title = this.frpStatus.last_error;
@@ -344,7 +354,8 @@ class Client {
         }
     }
     updateActivityLog() {
-        const logContainer = document.getElementById("activity-log-container");
+        var _this_statusPanel;
+        const logContainer = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.activityLogContainer;
         if (logContainer && this.events && this.events.length > 0) {
             const recentEvents = this.events.slice(-5).reverse();
             logContainer.innerHTML = "";
@@ -395,6 +406,9 @@ class Client {
         _define_property(this, "projectStatuses", void 0);
         _define_property(this, "frpStatus", void 0);
         _define_property(this, "events", void 0);
+        // References to UI elements provided by StatusPanel and config
+        _define_property(this, "statusPanel", void 0);
+        _define_property(this, "projectContainers", {});
         this.globalStatus = data[0] || {};
         this.projectStatuses = data[1] ? data[1].projects || [] : [];
         this.frpStatus = data[2] || {
@@ -402,12 +416,8 @@ class Client {
         };
         this.events = data[3] || [];
         L.Poll.add(async ()=>{
-            const updateText = (id, value)=>{
-                const elem = document.getElementById(id);
-                if (elem) elem.textContent = String(value);
-            };
             try {
-                var _results_, _results_1;
+                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7;
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
@@ -420,28 +430,25 @@ class Client {
                     frp_enabled: false
                 };
                 this.events = ((_results_1 = results[3]) === null || _results_1 === void 0 ? void 0 : _results_1.events) || [];
-                const statusElem = document.getElementById("status-value");
                 const statusColors = {
                     running: "green",
                     stopped: "red",
                     degraded: "orange"
                 };
-                if (statusElem) {
-                    statusElem.textContent = this.globalStatus.status || "-";
-                    statusElem.style.color = statusColors[this.globalStatus.status || ""] || "gray";
+                if ((_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.statusValueEl) {
+                    this.statusPanel.statusValueEl.textContent = this.globalStatus.status || "-";
+                    this.statusPanel.statusValueEl.style.color = statusColors[this.globalStatus.status || ""] || "gray";
                 }
-                updateText("total-projects-value", this.globalStatus.total_projects || 0);
-                updateText("active-ports-value", this.globalStatus.active_ports || 0);
-                updateText("uptime-value", formatUptime(this.globalStatus.uptime || 0));
-                updateText("traffic-in-value", formatBytes(this.globalStatus.total_bytes_in || 0));
-                updateText("traffic-out-value", formatBytes(this.globalStatus.total_bytes_out || 0));
-                const frpEnabledElem = document.getElementById("frp-enabled-value");
-                if (frpEnabledElem) {
-                    frpEnabledElem.textContent = this.frpStatus.frp_enabled ? _("Enabled") : _("Disabled");
-                    frpEnabledElem.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
+                if ((_this_statusPanel1 = this.statusPanel) === null || _this_statusPanel1 === void 0 ? void 0 : _this_statusPanel1.totalProjectsEl) this.statusPanel.totalProjectsEl.textContent = String(this.globalStatus.total_projects || 0);
+                if ((_this_statusPanel2 = this.statusPanel) === null || _this_statusPanel2 === void 0 ? void 0 : _this_statusPanel2.activePortsEl) this.statusPanel.activePortsEl.textContent = String(this.globalStatus.active_ports || 0);
+                if ((_this_statusPanel3 = this.statusPanel) === null || _this_statusPanel3 === void 0 ? void 0 : _this_statusPanel3.uptimeEl) this.statusPanel.uptimeEl.textContent = formatUptime(this.globalStatus.uptime || 0);
+                if ((_this_statusPanel4 = this.statusPanel) === null || _this_statusPanel4 === void 0 ? void 0 : _this_statusPanel4.trafficInEl) this.statusPanel.trafficInEl.textContent = formatBytes(this.globalStatus.total_bytes_in || 0);
+                if ((_this_statusPanel5 = this.statusPanel) === null || _this_statusPanel5 === void 0 ? void 0 : _this_statusPanel5.trafficOutEl) this.statusPanel.trafficOutEl.textContent = formatBytes(this.globalStatus.total_bytes_out || 0);
+                if ((_this_statusPanel6 = this.statusPanel) === null || _this_statusPanel6 === void 0 ? void 0 : _this_statusPanel6.frpEnabledEl) {
+                    this.statusPanel.frpEnabledEl.textContent = this.frpStatus.frp_enabled ? _("Enabled") : _("Disabled");
+                    this.statusPanel.frpEnabledEl.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
                 }
-                const frpVersionElem = document.getElementById("frp-version-value");
-                if (frpVersionElem && this.frpStatus.frp_version) frpVersionElem.textContent = this.frpStatus.frp_version;
+                if (((_this_statusPanel7 = this.statusPanel) === null || _this_statusPanel7 === void 0 ? void 0 : _this_statusPanel7.frpVersionEl) && this.frpStatus.frp_version) this.statusPanel.frpVersionEl.textContent = this.frpStatus.frp_version;
                 this.updateProjectHealthIndicator();
                 this.updateFrpErrorDisplay();
                 this.updateActivityLog();
@@ -451,12 +458,14 @@ class Client {
                         const section_id = sections[i][".name"];
                         if (!section_id) continue;
                         const status = this.getProjectStatus(section_id);
-                        const section = document.getElementById("project-status-".concat(section_id));
+                        const section = this.projectContainers[section_id];
                         if (!section) continue;
                         const newStatusElements = this.renderStatusElements(status, section_id);
-                        section.replaceWith(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("div", {
+                        const newContainer = /*#__PURE__*/ createJsxElement("div", {
                             id: "project-status-".concat(section_id)
-                        }, newStatusElements)));
+                        }, newStatusElements);
+                        section.replaceWith(/*#__PURE__*/ createJsxElement("span", null, newContainer));
+                        this.projectContainers[section_id] = newContainer;
                     }
                 })();
             } catch (err) {
@@ -468,38 +477,183 @@ class Client {
 
 ;// CONCATENATED MODULE: ./components/LogViewer.tsx
 
+const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
+const REGEX_PORT = /:\d{2,5}\b/g;
+const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
+const REGEX_UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 class LogViewer {
+    highlightLog(text) {
+        let result = text;
+        const matches = [];
+        const addMatch = (regex, replacement)=>{
+            let match;
+            while((match = regex.exec(text)) !== null)matches.push({
+                start: match.index,
+                end: match.index + match[0].length,
+                html: replacement.replace("$&", match[0])
+            });
+        };
+        addMatch(REGEX_IP, '<strong class="text-primary">$&</strong>');
+        addMatch(REGEX_PORT, '<strong class="text-success">$&</strong>');
+        addMatch(REGEX_ERROR, '<strong class="text-danger">$&</strong>');
+        addMatch(REGEX_UUID, "<code>$&</code>");
+        matches.sort((a, b)=>a.start - b.start);
+        let offset = 0;
+        for (const match of matches){
+            const before = result.slice(0, match.start + offset);
+            const after = result.slice(match.end + offset);
+            result = before + match.html + after;
+            offset += match.html.length - (match.end - match.start);
+        }
+        return result;
+    }
+    applyFilters() {
+        let filtered = this.logs;
+        if (this.searchFilter.trim()) {
+            const query = this.searchFilter.toLowerCase();
+            filtered = filtered.filter((log)=>log.toLowerCase().includes(query));
+        }
+        this.filteredLogs = filtered;
+    }
+    toggleLineSelection(index) {
+        if (this.selectedLines.has(index)) this.selectedLines.delete(index);
+        else this.selectedLines.add(index);
+    }
+    selectRange(endIndex) {
+        if (this.selectedLines.size === 0) {
+            this.selectedLines.add(endIndex);
+            return;
+        }
+        const indices = Array.from(this.selectedLines);
+        const startIndex = Math.max(...indices);
+        const min = Math.min(startIndex, endIndex);
+        const max = Math.max(startIndex, endIndex);
+        for(let i = min; i <= max; i++)this.selectedLines.add(i);
+    }
+    exportSelected() {
+        let text;
+        if (this.selectedLines.size > 0) {
+            const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
+            text = indices.map((i)=>this.filteredLogs[i]).join("\n");
+        } else text = this.filteredLogs.join("\n");
+        const blob = new Blob([
+            text
+        ], {
+            type: "text/plain"
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "".concat(this.props.name, "-logs.txt");
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    toggleWrap() {
+        this.wrapText = !this.wrapText;
+        if (this.logContainer) this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
+        if (this.wrapButton) this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
+    }
     render() {
         const statusColor = {
+            running: "#4CAF50",
             connected: "#4CAF50",
             connecting: "#FFC107",
             error: "#F44336",
             stopped: "#9E9E9E",
             unavailable: "#9E9E9E"
         }[this.status] || "#9E9E9E";
-        // Store refs to DOM nodes directly (no querySelector/getElementById)
         this.statusSpan = /*#__PURE__*/ createJsxElement("span", {
-            style: "color: ".concat(statusColor, "; font-weight: 600;")
+            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;")
         }, this.status);
         this.errorSpan = /*#__PURE__*/ createJsxElement("div", {
             style: this.lastError ? "color: #F44336; margin-top: 0.3em; display:block" : "color: #F44336; margin-top: 0.3em; display:none"
         }, this.lastError);
-        const placeholder = /*#__PURE__*/ createJsxElement("div", {
-            style: "color: #6c757d; text-align: center; padding: 2em;"
-        }, "No logs available");
-        this.logContainer = /*#__PURE__*/ createJsxElement("div", {
-            style: "flex: 1; overflow-y: auto; padding: 1em; background: #f8f9fa; font-family: monospace; font-size: 0.85em; line-height: 1.5;"
-        }, this.logs.length === 0 ? placeholder : null);
-        this.modal = /*#__PURE__*/ createJsxElement("div", {
-            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
-            onclick: (e)=>{
-                if (e.target === e.currentTarget) this.close();
+        this.searchInput = /*#__PURE__*/ createJsxElement("input", {
+            type: "text",
+            class: "cbi-input-text",
+            placeholder: "Search logs...",
+            style: "flex: 1;",
+            oninput: (e)=>{
+                const target = e.target;
+                this.searchFilter = target.value;
+                this.applyFilters();
+                this.updateDisplay();
             }
-        }, /*#__PURE__*/ createJsxElement("div", {
-            style: "background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;"
-        }, /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 1.5em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
-        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h3", {
+        });
+        const refreshButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>this.fetchLogs()
+        }, "REFRESH");
+        this.pauseButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>{
+                this.isPaused = !this.isPaused;
+                if (this.pauseButton) this.pauseButton.textContent = this.isPaused ? "PAUSED" : "PAUSE";
+                if (this.isPaused) this.stopPolling();
+                else this.startPolling();
+            }
+        }, "PAUSE");
+        this.followButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>{
+                this.isFollowing = !this.isFollowing;
+                if (this.followButton) this.followButton.textContent = this.isFollowing ? "FOLLOW: ON" : "FOLLOW: OFF";
+            }
+        }, "FOLLOW: ON");
+        this.wrapButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>this.toggleWrap()
+        }, "WRAP: ON");
+        this.logContainer = /*#__PURE__*/ createJsxElement("div", {
+            class: "cbi-value-field",
+            style: "flex: 1; overflow-y: auto; padding: 1em; font-family: monospace; font-size: 0.85em; line-height: 1.5; white-space: pre-wrap;"
+        }, this.logs.length === 0 ? "No logs available" : null);
+        const copyButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.copyToClipboard()
+        }, "COPY");
+        const copySelectedButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-positive",
+            onclick: ()=>{
+                if (this.selectedLines.size > 0) {
+                    const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
+                    const text = indices.map((i)=>this.filteredLogs[i]).join("\n");
+                    navigator.clipboard.writeText(text).then(()=>alert("Selected logs copied to clipboard")).catch((err)=>{
+                        console.error("Failed to copy logs:", err);
+                        alert("Failed to copy logs");
+                    });
+                } else alert("No lines selected");
+            }
+        }, "COPY SELECTED");
+        const exportButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-positive",
+            onclick: ()=>this.exportSelected()
+        }, "EXPORT");
+        const clearButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.clearLogs(),
+            style: "background: #dc3545; color: white;"
+        }, "CLEAR");
+        const closeButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.close()
+        }, "CLOSE");
+        const footer = /*#__PURE__*/ createJsxElement("div", {
+            class: "button-row",
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end;"
+        }, copyButton, copySelectedButton, exportButton, clearButton, closeButton);
+        const header = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
+        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
             style: "margin: 0; font-size: 1.2em; font-weight: 600;"
         }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
@@ -507,27 +661,27 @@ class LogViewer {
             type: "button",
             onclick: ()=>this.close(),
             style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-        }, "\xd7")), this.logContainer, /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 1em; border-top: 1px solid #dee2e6; display: flex; gap: 0.5em; justify-content: flex-end;"
-        }, /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.copyToClipboard(),
-            style: "padding: 0.5em 1em; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-        }, "Copy to Clipboard"), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.clearLogs(),
-            style: "padding: 0.5em 1em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-        }, "Clear Logs"), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.close(),
-            style: "padding: 0.5em 1em; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-        }, "Close"))));
+        }, "\xd7"));
+        const searchBar = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center;"
+        }, this.searchInput, refreshButton, this.pauseButton, this.followButton, this.wrapButton);
+        const content = /*#__PURE__*/ createJsxElement("div", {
+            class: "modal cbi-modal cbi-section-node",
+            role: "dialog",
+            "aria-modal": "true",
+            style: "width: 90%; max-width: 900px; max-height: 85vh;"
+        }, header, searchBar, this.logContainer, footer);
+        this.modal = /*#__PURE__*/ createJsxElement("div", {
+            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
+            onclick: (e)=>{
+                if (e.target === e.currentTarget) this.close();
+            }
+        }, content);
         return this.modal;
     }
     open() {
         if (this.isOpen) return;
         this.isOpen = true;
-        // Render and attach modal, then populate initial content
         const node = this.render();
         document.body.appendChild(node);
         this.updateDisplay();
@@ -539,17 +693,20 @@ class LogViewer {
         this.isOpen = false;
         this.stopPolling();
         (_this_modal = this.modal) === null || _this_modal === void 0 ? void 0 : (_this_modal_parentElement = _this_modal.parentElement) === null || _this_modal_parentElement === void 0 ? void 0 : _this_modal_parentElement.removeChild(this.modal);
-        // Release DOM references to avoid retaining detached nodes
         this.modal = null;
         this.logContainer = null;
         this.statusSpan = null;
         this.errorSpan = null;
+        this.searchInput = null;
+        this.pauseButton = null;
+        this.followButton = null;
+        this.wrapButton = null;
     }
     startPolling() {
         this.fetchLogs();
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = window.setInterval(()=>{
-            if (this.isOpen) this.fetchLogs();
+            if (this.isOpen && !this.isPaused) this.fetchLogs();
         }, 3000);
     }
     stopPolling() {
@@ -563,6 +720,7 @@ class LogViewer {
             this.status = response.status || "unavailable";
             this.lastError = response.last_error || "";
             this.logs = response.logs || [];
+            this.applyFilters();
             this.updateDisplay();
         }).catch((err)=>{
             console.error("Failed to fetch logs:", err);
@@ -572,10 +730,8 @@ class LogViewer {
         });
     }
     updateDisplay() {
-        // Update status
         if (this.statusSpan) {
             this.statusSpan.textContent = this.status;
-            // update color
             const color = {
                 connected: "#4CAF50",
                 connecting: "#FFC107",
@@ -585,35 +741,47 @@ class LogViewer {
             }[this.status] || "#9E9E9E";
             this.statusSpan.setAttribute("style", "color: ".concat(color, "; font-weight: 600;"));
         }
-        // Update error
         if (this.errorSpan) {
             if (this.lastError) {
                 this.errorSpan.style.display = "";
                 this.errorSpan.textContent = this.lastError;
             } else this.errorSpan.style.display = "none";
         }
-        // Update logs
         if (this.logContainer) {
-            // clear existing children
+            const wasAtBottom = this.logContainer.scrollHeight - this.logContainer.scrollTop <= this.logContainer.clientHeight + 50;
             while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
-            if (this.logs.length === 0) {
-                var _this_logContainer;
+            if (this.filteredLogs.length === 0) {
                 const noLogs = document.createElement("div");
                 noLogs.style.cssText = "color: #6c757d; text-align: center; padding: 2em;";
-                noLogs.textContent = "No logs available";
-                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(noLogs);
-            } else this.logs.forEach((log)=>{
-                var _this_logContainer;
-                const logEl = document.createElement("div");
-                logEl.style.cssText = "color: #333; word-break: break-word; margin-bottom: 0.2em;";
-                logEl.textContent = log;
-                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(logEl);
+                noLogs.textContent = this.searchFilter ? "No logs match your search" : "No logs available";
+                this.logContainer.appendChild(noLogs);
+            } else this.filteredLogs.forEach((log, index)=>{
+                const isSelected = this.selectedLines.has(index);
+                const lineDiv = document.createElement("div");
+                lineDiv.style.cssText = "cursor: pointer; padding: 0.2em; ".concat(isSelected ? "background: #e3f2fd;" : "");
+                lineDiv.onclick = (e)=>{
+                    if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
+                    else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
+                    else {
+                        this.selectedLines.clear();
+                        this.toggleLineSelection(index);
+                    }
+                    this.updateDisplay();
+                };
+                const lineNum = document.createElement("span");
+                lineNum.style.cssText = "color: #999; margin-right: 1em;";
+                lineNum.textContent = "".concat(index + 1);
+                const content = document.createElement("span");
+                content.innerHTML = this.highlightLog(log);
+                lineDiv.appendChild(lineNum);
+                lineDiv.appendChild(content);
+                this.logContainer.appendChild(lineDiv);
             });
-            this.logContainer.scrollTop = this.logContainer.scrollHeight;
+            if (this.isFollowing && wasAtBottom) this.logContainer.scrollTop = this.logContainer.scrollHeight;
         }
     }
     copyToClipboard() {
-        const text = this.logs.join("\n");
+        const text = this.filteredLogs.join("\n");
         navigator.clipboard.writeText(text).then(()=>{
             alert("Logs copied to clipboard");
         }).catch((err)=>{
@@ -624,6 +792,8 @@ class LogViewer {
     clearLogs() {
         if (confirm("Are you sure you want to clear the logs?")) this.props.clearer(this.props.name).then(()=>{
             this.logs = [];
+            this.filteredLogs = [];
+            this.selectedLines.clear();
             this.updateDisplay();
         }).catch((err)=>{
             console.error("Failed to clear logs:", err);
@@ -636,17 +806,165 @@ class LogViewer {
         _define_property(this, "logContainer", null);
         _define_property(this, "statusSpan", null);
         _define_property(this, "errorSpan", null);
-        // Added state fields
+        _define_property(this, "searchInput", null);
+        _define_property(this, "pauseButton", null);
+        _define_property(this, "followButton", null);
+        _define_property(this, "wrapButton", null);
         _define_property(this, "status", "unavailable");
         _define_property(this, "logs", []);
         _define_property(this, "lastError", "");
         _define_property(this, "isOpen", false);
         _define_property(this, "pollInterval", null);
+        _define_property(this, "searchFilter", "");
+        _define_property(this, "filteredLogs", []);
+        _define_property(this, "isPaused", false);
+        _define_property(this, "isFollowing", true);
+        _define_property(this, "selectedLines", new Set());
+        _define_property(this, "wrapText", true);
         this.props = props;
     }
 }
 
+;// CONCATENATED MODULE: ./components/ProxyStatsViewer.tsx
+
+class ProxyStatsViewer {
+    render() {
+        const container = document.createElement("div");
+        container.style.cssText = "padding: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;";
+        this.loadingEl = document.createElement("div");
+        this.loadingEl.textContent = "Loading stats...";
+        this.loadingEl.style.cssText = "color: #666; font-size: 14px;";
+        container.appendChild(this.loadingEl);
+        this.errorEl = document.createElement("div");
+        this.errorEl.style.cssText = "color: #d32f2f; font-size: 14px; display: none;";
+        container.appendChild(this.errorEl);
+        this.statsEl = document.createElement("div");
+        this.statsEl.style.cssText = "display: none;";
+        container.appendChild(this.statsEl);
+        this.fetchStats();
+        this.refreshInterval = window.setInterval(()=>this.fetchStats(), this.refreshRate);
+        this.visibilityHandler = ()=>this.handleVisibilityChange();
+        document.addEventListener("visibilitychange", this.visibilityHandler);
+        return container;
+    }
+    handleVisibilityChange() {
+        if (document.hidden) this.isPaused = true;
+        else {
+            this.isPaused = false;
+            this.fetchStats();
+        }
+    }
+    async fetchStats() {
+        if (this.isPaused) return;
+        try {
+            const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
+            const currentStats = JSON.stringify(stats);
+            if (currentStats === this.lastStats) return;
+            this.lastStats = currentStats;
+            this.retryCount = 0;
+            if (this.loadingEl) this.loadingEl.style.display = "none";
+            if (this.errorEl) this.errorEl.style.display = "none";
+            if (this.statsEl) {
+                this.statsEl.style.display = "block";
+                this.statsEl.innerHTML = "";
+                const proxies = stats.proxies ? JSON.parse(stats.proxies) : [];
+                if (!Array.isArray(proxies) || proxies.length === 0) {
+                    const noProxiesEl = document.createElement("div");
+                    noProxiesEl.style.cssText = "color: #666; font-size: 14px;";
+                    noProxiesEl.textContent = "No proxies configured";
+                    this.statsEl.appendChild(noProxiesEl);
+                    return;
+                }
+                const hasError = proxies.some((p)=>p.err && p.err.length > 0);
+                const statusColor = hasError ? "#dc3545" : "green";
+                const statusText = hasError ? "error" : "running";
+                const statusBadge = document.createElement("div");
+                statusBadge.style.cssText = "margin-bottom: 8px;";
+                const badge = document.createElement("span");
+                badge.className = "ifacebadge";
+                badge.style.cssText = "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";");
+                badge.textContent = statusText;
+                statusBadge.appendChild(badge);
+                this.statsEl.appendChild(statusBadge);
+                const countEl = document.createElement("small");
+                countEl.style.cssText = "display: block; margin-bottom: 4px;";
+                countEl.innerHTML = "<span>Proxies: ".concat(proxies.length, "</span><br>");
+                this.statsEl.appendChild(countEl);
+                const container = document.createElement("div");
+                container.style.cssText = "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;";
+                proxies.forEach((proxy)=>{
+                    var _proxy_cfg;
+                    const row = document.createElement("div");
+                    row.style.cssText = "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;";
+                    const typeEl = document.createElement("span");
+                    typeEl.style.cssText = "min-width: 35px; color: #6c757d;";
+                    typeEl.textContent = proxy.type.toUpperCase();
+                    row.appendChild(typeEl);
+                    const portEl = document.createElement("span");
+                    portEl.style.cssText = "min-width: 45px;";
+                    portEl.textContent = ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remote_port) || proxy.remote_addr || "N/A");
+                    row.appendChild(portEl);
+                    const inEl = document.createElement("span");
+                    inEl.style.cssText = "color: #28a745;";
+                    inEl.textContent = "\u21930 B";
+                    row.appendChild(inEl);
+                    const outEl = document.createElement("span");
+                    outEl.style.cssText = "color: #dc3545;";
+                    outEl.textContent = "\u21910 B";
+                    row.appendChild(outEl);
+                    container.appendChild(row);
+                });
+                this.statsEl.appendChild(container);
+            }
+        } catch (error) {
+            this.retryCount++;
+            if (this.retryCount < this.maxRetries) {
+                const backoffDelay = Math.min(1000 * 2 ** this.retryCount, 30000);
+                setTimeout(()=>this.fetchStats(), backoffDelay);
+                return;
+            }
+            if (this.loadingEl) this.loadingEl.style.display = "none";
+            if (this.errorEl) {
+                this.errorEl.style.display = "block";
+                this.errorEl.textContent = "Error: ".concat(error instanceof Error ? error.message : "Unknown error");
+            }
+        }
+    }
+    destroy() {
+        if (this.refreshInterval !== null) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+        if (this.visibilityHandler) {
+            document.removeEventListener("visibilitychange", this.visibilityHandler);
+            this.visibilityHandler = null;
+        }
+        this.isPaused = true;
+    }
+    constructor(props){
+        var _props_refreshInterval;
+        _define_property(this, "clientId", void 0);
+        _define_property(this, "clientName", void 0);
+        _define_property(this, "rpcClient", void 0);
+        _define_property(this, "statsEl", null);
+        _define_property(this, "errorEl", null);
+        _define_property(this, "loadingEl", null);
+        _define_property(this, "refreshInterval", null);
+        _define_property(this, "refreshRate", void 0);
+        _define_property(this, "isPaused", false);
+        _define_property(this, "visibilityHandler", null);
+        _define_property(this, "lastStats", "");
+        _define_property(this, "retryCount", 0);
+        _define_property(this, "maxRetries", 3);
+        this.clientId = props.clientId;
+        this.clientName = props.clientName;
+        this.rpcClient = props.rpcClient;
+        this.refreshRate = (_props_refreshInterval = props.refreshInterval) !== null && _props_refreshInterval !== void 0 ? _props_refreshInterval : 5000;
+    }
+}
+
 ;// CONCATENATED MODULE: ./modules/frp.tsx
+
 
 
 const frp_form = L.form;
@@ -783,6 +1101,23 @@ const actionButtons = {};
         }, _("View Logs"));
         actionButtons[section_id] = btn;
         return btn;
+    };
+    o = ss.option(frp_form.DummyValue, "proxy_stats", _("Proxy Stats"));
+    o.modalonly = false;
+    o.textvalue = (section_id)=>{
+        const nodeName = L.uci.get("portweaver", section_id, "name");
+        const container = document.createElement("div");
+        container.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap;";
+        // Create stats viewer for the client (now shows all proxies)
+        const statsViewer = new ProxyStatsViewer({
+            clientId: nodeName,
+            clientName: nodeName,
+            rpcClient: rpcClient
+        });
+        const statsEl = statsViewer.render();
+        statsEl.style.cssText = "flex: 1; min-width: 300px; ".concat(statsEl.style.cssText);
+        container.appendChild(statsEl);
+        return container;
     };
     L.Poll.add(async ()=>{
         try {
@@ -1638,9 +1973,18 @@ const uci = L.uci;
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const status = client.getProjectStatus(section_id);
-        return /*#__PURE__*/ createJsxElement("div", {
+        const container = /*#__PURE__*/ createJsxElement("div", {
             id: "project-status-".concat(section_id)
-        }, client.renderStatusElements(status, section_id));
+        }, client.renderStatusElements(status, section_id), (status === null || status === void 0 ? void 0 : status.enabled) && (status === null || status === void 0 ? void 0 : status.bytes_in) !== undefined ? /*#__PURE__*/ createJsxElement("div", {
+            style: {
+                marginTop: "8px",
+                fontSize: "12px",
+                color: "#666"
+            }
+        }, "\u2193 In: ", /*#__PURE__*/ createJsxElement("strong", null, (status.bytes_in / 1024).toFixed(1)), " KB | \u2191 Out: ", /*#__PURE__*/ createJsxElement("strong", null, (status.bytes_out / 1024).toFixed(1)), " KB") : null);
+        client.projectContainers = client.projectContainers || {};
+        client.projectContainers[section_id] = container;
+        return container;
     };
     o = ss.option(config_form.Button, "_runtime_toggle", _("Toggle"));
     o.modalonly = false;
@@ -1832,6 +2176,7 @@ const uci = L.uci;
 
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
 
+
 class StatusPanel {
     render(status, frpStatus, projectStatuses, events) {
         const statusColor = {
@@ -1845,45 +2190,79 @@ class StatusPanel {
         const hasEnabledProjects = enabledProjects.length > 0;
         return /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("div", {
             style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;"
-        }, this.card(_("Status"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
-            id: "status-value"
-        }, status.status || "-")), this.card(_("Total Projects"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "total-projects-value"
-        }, status.total_projects || 0)), this.card(_("Active Ports"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "active-ports-value"
-        }, status.active_ports || 0)), this.card(_("Uptime"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "uptime-value"
-        }, formatUptime(status.uptime || 0))), this.card(_("Traffic In"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "traffic-in-value"
-        }, formatBytes(status.total_bytes_in || 0))), this.card(_("Traffic Out"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "traffic-out-value"
-        }, formatBytes(status.total_bytes_out || 0))), hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
+        }, (()=>{
+            const statusValueEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
+                id: "status-value"
+            }, status.status || "-");
+            this.statusValueEl = statusValueEl;
+            return this.card(_("Status"), statusValueEl);
+        })(), '"', (()=>{
+            const totalProjectsEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "total-projects-value"
+            }, status.total_projects || 0);
+            this.totalProjectsEl = totalProjectsEl;
+            return this.card(_("Total Projects"), totalProjectsEl);
+        })(), '"', (()=>{
+            const activePortsEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "active-ports-value"
+            }, status.active_ports || 0);
+            this.activePortsEl = activePortsEl;
+            return this.card(_("Active Ports"), activePortsEl);
+        })(), '"', (()=>{
+            const uptimeEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "uptime-value"
+            }, formatUptime(status.uptime || 0));
+            this.uptimeEl = uptimeEl;
+            return this.card(_("Uptime"), uptimeEl);
+        })(), '"', (()=>{
+            const trafficInEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "traffic-in-value"
+            }, formatBytes(status.total_bytes_in || 0));
+            this.trafficInEl = trafficInEl;
+            return this.card(_("Traffic In"), trafficInEl);
+        })(), '"', (()=>{
+            const trafficOutEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "traffic-out-value"
+            }, formatBytes(status.total_bytes_out || 0));
+            this.trafficOutEl = trafficOutEl;
+            return this.card(_("Traffic Out"), trafficOutEl);
+        })(), '"', hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
             id: "project-health-value"
         }, /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600; color: ".concat(runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545", ";")
         }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, _("projects running")))), frpStatus && this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600; color: ".concat(this.getFrpStatusColor(frpStatus), ";"),
-            id: "frp-enabled-value"
-        }, this.getFrpStatusText(frpStatus)), frpStatus.frp_version && /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
-            id: "frp-version-value"
-        }, frpStatus.frp_version), frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
-        }, frpStatus.client_count, " ", _("client(s)")))), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && this.card(_("FRP Error"), /*#__PURE__*/ createJsxElement("div", {
-            style: "cursor: help;",
-            title: frpStatus.last_error,
-            id: "frp-error-value"
-        }, /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
-        }, this.truncateError(frpStatus.last_error, 50))))), events && events.length > 0 && this.renderActivityLog(events));
+        }, _("projects running")))), frpStatus && (()=>{
+            const frpEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600; color: ".concat(this.getFrpStatusColor(frpStatus), ";"),
+                id: "frp-enabled-value"
+            }, this.getFrpStatusText(frpStatus));
+            this.frpEnabledEl = frpEnabledEl;
+            const frpVersionEl = frpStatus.frp_version ? /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                id: "frp-version-value"
+            }, frpStatus.frp_version) : null;
+            if (frpVersionEl) this.frpVersionEl = frpVersionEl;
+            return this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, frpEnabledEl, frpVersionEl, frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
+            }, frpStatus.client_count, " ", _("client(s)"))));
+        })(), '"', (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && (()=>{
+            const frpErrorEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "cursor: help;",
+                title: frpStatus.last_error,
+                id: "frp-error-value"
+            }, /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
+            }, this.truncateError(frpStatus.last_error, 50)));
+            this.frpErrorEl = frpErrorEl;
+            return this.card(_("FRP Error"), frpErrorEl);
+        })(), '"'), events && events.length > 0 && this.renderActivityLog(events));
     }
     getFrpStatusColor(frpStatus) {
         if (!frpStatus.frp_enabled) return "#6c757d";
@@ -1927,10 +2306,14 @@ class StatusPanel {
             style: "margin-top: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;"
         }, /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;"
-        }, _("Recent Activity")), /*#__PURE__*/ createJsxElement("div", {
-            style: "max-height: 150px; overflow-y: auto;",
-            id: "activity-log-container"
-        }, recentEvents.map((event)=>this.renderEventRow(event))));
+        }, _("Recent Activity")), (()=>{
+            const activityLogContainer = /*#__PURE__*/ createJsxElement("div", {
+                style: "max-height: 150px; overflow-y: auto;",
+                id: "activity-log-container"
+            }, recentEvents.map((event)=>this.renderEventRow(event)));
+            this.activityLogContainer = activityLogContainer;
+            return activityLogContainer;
+        })());
     }
     renderEventRow(event) {
         const eventColors = {
@@ -1977,13 +2360,26 @@ class StatusPanel {
             style: "font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;"
         }, label), valueEl);
     }
+    constructor(){
+        _define_property(this, "statusValueEl", void 0);
+        _define_property(this, "totalProjectsEl", void 0);
+        _define_property(this, "activePortsEl", void 0);
+        _define_property(this, "uptimeEl", void 0);
+        _define_property(this, "trafficInEl", void 0);
+        _define_property(this, "trafficOutEl", void 0);
+        _define_property(this, "projectHealthEl", void 0);
+        _define_property(this, "frpEnabledEl", void 0);
+        _define_property(this, "frpVersionEl", void 0);
+        _define_property(this, "frpErrorEl", void 0);
+        _define_property(this, "activityLogContainer", void 0);
+    }
 }
 
 ;// CONCATENATED MODULE: ./modules/header.tsx
 
 const header_form = L.form;
 
-/* export default */ function header(_m, s, client, tab_id) {
+/* export default */ function modules_header(_m, s, client, tab_id) {
     let o;
     o = s.taboption(tab_id, header_form.Flag, "enabled", _("Enable PortWeaver"));
     o.default = "1";
@@ -1992,6 +2388,7 @@ const header_form = L.form;
     o.rawhtml = true;
     o.cfgvalue = ()=>{
         const panel = new StatusPanel();
+        client.statusPanel = panel;
         return panel.render(client.globalStatus, client.frpStatus, client.projectStatuses, client.events);
     };
     const runtimeToggle = async (section_id)=>{
@@ -2035,14 +2432,15 @@ const LOG_FILE = "/tmp/portweaver.log";
     o = s.taboption(tab_id, logs_form.DummyValue, "_logs_viewer");
     o.rawhtml = true;
     let pollInterval = null;
+    let logContainer = null;
     const updateLogs = ()=>{
-        const container = document.getElementById("portweaver-log-container");
-        if (!container) return;
+        if (!logContainer) return;
         fs.read_direct(LOG_FILE, "text").then((res)=>{
-            container.textContent = res.trim() || _("Log is empty.");
+            if (logContainer) logContainer.textContent = res.trim() || _("Log is empty.");
         }).catch((err)=>{
-            if (err.toString().includes("NotFoundError")) container.textContent = _("Log file does not exist.");
-            else container.textContent = _("Error reading log: %s").format(err.toString());
+            if (!logContainer) return;
+            if (err.toString().includes("NotFoundError")) logContainer.textContent = _("Log file does not exist.");
+            else logContainer.textContent = _("Error reading log: %s").format(err.toString());
         });
     };
     const clearLogs = async ()=>{
@@ -2071,6 +2469,13 @@ const LOG_FILE = "/tmp/portweaver.log";
         if (pollInterval) clearInterval(pollInterval);
         pollInterval = setInterval(updateLogs, 3000);
         setTimeout(updateLogs, 100);
+        const preEl = E("pre", {
+            id: "portweaver-log-container",
+            style: "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;"
+        }, [
+            _("Loading logs...")
+        ]);
+        logContainer = preEl;
         return E("div", {
             class: "cbi-section"
         }, [
@@ -2099,12 +2504,7 @@ const LOG_FILE = "/tmp/portweaver.log";
                     style: "color: #666; margin-left: auto;"
                 }, _("Auto-refresh every 3 seconds"))
             ]),
-            E("pre", {
-                id: "portweaver-log-container",
-                style: "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;"
-            }, [
-                _("Loading logs...")
-            ])
+            preEl
         ]);
     };
 }
@@ -2652,7 +3052,7 @@ class main extends L.view {
             data[4],
             data[5]
         ]);
-        header(m, s, client, "settings");
+        modules_header(m, s, client, "settings");
         config(m, s, client, "projects");
         ddns(m, s, "ddns");
         logs(m, s, "logs");

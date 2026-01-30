@@ -11,12 +11,16 @@ import {
   getErrorMessage,
 } from "../utils/formatters";
 import { createRpcClient } from "../utils/rpc-client";
+import type { StatusPanel } from "../components/StatusPanel";
 export const rpcClient = createRpcClient(L.rpc);
 export class Client {
   globalStatus: PortWeaverStatus;
   projectStatuses: ProjectStatus[];
   frpStatus: FrpStatus;
   events: ActivityEvent[];
+  // References to UI elements provided by StatusPanel and config
+  statusPanel?: StatusPanel;
+  projectContainers: Record<string, HTMLElement> = {};
   constructor(
     data: [
       PortWeaverStatus,
@@ -30,10 +34,6 @@ export class Client {
     this.frpStatus = data[2] || { frp_enabled: false };
     this.events = data[3] || [];
     L.Poll.add(async () => {
-      const updateText = (id: string, value: any) => {
-        const elem = document.getElementById(id);
-        if (elem) elem.textContent = String(value);
-      };
 
       try {
         const results = await Promise.all([
@@ -47,47 +47,33 @@ export class Client {
         this.frpStatus = results[2] || { frp_enabled: false };
         this.events = results[3]?.events || [];
 
-        const statusElem = document.getElementById(
-          "status-value",
-        ) as HTMLElement | null;
         const statusColors: Record<string, string> = {
           running: "green",
           stopped: "red",
           degraded: "orange",
         };
-        if (statusElem) {
-          statusElem.textContent = this.globalStatus.status || "-";
-          (statusElem.style as any).color =
+        if (this.statusPanel?.statusValueEl) {
+          this.statusPanel.statusValueEl.textContent = this.globalStatus.status || "-";
+          (this.statusPanel.statusValueEl.style as any).color =
             statusColors[this.globalStatus.status || ""] || "gray";
         }
 
-        updateText(
-          "total-projects-value",
-          this.globalStatus.total_projects || 0,
-        );
-        updateText("active-ports-value", this.globalStatus.active_ports || 0);
-        updateText("uptime-value", formatUptime(this.globalStatus.uptime || 0));
-        updateText(
-          "traffic-in-value",
-          formatBytes(this.globalStatus.total_bytes_in || 0),
-        );
-        updateText(
-          "traffic-out-value",
-          formatBytes(this.globalStatus.total_bytes_out || 0),
-        );
+        if (this.statusPanel?.totalProjectsEl) this.statusPanel.totalProjectsEl.textContent = String(this.globalStatus.total_projects || 0);
+        if (this.statusPanel?.activePortsEl) this.statusPanel.activePortsEl.textContent = String(this.globalStatus.active_ports || 0);
+        if (this.statusPanel?.uptimeEl) this.statusPanel.uptimeEl.textContent = formatUptime(this.globalStatus.uptime || 0);
+        if (this.statusPanel?.trafficInEl) this.statusPanel.trafficInEl.textContent = formatBytes(this.globalStatus.total_bytes_in || 0);
+        if (this.statusPanel?.trafficOutEl) this.statusPanel.trafficOutEl.textContent = formatBytes(this.globalStatus.total_bytes_out || 0);
 
-        const frpEnabledElem = document.getElementById("frp-enabled-value");
-        if (frpEnabledElem) {
-          frpEnabledElem.textContent = this.frpStatus.frp_enabled
+        if (this.statusPanel?.frpEnabledEl) {
+          this.statusPanel.frpEnabledEl.textContent = this.frpStatus.frp_enabled
             ? _("Enabled")
             : _("Disabled");
-          frpEnabledElem.style.color = this.frpStatus.frp_enabled
+          (this.statusPanel.frpEnabledEl.style as any).color = this.frpStatus.frp_enabled
             ? "#28a745"
             : "#6c757d";
         }
-        const frpVersionElem = document.getElementById("frp-version-value");
-        if (frpVersionElem && this.frpStatus.frp_version) {
-          frpVersionElem.textContent = this.frpStatus.frp_version;
+        if (this.statusPanel?.frpVersionEl && this.frpStatus.frp_version) {
+          this.statusPanel.frpVersionEl.textContent = this.frpStatus.frp_version;
         }
 
         this.updateProjectHealthIndicator();
@@ -102,21 +88,21 @@ export class Client {
               continue;
             }
             const status = this.getProjectStatus(section_id);
-            const section = document.getElementById(
-              `project-status-${section_id}`,
-            );
+            const section = this.projectContainers[section_id];
             if (!section) continue;
             const newStatusElements = this.renderStatusElements(
               status,
               section_id,
             );
+            const newContainer = <div id={`project-status-${section_id}`}>
+              {newStatusElements}
+            </div> as HTMLElement;
             section.replaceWith(
               <span>
-                <div id={`project-status-${section_id}`}>
-                  {newStatusElements}
-                </div>
+                {newContainer}
               </span>,
             );
+            this.projectContainers[section_id] = newContainer;
           }
         })();
       } catch (err) {
@@ -240,7 +226,7 @@ export class Client {
     const runningProjects = enabledProjects.filter(
       (p) => p.status === "running",
     );
-    const healthElem = document.getElementById("project-health-value");
+    const healthElem = this.statusPanel?.projectHealthEl;
     if (healthElem) {
       const healthColor =
         runningProjects.length === enabledProjects.length
@@ -265,7 +251,7 @@ export class Client {
   }
 
   private updateFrpErrorDisplay(): void {
-    const errorElem = document.getElementById("frp-error-value");
+    const errorElem = this.statusPanel?.frpErrorEl;
     if (errorElem && this.frpStatus.last_error) {
       const truncated =
         this.frpStatus.last_error.length > 50
@@ -282,7 +268,7 @@ export class Client {
   }
 
   private updateActivityLog(): void {
-    const logContainer = document.getElementById("activity-log-container");
+    const logContainer = this.statusPanel?.activityLogContainer;
     if (logContainer && this.events && this.events.length > 0) {
       const recentEvents = this.events.slice(-5).reverse();
       logContainer.innerHTML = "";

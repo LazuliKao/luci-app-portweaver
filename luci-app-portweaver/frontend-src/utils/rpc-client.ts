@@ -5,6 +5,7 @@ import type {
   EventsResponse,
   DdnsStatus,
   DdnsInfo,
+  FrpProxyStats,
 } from "../types/portweaver";
 
 export function createRpcClient(rpc: any) {
@@ -49,6 +50,13 @@ export function createRpcClient(rpc: any) {
     expect: {},
   }) as (id: string) => Promise<any>;
 
+  const getFrpProxyStats = rpc.declare({
+    object: "portweaver",
+    method: "get_frp_proxy_stats",
+    params: ["id"],
+    expect: {},
+  }) as (id: string) => Promise<FrpClientStats>;
+
   const getEvents = rpc.declare({
     object: "portweaver",
     method: "get_events",
@@ -81,6 +89,7 @@ export function createRpcClient(rpc: any) {
     setEnabled,
     getFrpStatus,
     getFrpInfo,
+    getFrpProxyStats,
     clearFrpLogs,
     getEvents,
     getDdnsStatus,

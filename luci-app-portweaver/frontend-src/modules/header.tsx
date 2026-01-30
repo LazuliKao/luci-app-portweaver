@@ -23,6 +23,7 @@ export default function (
   o.rawhtml = true;
   o.cfgvalue = () => {
     const panel = new StatusPanel();
+    client.statusPanel = panel;
     return panel.render(
       client.globalStatus,
       client.frpStatus,

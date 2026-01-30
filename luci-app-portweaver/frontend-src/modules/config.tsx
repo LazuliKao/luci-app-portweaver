@@ -33,11 +33,20 @@ export default function (
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
     const status = client.getProjectStatus(section_id);
-    return (
+    const container = (
       <div id={`project-status-${section_id}`}>
         {client.renderStatusElements(status, section_id)}
+        {status?.enabled && status?.bytes_in !== undefined ? (
+          <div style={{ marginTop: "8px", fontSize: "12px", color: "#666" }}>
+            ↓ In: <strong>{(status.bytes_in / 1024).toFixed(1)}</strong> KB | ↑
+            Out: <strong>{(status.bytes_out / 1024).toFixed(1)}</strong> KB
+          </div>
+        ) : null}
       </div>
-    );
+    ) as HTMLElement;
+    client.projectContainers = client.projectContainers || {};
+    client.projectContainers[section_id] = container;
+    return container;
   };
 
   o = ss.option(form.Button, "_runtime_toggle", _("Toggle"));
