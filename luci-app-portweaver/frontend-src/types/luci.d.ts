@@ -24,7 +24,10 @@ declare namespace LuCI {
   interface FS {
     write(path: string, content: string): Promise<void>;
     read_direct(path: string, format?: "text" | "json" | "blob"): Promise<any>;
-    exec(command: string, args?: string[]): Promise<{ stdout: string; stderr: string }>;
+    exec(
+      command: string,
+      args?: string[],
+    ): Promise<{ stdout: string; stderr: string }>;
   }
   interface Form {
     Value: typeof LuCI.form.CBIValue;

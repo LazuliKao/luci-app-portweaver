@@ -136,6 +136,7 @@ export class LogViewerCore {
     this.wrapText = !this.wrapText;
     if (this.logContainer) {
       this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
+      this.logContainer.style.overflowX = this.wrapText ? "auto" : "scroll";
     }
     if (this.wrapButton) {
       this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
@@ -252,7 +253,7 @@ export class LogViewerCore {
     this.logContainer = (
       <div
         class="cbi-value-field"
-        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 60vh;"
+        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px;"
       >
         {this.logs.length === 0 ? "No logs available" : null}
       </div>
@@ -344,7 +345,7 @@ export class LogViewerCore {
     const content = (
       <div
         class="log-viewer-core"
-        style="width: 100%; max-height: 85vh; min-width: 600px;"
+        style="width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
       >
         {this.props.showHeader ? this.header : null}
         {this.searchBar}
@@ -488,14 +489,15 @@ export class LogViewerCore {
             this.updateDisplay();
           };
 
-          const lineNum = document.createElement("span");
-          lineNum.style.cssText = `color: ${themeColors.lineNumberColor}; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;`;
-          lineNum.textContent = `${index + 1}`;
+          const lineNum = (
+            <span
+              style={`color: ${themeColors.lineNumberColor}; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;`}
+            >
+              {index + 1}
+            </span>
+          );
 
-          const content = document.createElement("span");
-          content.style.cssText =
-            "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;";
-          content.innerHTML = this.highlightLog(log);
+          const content = <span>{this.highlightLog(log)}</span>;
 
           lineDiv.appendChild(lineNum);
           lineDiv.appendChild(content);

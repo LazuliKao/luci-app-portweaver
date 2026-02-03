@@ -2,7 +2,6 @@ import { LogViewerCore } from "../components/LogViewerCore";
 
 const form = L.form;
 const fs = L.fs;
-const _uci = L.uci;
 const ui = L.ui;
 
 const LOG_FILE = "/tmp/portweaver.log";
@@ -121,6 +120,10 @@ export default function (
         footer.appendChild(restartButton);
       }
     }
-    return <div class="cbi-section">{coreElement}</div>;
+    return (
+      <div style="height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;">
+        {coreElement}
+      </div>
+    );
   };
 }

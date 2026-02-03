@@ -597,7 +597,10 @@ class LogViewerCore {
     }
     toggleWrap() {
         this.wrapText = !this.wrapText;
-        if (this.logContainer) this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
+        if (this.logContainer) {
+            this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
+            this.logContainer.style.overflowX = this.wrapText ? "auto" : "scroll";
+        }
         if (this.wrapButton) this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
     }
     render() {
@@ -657,7 +660,7 @@ class LogViewerCore {
         }, "WRAP: ON");
         this.logContainer = /*#__PURE__*/ createJsxElement("div", {
             class: "cbi-value-field",
-            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 60vh;"
+            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px;"
         }, this.logs.length === 0 ? "No logs available" : null);
         const copyButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -699,7 +702,7 @@ class LogViewerCore {
         }, "Status: ", this.statusSpan, this.errorSpan)));
         const content = /*#__PURE__*/ createJsxElement("div", {
             class: "log-viewer-core",
-            style: "width: 100%; max-height: 85vh; min-width: 600px;"
+            style: "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
         }, this.props.showHeader ? this.header : null, this.searchBar, this.logContainer, this.footer);
         return content;
     }
@@ -799,12 +802,10 @@ class LogViewerCore {
                     }
                     this.updateDisplay();
                 };
-                const lineNum = document.createElement("span");
-                lineNum.style.cssText = "color: ".concat(themeColors.lineNumberColor, "; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;");
-                lineNum.textContent = "".concat(index + 1);
-                const content = document.createElement("span");
-                content.style.cssText = "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;";
-                content.innerHTML = this.highlightLog(log);
+                const lineNum = /*#__PURE__*/ createJsxElement("span", {
+                    style: "color: ".concat(themeColors.lineNumberColor, "; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;")
+                }, index + 1);
+                const content = /*#__PURE__*/ createJsxElement("span", null, this.highlightLog(log));
                 lineDiv.appendChild(lineNum);
                 lineDiv.appendChild(content);
                 (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(lineDiv);
@@ -2571,7 +2572,6 @@ const header_form = L.form;
 
 const logs_form = L.form;
 const fs = L.fs;
-L.uci;
 const ui = L.ui;
 const LOG_FILE = "/tmp/portweaver.log";
 let logViewerCore = null;
@@ -2650,7 +2650,7 @@ let logViewerCore = null;
             else footer.appendChild(restartButton);
         }
         return /*#__PURE__*/ createJsxElement("div", {
-            class: "cbi-section"
+            style: "height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;"
         }, coreElement);
     };
 }
