@@ -792,8 +792,9 @@ class LogViewer {
                 var _this_logContainer;
                 const isSelected = this.selectedLines.has(index);
                 const lineDiv = document.createElement("div");
-                lineDiv.style.cssText = "cursor: pointer; padding: 0.25em 0.5em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;");
+                lineDiv.style.cssText = "cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.25em 0.5em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;");
                 lineDiv.onclick = (e)=>{
+                    e.preventDefault();
                     if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
                     else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
                     else {
