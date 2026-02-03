@@ -180,7 +180,7 @@ export class LogViewer {
         type="text"
         class="cbi-input-text"
         placeholder="Search logs..."
-        style="flex: 1;"
+        style="flex: 1; min-width: 150px; max-width: 400px;"
         oninput={(e: Event) => {
           const target = e.target as HTMLInputElement;
           this.searchFilter = target.value;
@@ -188,7 +188,7 @@ export class LogViewer {
           this.updateDisplay();
         }}
       />
-    );
+    ) as HTMLInputElement;
 
     const refreshButton = (
       <button
@@ -250,7 +250,7 @@ export class LogViewer {
     this.logContainer = (
       <div
         class="cbi-value-field"
-        style="flex: 1; overflow-y: auto; padding: 1em; font-family: monospace; font-size: 0.85em; line-height: 1.5; white-space: pre-wrap;"
+        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 40vh;"
       >
         {this.logs.length === 0 ? "No logs available" : null}
       </div>
@@ -322,7 +322,7 @@ export class LogViewer {
     const footer = (
       <div
         class="button-row"
-        style="padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end;"
+        style="padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
       >
         {copyButton}
         {copySelectedButton}
@@ -354,7 +354,7 @@ export class LogViewer {
     );
 
     const searchBar = (
-      <div style="padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center;">
+      <div style="padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;">
         {this.searchInput}
         {refreshButton}
         {this.pauseButton}
@@ -368,7 +368,7 @@ export class LogViewer {
         class="modal cbi-modal cbi-section-node"
         role="dialog"
         aria-modal="true"
-        style="width: 90%; max-width: 900px; max-height: 85vh;"
+        style="width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
       >
         {header}
         {searchBar}
@@ -501,7 +501,7 @@ export class LogViewer {
           const isSelected = this.selectedLines.has(index);
 
           const lineDiv = document.createElement("div");
-          lineDiv.style.cssText = `cursor: pointer; padding: 0.25em 0.5em; ${isSelected ? "background: #e3f2fd;" : ""} font-family: monospace; font-size: 0.85em; line-height: 1.4;`;
+          lineDiv.style.cssText = `cursor: pointer; padding: 0.25em 0.5em; ${isSelected ? "background: #e3f2fd;" : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`;
           lineDiv.onclick = (e: MouseEvent) => {
             if (e.ctrlKey || e.metaKey) {
               this.toggleLineSelection(index);
@@ -516,16 +516,18 @@ export class LogViewer {
 
           const lineNum = document.createElement("span");
           lineNum.style.cssText =
-            "color: #999; margin-right: 1em; min-width: 2em; display: inline-block; text-align: right;";
+            "color: #999; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;";
           lineNum.textContent = `${index + 1}`;
 
           const content = document.createElement("span");
+          content.style.cssText =
+            "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;";
           content.innerHTML = this.highlightLog(log);
 
           lineDiv.appendChild(lineNum);
           lineDiv.appendChild(content);
 
-          this.logContainer.appendChild(lineDiv);
+          this.logContainer?.appendChild(lineDiv);
         });
       }
 

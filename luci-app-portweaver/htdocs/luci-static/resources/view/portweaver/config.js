@@ -578,7 +578,7 @@ class LogViewer {
             type: "text",
             class: "cbi-input-text",
             placeholder: "Search logs...",
-            style: "flex: 1;",
+            style: "flex: 1; min-width: 150px; max-width: 400px;",
             oninput: (e)=>{
                 const target = e.target;
                 this.searchFilter = target.value;
@@ -616,7 +616,7 @@ class LogViewer {
         }, "WRAP: ON");
         this.logContainer = /*#__PURE__*/ createJsxElement("div", {
             class: "cbi-value-field",
-            style: "flex: 1; overflow-y: auto; padding: 1em; font-family: monospace; font-size: 0.85em; line-height: 1.5; white-space: pre-wrap;"
+            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 40vh;"
         }, this.logs.length === 0 ? "No logs available" : null);
         const copyButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -655,7 +655,7 @@ class LogViewer {
         }, "CLOSE");
         const footer = /*#__PURE__*/ createJsxElement("div", {
             class: "button-row",
-            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end;"
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
         }, copyButton, copySelectedButton, exportButton, clearButton, closeButton);
         const header = /*#__PURE__*/ createJsxElement("div", {
             style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
@@ -669,13 +669,13 @@ class LogViewer {
             style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
         }, "\xd7"));
         const searchBar = /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center;"
+            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;"
         }, this.searchInput, refreshButton, this.pauseButton, this.followButton, this.wrapButton);
         const content = /*#__PURE__*/ createJsxElement("div", {
             class: "modal cbi-modal cbi-section-node",
             role: "dialog",
             "aria-modal": "true",
-            style: "width: 90%; max-width: 900px; max-height: 85vh;"
+            style: "width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
         }, header, searchBar, this.logContainer, footer);
         this.modal = /*#__PURE__*/ createJsxElement("div", {
             style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
@@ -763,9 +763,10 @@ class LogViewer {
                 noLogs.textContent = this.searchFilter ? "No logs match your search" : "No logs available";
                 this.logContainer.appendChild(noLogs);
             } else this.filteredLogs.forEach((log, index)=>{
+                var _this_logContainer;
                 const isSelected = this.selectedLines.has(index);
                 const lineDiv = document.createElement("div");
-                lineDiv.style.cssText = "cursor: pointer; padding: 0.25em 0.5em; ".concat(isSelected ? "background: #e3f2fd;" : "", " font-family: monospace; font-size: 0.85em; line-height: 1.4;");
+                lineDiv.style.cssText = "cursor: pointer; padding: 0.25em 0.5em; ".concat(isSelected ? "background: #e3f2fd;" : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;");
                 lineDiv.onclick = (e)=>{
                     if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
                     else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
@@ -776,13 +777,14 @@ class LogViewer {
                     this.updateDisplay();
                 };
                 const lineNum = document.createElement("span");
-                lineNum.style.cssText = "color: #999; margin-right: 1em; min-width: 2em; display: inline-block; text-align: right;";
+                lineNum.style.cssText = "color: #999; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;";
                 lineNum.textContent = "".concat(index + 1);
                 const content = document.createElement("span");
+                content.style.cssText = "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;";
                 content.innerHTML = this.highlightLog(log);
                 lineDiv.appendChild(lineNum);
                 lineDiv.appendChild(content);
-                this.logContainer.appendChild(lineDiv);
+                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(lineDiv);
             });
             if (this.isFollowing && wasAtBottom) this.logContainer.scrollTop = this.logContainer.scrollHeight;
         }
