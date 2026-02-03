@@ -114,7 +114,7 @@ export class Client {
             const newContainer = (
               <div id={`project-status-${section_id}`}>{newStatusElements}</div>
             ) as HTMLElement;
-            section.replaceWith(<span>{newContainer}</span>);
+            section.replaceWith(newContainer);
             this.projectContainers[section_id] = newContainer;
           }
         })();

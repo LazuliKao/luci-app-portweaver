@@ -1,3 +1,5 @@
+import { getThemeColors } from "../utils/theme-utils";
+
 export interface LogInfo {
   status: string;
   last_error: string;
@@ -275,6 +277,8 @@ export class LogViewer {
             const indices = Array.from(this.selectedLines).sort(
               (a, b) => a - b,
             );
+            console.log(navigator.clipboard);
+
             const text = indices.map((i) => this.filteredLogs[i]).join("\n");
             navigator.clipboard
               .writeText(text)
@@ -452,37 +456,9 @@ export class LogViewer {
       });
   }
 
-  private getThemeColors(): { isDark: boolean; selectionBg: string; lineNumberColor: string } {
-    try {
-      const bodyBg = getComputedStyle(document.body).backgroundColor;
-      const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-      if (match) {
-        const r = parseInt(match[1], 10);
-        const g = parseInt(match[2], 10);
-        const b = parseInt(match[3], 10);
-        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-        const isDark = luminance < 128;
-        
-        return {
-          isDark,
-          selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
-          lineNumberColor: isDark ? "#aaa" : "#999"
-        };
-      }
-    } catch (e) {
-      console.warn("Failed to detect theme, using light mode defaults");
-    }
-    
-    return {
-      isDark: false,
-      selectionBg: "#e3f2fd",
-      lineNumberColor: "#999"
-    };
-  }
-
   private updateDisplay(): void {
-    const themeColors = this.getThemeColors();
-    
+    const themeColors = getThemeColors();
+
     if (this.statusSpan) {
       this.statusSpan.textContent = this.status;
       const backgroundColor =
@@ -545,8 +521,7 @@ export class LogViewer {
           };
 
           const lineNum = document.createElement("span");
-          lineNum.style.cssText =
-            `color: ${themeColors.lineNumberColor}; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;`;
+          lineNum.style.cssText = `color: ${themeColors.lineNumberColor}; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;`;
           lineNum.textContent = `${index + 1}`;
 
           const content = document.createElement("span");
@@ -568,16 +543,58 @@ export class LogViewer {
   }
 
   private copyToClipboard(): void {
-    const text = this.filteredLogs.join("\n");
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        alert("Logs copied to clipboard");
-      })
-      .catch((err: any) => {
+    let text = "";
+    if (this.selectedLines.size > 0) {
+      const indices = Array.from(this.selectedLines).sort((a, b) => a - b);
+      text = indices.map((i) => this.filteredLogs[i]).join("\n");
+    } else {
+      text = this.filteredLogs.join("\n");
+    }
+
+    let useModernClipboard = false;
+    try {
+      if (
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === "function"
+      ) {
+        navigator.clipboard.writeText("");
+        useModernClipboard = true;
+      }
+    } catch (_e) {
+      useModernClipboard = false;
+    }
+
+    if (useModernClipboard) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          alert("Logs copied to clipboard");
+        })
+        .catch((err: any) => {
+          console.error("Failed to copy logs:", err);
+          alert("Failed to copy logs");
+        });
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        const success = document.execCommand("copy");
+        if (success) {
+          alert("Logs copied to clipboard");
+        } else {
+          throw new Error("execCommand failed");
+        }
+      } catch (err) {
         console.error("Failed to copy logs:", err);
-        alert("Failed to copy logs");
-      });
+        alert("Failed to copy logs - please select and copy manually");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
   }
 
   private clearLogs(): void {

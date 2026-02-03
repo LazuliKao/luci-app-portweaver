@@ -464,7 +464,7 @@ class Client {
                         const newContainer = /*#__PURE__*/ createJsxElement("div", {
                             id: "project-status-".concat(section_id)
                         }, newStatusElements);
-                        section.replaceWith(/*#__PURE__*/ createJsxElement("span", null, newContainer));
+                        section.replaceWith(newContainer);
                         this.projectContainers[section_id] = newContainer;
                     }
                 })();
@@ -475,7 +475,45 @@ class Client {
     }
 }
 
+;// CONCATENATED MODULE: ./utils/theme-utils.ts
+/**
+ * Detects the current theme (dark/light mode) based on body background color
+ * and returns appropriate color values for UI elements.
+ *
+ * This function analyzes the computed background color of the document body
+ * to determine if the current theme is dark or light, then returns suitable
+ * colors for selection backgrounds and line numbers that work well with
+ * the detected theme.
+ *
+ * @returns {ThemeColors} Object containing theme information and color values
+ */ function getThemeColors() {
+    try {
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+            const r = parseInt(match[1], 10);
+            const g = parseInt(match[2], 10);
+            const b = parseInt(match[3], 10);
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            const isDark = luminance < 128;
+            return {
+                isDark,
+                selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
+                lineNumberColor: isDark ? "#aaa" : "#999"
+            };
+        }
+    } catch (_e) {
+        console.warn("Failed to detect theme, using light mode defaults");
+    }
+    return {
+        isDark: false,
+        selectionBg: "#e3f2fd",
+        lineNumberColor: "#999"
+    };
+}
+
 ;// CONCATENATED MODULE: ./components/LogViewer.tsx
+
 
 const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
 const REGEX_PORT = /:\d{2,5}\b/g;
@@ -629,6 +667,7 @@ class LogViewer {
             onclick: ()=>{
                 if (this.selectedLines.size > 0) {
                     const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
+                    console.log(navigator.clipboard);
                     const text = indices.map((i)=>this.filteredLogs[i]).join("\n");
                     navigator.clipboard.writeText(text).then(()=>alert("Selected logs copied to clipboard")).catch((err)=>{
                         console.error("Failed to copy logs:", err);
@@ -735,33 +774,8 @@ class LogViewer {
             this.updateDisplay();
         });
     }
-    getThemeColors() {
-        try {
-            const bodyBg = getComputedStyle(document.body).backgroundColor;
-            const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-            if (match) {
-                const r = parseInt(match[1], 10);
-                const g = parseInt(match[2], 10);
-                const b = parseInt(match[3], 10);
-                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-                const isDark = luminance < 128;
-                return {
-                    isDark,
-                    selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
-                    lineNumberColor: isDark ? "#aaa" : "#999"
-                };
-            }
-        } catch (e) {
-            console.warn("Failed to detect theme, using light mode defaults");
-        }
-        return {
-            isDark: false,
-            selectionBg: "#e3f2fd",
-            lineNumberColor: "#999"
-        };
-    }
     updateDisplay() {
-        const themeColors = this.getThemeColors();
+        const themeColors = getThemeColors();
         if (this.statusSpan) {
             this.statusSpan.textContent = this.status;
             const backgroundColor = {
@@ -817,13 +831,44 @@ class LogViewer {
         }
     }
     copyToClipboard() {
-        const text = this.filteredLogs.join("\n");
-        navigator.clipboard.writeText(text).then(()=>{
+        let text = "";
+        if (this.selectedLines.size > 0) {
+            const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
+            text = indices.map((i)=>this.filteredLogs[i]).join("\n");
+        } else text = this.filteredLogs.join("\n");
+        let useModernClipboard = false;
+        try {
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+                navigator.clipboard.writeText("");
+                useModernClipboard = true;
+            }
+        } catch (_e) {
+            useModernClipboard = false;
+        }
+        if (useModernClipboard) navigator.clipboard.writeText(text).then(()=>{
             alert("Logs copied to clipboard");
         }).catch((err)=>{
             console.error("Failed to copy logs:", err);
             alert("Failed to copy logs");
         });
+        else {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                const success = document.execCommand("copy");
+                if (success) alert("Logs copied to clipboard");
+                else throw new Error("execCommand failed");
+            } catch (err) {
+                console.error("Failed to copy logs:", err);
+                alert("Failed to copy logs - please select and copy manually");
+            } finally{
+                document.body.removeChild(textarea);
+            }
+        }
     }
     clearLogs() {
         if (confirm("Are you sure you want to clear the logs?")) this.props.clearer(this.props.name).then(()=>{
