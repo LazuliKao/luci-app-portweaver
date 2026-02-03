@@ -21,6 +21,11 @@ declare namespace LuCI {
     handleSaveApply?(): Promise<void>;
     handleReset?(): Promise<void>;
   }
+  interface FS {
+    write(path: string, content: string): Promise<void>;
+    read_direct(path: string, format?: "text" | "json" | "blob"): Promise<any>;
+    exec(command: string, args?: string[]): Promise<{ stdout: string; stderr: string }>;
+  }
   interface Form {
     Value: typeof LuCI.form.CBIValue;
     TextValue: typeof LuCI.form.CBIValue;
@@ -77,6 +82,7 @@ declare const L: {
     extend<TN>(proto: Partial<View<TN>>): View<TN>;
   };
   form: LuCI.Form;
+  fs: LuCI.FS;
   ui: LuCI.UI;
   rpc: LuCI.RPC;
   uci: LuCI.UCI;

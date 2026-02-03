@@ -1,9 +1,13 @@
+import { LogViewerCore } from "../components/LogViewerCore";
+
 const form = L.form;
 const fs = L.fs;
 const _uci = L.uci;
 const ui = L.ui;
 
 const LOG_FILE = "/tmp/portweaver.log";
+
+let logViewerCore: LogViewerCore | null = null;
 
 export default function (
   _m: LuCI.form.CBIMap,
@@ -20,40 +24,47 @@ export default function (
   o = s.taboption(tab_id, form.DummyValue, "_logs_viewer");
   o.rawhtml = true;
 
-  let pollInterval: NodeJS.Timeout | null = null;
-  let logContainer: HTMLElement | null = null;
-
-  const updateLogs = () => {
-    if (!logContainer) return;
-
-    fs.read_direct(LOG_FILE, "text")
-      .then((res: string) => {
-        if (logContainer)
-          logContainer.textContent = res.trim() || _("Log is empty.");
-      })
-      .catch((err: Error) => {
-        if (!logContainer) return;
-        if (err.toString().includes("NotFoundError")) {
-          logContainer.textContent = _("Log file does not exist.");
-        } else {
-          logContainer.textContent = _("Error reading log: %s").format(
-            err.toString(),
-          );
-        }
-      });
+  const fetcher = async (): Promise<{
+    status: string;
+    last_error: string;
+    logs: string[];
+  }> => {
+    try {
+      const content = await fs.read_direct(LOG_FILE, "text");
+      const lines = content.trim().split("\n").filter(Boolean);
+      return {
+        status: "running",
+        last_error: "",
+        logs: lines,
+      };
+    } catch (err: any) {
+      if (err.toString().includes("NotFoundError")) {
+        return {
+          status: "stopped",
+          last_error: _("Log file does not exist."),
+          logs: [],
+        };
+      } else {
+        return {
+          status: "error",
+          last_error: _("Error reading log: %s").format(err.toString()),
+          logs: [],
+        };
+      }
+    }
   };
 
-  const clearLogs = async () => {
+  const clearer = async (): Promise<void> => {
     if (!confirm(_("Are you sure you want to clear all logs?"))) {
-      return;
+      throw new Error("User cancelled");
     }
 
     try {
       await fs.write(LOG_FILE, "");
       ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
-      updateLogs();
-    } catch (_err) {
+    } catch (err) {
       ui.addNotification(null, E("p", _("Failed to clear logs")), "error");
+      throw err;
     }
   };
 
@@ -69,72 +80,47 @@ export default function (
         E("p", _("Service restarted successfully")),
         "info",
       );
-      setTimeout(updateLogs, 2000);
     } catch (_err) {
       ui.addNotification(null, E("p", _("Failed to restart service")), "error");
     }
   };
 
   o.render = () => {
-    if (pollInterval) {
-      clearInterval(pollInterval);
+    if (logViewerCore) {
+      logViewerCore.destroy();
     }
 
-    pollInterval = setInterval(updateLogs, 3000);
+    logViewerCore = new LogViewerCore({
+      name: "system",
+      title: _("System Logs"),
+      fetcher: () => fetcher(),
+      clearer: () => clearer(),
+      showHeader: false,
+    });
 
-    setTimeout(updateLogs, 100);
+    const coreElement = logViewerCore.render();
 
-    const preEl = E(
-      "pre",
-      {
-        id: "portweaver-log-container",
-        style:
-          "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;",
-      },
-      [_("Loading logs...")],
-    ) as HTMLElement;
-    logContainer = preEl;
+    logViewerCore.init();
 
-    return E("div", { class: "cbi-section" }, [
-      E(
-        "div",
-        {
-          style:
-            "display: flex; gap: 10px; margin-bottom: 10px; align-items: center;",
-        },
-        [
-          E(
-            "button",
-            {
-              class: "btn cbi-button cbi-button-action",
-              click: updateLogs,
-            },
-            [_("Refresh")],
-          ),
-          E(
-            "button",
-            {
-              class: "btn cbi-button cbi-button-remove",
-              click: clearLogs,
-            },
-            [_("Clear logs")],
-          ),
-          E(
-            "button",
-            {
-              class: "btn cbi-button cbi-button-apply",
-              click: restartService,
-            },
-            [_("Restart service")],
-          ),
-          E(
-            "small",
-            { style: "color: #666; margin-left: auto;" },
-            _("Auto-refresh every 3 seconds"),
-          ),
-        ],
-      ),
-      preEl,
-    ]);
+    const restartButton = (
+      <button
+        type="button"
+        class="cbi-button cbi-button-apply"
+        onclick={() => restartService()}
+      >
+        {_("Restart Service")}
+      </button>
+    );
+
+    const footer = coreElement.querySelector(".button-row");
+    if (footer) {
+      const clearButton = footer.querySelector("button:last-child");
+      if (clearButton) {
+        clearButton.parentNode?.insertBefore(restartButton, clearButton);
+      } else {
+        footer.appendChild(restartButton);
+      }
+    }
+    return <div class="cbi-section">{coreElement}</div>;
   };
 }

@@ -5,7 +5,6 @@ import type {
   EventsResponse,
   DdnsStatus,
   DdnsInfo,
-  FrpProxyStats,
 } from "../types/portweaver";
 
 export function createRpcClient(rpc: any) {

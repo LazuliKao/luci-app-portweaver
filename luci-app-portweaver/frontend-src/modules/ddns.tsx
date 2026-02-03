@@ -1,4 +1,4 @@
-import { LogViewer } from "../components/LogViewer";
+import { LogViewerDialog } from "../components/LogViewerDialog";
 import { rpcClient } from "./client";
 import type { DdnsStatus } from "../types/portweaver";
 
@@ -256,7 +256,7 @@ export default function (
 
     const nodeName = L.uci.get("portweaver", section_id, "name") as string;
     viewLogsBtn.onclick = () => {
-      const viewer = new LogViewer({
+      const viewer = new LogViewerDialog({
         name: nodeName,
         title: _("DDNS Logs - %s").format(nodeName),
         fetcher: (name) => rpcClient.getDdnsInfo(name),

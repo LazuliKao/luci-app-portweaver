@@ -1,6 +1,7 @@
-import { LogViewer } from "../components/LogViewer";
+import { LogViewerDialog } from "../components/LogViewerDialog";
 import { ProxyStatsViewer } from "../components/ProxyStatsViewer";
 import { rpcClient } from "./client";
+import { getThemeColors } from "../utils/theme-utils";
 const form = L.form;
 
 type FrpState =
@@ -10,13 +11,22 @@ type FrpState =
   | "stopped"
   | "unavailable";
 
-const STATUS_COLORS: Record<FrpState, string> = {
-  connected: "#4CAF50",
-  connecting: "#FFC107",
-  error: "#F44336",
-  stopped: "#9E9E9E",
-  unavailable: "#9E9E9E",
-};
+function getStatusColors(): Record<FrpState, string> {
+  const { isDark } = getThemeColors();
+  // Dark mode adjustments for better visibility
+  const connectedColor = isDark ? "#4CAF50" : "#4CAF50"; // Green works well in both
+  const connectingColor = isDark ? "#FFD700" : "#FFC107"; // Brighter gold for dark mode
+  const errorColor = isDark ? "#FF5252" : "#F44336"; // Brighter red for dark mode
+  const inactiveColor = isDark ? "#BDBDBD" : "#9E9E9E"; // Lighter gray for dark mode
+
+  return {
+    connected: connectedColor,
+    connecting: connectingColor,
+    error: errorColor,
+    stopped: inactiveColor,
+    unavailable: inactiveColor,
+  };
+}
 
 const STATUS_LABELS: Record<FrpState, string> = {
   connected: _("Connected"),
@@ -90,14 +100,8 @@ export default function (
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
     const info = nodeStatuses[section_id] || { status: "unavailable" };
-    const statusColor =
-      {
-        connected: "#4CAF50",
-        connecting: "#FFC107",
-        error: "#F44336",
-        stopped: "#9E9E9E",
-        unavailable: "#9E9E9E",
-      }[info.status] || "#9E9E9E";
+    const colors = getStatusColors();
+    const statusColor = colors[info.status] || colors.unavailable;
 
     const statusText =
       {
@@ -183,7 +187,7 @@ export default function (
             section_id,
             "name",
           ) as string;
-          const logViewer = new LogViewer({
+          const logViewer = new LogViewerDialog({
             name: nodeName,
             title: _("FRP Logs - %s").format(nodeName),
             fetcher: async () => await rpcClient.getFrpInfo(String(nodeName)),
@@ -254,8 +258,10 @@ export default function (
                 const indicator = container.childNodes[0] as HTMLElement;
                 const textSpan = container.childNodes[1] as HTMLElement;
 
-                const statusColor =
-                  STATUS_COLORS[newStatus] || STATUS_COLORS.unavailable;
+                // Get fresh theme colors at update time
+                const colors = getStatusColors();
+                const statusColor = colors[newStatus] || colors.unavailable;
+                indicator.style.backgroundColor = statusColor;
                 indicator.style.backgroundColor = statusColor;
 
                 const statusText = STATUS_LABELS[newStatus] || newStatus;

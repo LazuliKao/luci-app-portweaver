@@ -6,11 +6,12 @@ export interface LogInfo {
   logs: string[];
 }
 
-export interface LogViewerProps {
+export interface LogViewerCoreProps {
   name: string;
   title: string;
   fetcher: (name: string) => Promise<LogInfo>;
   clearer: (name: string) => Promise<void>;
+  showHeader?: boolean;
 }
 
 const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
@@ -20,9 +21,8 @@ const REGEX_SUCCESS = /\b(success|ok|done|complete)\b/gi;
 const REGEX_UUID =
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
-export class LogViewer {
-  private props: LogViewerProps;
-  private modal: HTMLElement | null = null;
+export class LogViewerCore {
+  private props: LogViewerCoreProps;
   private logContainer: HTMLElement | null = null;
   private statusSpan: HTMLElement | null = null;
   private errorSpan: HTMLElement | null = null;
@@ -34,7 +34,6 @@ export class LogViewer {
   private status: string = "unavailable";
   private logs: string[] = [];
   private lastError: string = "";
-  private isOpen: boolean = false;
   private pollInterval: number | null = null;
   private searchFilter: string = "";
   private filteredLogs: string[] = [];
@@ -43,8 +42,11 @@ export class LogViewer {
   private selectedLines: Set<number> = new Set();
   private wrapText: boolean = true;
 
-  constructor(props: LogViewerProps) {
-    this.props = props;
+  constructor(props: LogViewerCoreProps) {
+    this.props = {
+      ...props,
+      showHeader: props.showHeader ?? true,
+    };
   }
 
   private highlightLog(text: string): string {
@@ -118,14 +120,8 @@ export class LogViewer {
     }
   }
 
-  private exportSelected(): void {
-    let text: string;
-    if (this.selectedLines.size > 0) {
-      const indices = Array.from(this.selectedLines).sort((a, b) => a - b);
-      text = indices.map((i) => this.filteredLogs[i]).join("\n");
-    } else {
-      text = this.filteredLogs.join("\n");
-    }
+  private exportAll(): void {
+    const text = this.logs.join("\n");
 
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -145,6 +141,10 @@ export class LogViewer {
       this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
     }
   }
+
+  private searchBar: HTMLElement | null = null;
+  private footer: HTMLElement | null = null;
+  private header: HTMLElement | null = null;
 
   render(): HTMLElement {
     const statusColor =
@@ -252,7 +252,7 @@ export class LogViewer {
     this.logContainer = (
       <div
         class="cbi-value-field"
-        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 40vh;"
+        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 60vh;"
       >
         {this.logs.length === 0 ? "No logs available" : null}
       </div>
@@ -288,7 +288,7 @@ export class LogViewer {
       <button
         type="button"
         class="cbi-button cbi-button-positive"
-        onclick={() => this.exportSelected()}
+        onclick={() => this.exportAll()}
       >
         EXPORT
       </button>
@@ -305,13 +305,17 @@ export class LogViewer {
       </button>
     );
 
-    const closeButton = (
-      <button type="button" class="cbi-button" onclick={() => this.close()}>
-        CLOSE
-      </button>
+    this.searchBar = (
+      <div style="padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;">
+        {this.searchInput}
+        {refreshButton}
+        {this.pauseButton}
+        {this.followButton}
+        {this.wrapButton}
+      </div>
     );
 
-    const footer = (
+    this.footer = (
       <div
         class="button-row"
         style="padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
@@ -320,11 +324,10 @@ export class LogViewer {
         {copySelectedButton}
         {exportButton}
         {clearButton}
-        {closeButton}
       </div>
     );
 
-    const header = (
+    this.header = (
       <div style="padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
         <div>
           <h4 style="margin: 0; font-size: 1.2em; font-weight: 600;">
@@ -335,69 +338,43 @@ export class LogViewer {
             {this.errorSpan}
           </div>
         </div>
-        <button
-          type="button"
-          onclick={() => this.close()}
-          style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-        >
-          ×
-        </button>
-      </div>
-    );
-
-    const searchBar = (
-      <div style="padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;">
-        {this.searchInput}
-        {refreshButton}
-        {this.pauseButton}
-        {this.followButton}
-        {this.wrapButton}
       </div>
     );
 
     const content = (
       <div
-        class="modal cbi-modal cbi-section-node"
-        role="dialog"
-        aria-modal="true"
-        style="width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
+        class="log-viewer-core"
+        style="width: 100%; max-height: 85vh; min-width: 600px;"
       >
-        {header}
-        {searchBar}
+        {this.props.showHeader ? this.header : null}
+        {this.searchBar}
         {this.logContainer}
-        {footer}
+        {this.footer}
       </div>
     );
 
-    this.modal = (
-      <div
-        style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;"
-        onclick={(e: MouseEvent) => {
-          if (e.target === e.currentTarget) this.close();
-        }}
-      >
-        {content}
-      </div>
-    );
-
-    return this.modal;
+    return content;
   }
 
-  open(): void {
-    if (this.isOpen) return;
-    this.isOpen = true;
-    const node = this.render();
-    document.body.appendChild(node);
+  getSearchBar(): HTMLElement | null {
+    return this.searchBar;
+  }
+
+  getLogContainer(): HTMLElement | null {
+    return this.logContainer;
+  }
+
+  getFooter(): HTMLElement | null {
+    return this.footer;
+  }
+
+  init(): void {
     this.updateDisplay();
     this.startPolling();
   }
 
-  close(): void {
-    if (!this.isOpen) return;
-    this.isOpen = false;
+  destroy(): void {
     this.stopPolling();
-    this.modal?.parentElement?.removeChild(this.modal);
-    this.modal = null;
     this.logContainer = null;
     this.statusSpan = null;
     this.errorSpan = null;
@@ -405,6 +382,9 @@ export class LogViewer {
     this.pauseButton = null;
     this.followButton = null;
     this.wrapButton = null;
+    this.searchBar = null;
+    this.footer = null;
+    this.header = null;
   }
 
   private startPolling(): void {
@@ -413,7 +393,7 @@ export class LogViewer {
       clearInterval(this.pollInterval);
     }
     this.pollInterval = window.setInterval(() => {
-      if (this.isOpen && !this.isPaused) {
+      if (!this.isPaused) {
         this.fetchLogs();
       }
     }, 3000);
@@ -533,10 +513,12 @@ export class LogViewer {
   private copyToClipboard(): void {
     let text = "";
     if (this.selectedLines.size > 0) {
+      // Copy selected lines from filteredLogs (what user sees)
       const indices = Array.from(this.selectedLines).sort((a, b) => a - b);
       text = indices.map((i) => this.filteredLogs[i]).join("\n");
     } else {
-      text = this.filteredLogs.join("\n");
+      // Copy all original logs (not filtered)
+      text = this.logs.join("\n");
     }
 
     let useModernClipboard = false;

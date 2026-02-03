@@ -517,7 +517,9 @@ class Client {
     }
 }
 
-;// CONCATENATED MODULE: ./components/LogViewer.tsx
+;// CONCATENATED MODULE: ./components/LogViewerCore.tsx
+
+
 
 
 const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
@@ -525,7 +527,7 @@ const REGEX_PORT = /:\d{2,5}\b/g;
 const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
 const REGEX_SUCCESS = /\b(success|ok|done|complete)\b/gi;
 const REGEX_UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
-class LogViewer {
+class LogViewerCore {
     highlightLog(text) {
         let result = text;
         const matches = [];
@@ -579,12 +581,8 @@ class LogViewer {
         const max = Math.max(startIndex, endIndex);
         for(let i = min; i <= max; i++)this.selectedLines.add(i);
     }
-    exportSelected() {
-        let text;
-        if (this.selectedLines.size > 0) {
-            const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
-            text = indices.map((i)=>this.filteredLogs[i]).join("\n");
-        } else text = this.filteredLogs.join("\n");
+    exportAll() {
+        const text = this.logs.join("\n");
         const blob = new Blob([
             text
         ], {
@@ -659,7 +657,7 @@ class LogViewer {
         }, "WRAP: ON");
         this.logContainer = /*#__PURE__*/ createJsxElement("div", {
             class: "cbi-value-field",
-            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 40vh;"
+            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px; max-height: 60vh;"
         }, this.logs.length === 0 ? "No logs available" : null);
         const copyButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -677,7 +675,7 @@ class LogViewer {
         const exportButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
             class: "cbi-button cbi-button-positive",
-            onclick: ()=>this.exportSelected()
+            onclick: ()=>this.exportAll()
         }, "EXPORT");
         const clearButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -685,58 +683,41 @@ class LogViewer {
             onclick: ()=>this.clearLogs(),
             style: "background: #dc3545; color: white;"
         }, "CLEAR");
-        const closeButton = /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            class: "cbi-button",
-            onclick: ()=>this.close()
-        }, "CLOSE");
-        const footer = /*#__PURE__*/ createJsxElement("div", {
+        this.searchBar = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;"
+        }, this.searchInput, refreshButton, this.pauseButton, this.followButton, this.wrapButton);
+        this.footer = /*#__PURE__*/ createJsxElement("div", {
             class: "button-row",
             style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
-        }, copyButton, copySelectedButton, exportButton, clearButton, closeButton);
-        const header = /*#__PURE__*/ createJsxElement("div", {
+        }, copyButton, copySelectedButton, exportButton, clearButton);
+        this.header = /*#__PURE__*/ createJsxElement("div", {
             style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
         }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
             style: "margin: 0; font-size: 1.2em; font-weight: 600;"
         }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, "Status: ", this.statusSpan, this.errorSpan)), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.close(),
-            style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-        }, "\xd7"));
-        const searchBar = /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;"
-        }, this.searchInput, refreshButton, this.pauseButton, this.followButton, this.wrapButton);
+        }, "Status: ", this.statusSpan, this.errorSpan)));
         const content = /*#__PURE__*/ createJsxElement("div", {
-            class: "modal cbi-modal cbi-section-node",
-            role: "dialog",
-            "aria-modal": "true",
-            style: "width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
-        }, header, searchBar, this.logContainer, footer);
-        this.modal = /*#__PURE__*/ createJsxElement("div", {
-            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
-            onclick: (e)=>{
-                if (e.target === e.currentTarget) this.close();
-            }
-        }, content);
-        return this.modal;
+            class: "log-viewer-core",
+            style: "width: 100%; max-height: 85vh; min-width: 600px;"
+        }, this.props.showHeader ? this.header : null, this.searchBar, this.logContainer, this.footer);
+        return content;
     }
-    open() {
-        if (this.isOpen) return;
-        this.isOpen = true;
-        const node = this.render();
-        document.body.appendChild(node);
+    getSearchBar() {
+        return this.searchBar;
+    }
+    getLogContainer() {
+        return this.logContainer;
+    }
+    getFooter() {
+        return this.footer;
+    }
+    init() {
         this.updateDisplay();
         this.startPolling();
     }
-    close() {
-        var _this_modal_parentElement, _this_modal;
-        if (!this.isOpen) return;
-        this.isOpen = false;
+    destroy() {
         this.stopPolling();
-        (_this_modal = this.modal) === null || _this_modal === void 0 ? void 0 : (_this_modal_parentElement = _this_modal.parentElement) === null || _this_modal_parentElement === void 0 ? void 0 : _this_modal_parentElement.removeChild(this.modal);
-        this.modal = null;
         this.logContainer = null;
         this.statusSpan = null;
         this.errorSpan = null;
@@ -744,12 +725,15 @@ class LogViewer {
         this.pauseButton = null;
         this.followButton = null;
         this.wrapButton = null;
+        this.searchBar = null;
+        this.footer = null;
+        this.header = null;
     }
     startPolling() {
         this.fetchLogs();
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = window.setInterval(()=>{
-            if (this.isOpen && !this.isPaused) this.fetchLogs();
+            if (!this.isPaused) this.fetchLogs();
         }, 3000);
     }
     stopPolling() {
@@ -831,9 +815,11 @@ class LogViewer {
     copyToClipboard() {
         let text = "";
         if (this.selectedLines.size > 0) {
+            // Copy selected lines from filteredLogs (what user sees)
             const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
             text = indices.map((i)=>this.filteredLogs[i]).join("\n");
-        } else text = this.filteredLogs.join("\n");
+        } else // Copy all original logs (not filtered)
+        text = this.logs.join("\n");
         let useModernClipboard = false;
         try {
             if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
@@ -880,8 +866,8 @@ class LogViewer {
         });
     }
     constructor(props){
+        var _props_showHeader;
         _define_property(this, "props", void 0);
-        _define_property(this, "modal", null);
         _define_property(this, "logContainer", null);
         _define_property(this, "statusSpan", null);
         _define_property(this, "errorSpan", null);
@@ -892,7 +878,6 @@ class LogViewer {
         _define_property(this, "status", "unavailable");
         _define_property(this, "logs", []);
         _define_property(this, "lastError", "");
-        _define_property(this, "isOpen", false);
         _define_property(this, "pollInterval", null);
         _define_property(this, "searchFilter", "");
         _define_property(this, "filteredLogs", []);
@@ -900,6 +885,91 @@ class LogViewer {
         _define_property(this, "isFollowing", true);
         _define_property(this, "selectedLines", new Set());
         _define_property(this, "wrapText", true);
+        _define_property(this, "searchBar", null);
+        _define_property(this, "footer", null);
+        _define_property(this, "header", null);
+        this.props = _object_spread_props(_object_spread({}, props), {
+            showHeader: (_props_showHeader = props.showHeader) !== null && _props_showHeader !== void 0 ? _props_showHeader : true
+        });
+    }
+}
+
+;// CONCATENATED MODULE: ./components/LogViewerDialog.tsx
+
+
+
+
+class LogViewerDialog {
+    render() {
+        this.core = new LogViewerCore(_object_spread_props(_object_spread({}, this.props), {
+            showHeader: false
+        }));
+        this.core.render();
+        const statusColor = "#9E9E9E";
+        const statusSpan = /*#__PURE__*/ createJsxElement("span", {
+            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;")
+        }, "unavailable");
+        const errorSpan = /*#__PURE__*/ createJsxElement("div", {
+            style: "color: #F44336; margin-top: 0.3em; display:none"
+        });
+        const header = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
+        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
+            style: "margin: 0; font-size: 1.2em; font-weight: 600;"
+        }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+        }, "Status: ", statusSpan, errorSpan)), /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            onclick: ()=>this.close(),
+            style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
+        }, "\xd7"));
+        const searchBar = this.core.getSearchBar();
+        const logContainer = this.core.getLogContainer();
+        const footer = this.core.getFooter();
+        const closeFooterButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.close()
+        }, "CLOSE");
+        const dialogFooter = /*#__PURE__*/ createJsxElement("div", {
+            class: "button-row",
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
+        }, /*#__PURE__*/ createJsxElement("span", null, footer ? Array.from(footer.children) : null), /*#__PURE__*/ createJsxElement("span", null, closeFooterButton));
+        const content = /*#__PURE__*/ createJsxElement("div", {
+            class: "modal cbi-modal cbi-section-node",
+            role: "dialog",
+            "aria-modal": "true",
+            style: "width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
+        }, header, searchBar, logContainer, dialogFooter);
+        this.modal = /*#__PURE__*/ createJsxElement("div", {
+            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
+            onclick: (e)=>{
+                if (e.target === e.currentTarget) this.close();
+            }
+        }, content);
+        return this.modal;
+    }
+    open() {
+        if (this.isOpen) return;
+        this.isOpen = true;
+        const node = this.render();
+        document.body.appendChild(node);
+        if (this.core) this.core.init();
+    }
+    close() {
+        var _this_modal_parentElement, _this_modal;
+        if (!this.isOpen) return;
+        this.isOpen = false;
+        if (this.core) this.core.destroy();
+        (_this_modal = this.modal) === null || _this_modal === void 0 ? void 0 : (_this_modal_parentElement = _this_modal.parentElement) === null || _this_modal_parentElement === void 0 ? void 0 : _this_modal_parentElement.removeChild(this.modal);
+        this.modal = null;
+        this.core = null;
+    }
+    constructor(props){
+        _define_property(this, "props", void 0);
+        _define_property(this, "core", null);
+        _define_property(this, "modal", null);
+        _define_property(this, "isOpen", false);
         this.props = props;
     }
 }
@@ -1046,14 +1116,23 @@ class ProxyStatsViewer {
 
 
 
+
 const frp_form = L.form;
-const STATUS_COLORS = {
-    connected: "#4CAF50",
-    connecting: "#FFC107",
-    error: "#F44336",
-    stopped: "#9E9E9E",
-    unavailable: "#9E9E9E"
-};
+function getStatusColors() {
+    const { isDark } = getThemeColors();
+    // Dark mode adjustments for better visibility
+    const connectedColor = isDark ? "#4CAF50" : "#4CAF50"; // Green works well in both
+    const connectingColor = isDark ? "#FFD700" : "#FFC107"; // Brighter gold for dark mode
+    const errorColor = isDark ? "#FF5252" : "#F44336"; // Brighter red for dark mode
+    const inactiveColor = isDark ? "#BDBDBD" : "#9E9E9E"; // Lighter gray for dark mode
+    return {
+        connected: connectedColor,
+        connecting: connectingColor,
+        error: errorColor,
+        stopped: inactiveColor,
+        unavailable: inactiveColor
+    };
+}
 const STATUS_LABELS = {
     connected: _("Connected"),
     connecting: _("Connecting"),
@@ -1098,13 +1177,8 @@ const actionButtons = {};
         const info = nodeStatuses[section_id] || {
             status: "unavailable"
         };
-        const statusColor = {
-            connected: "#4CAF50",
-            connecting: "#FFC107",
-            error: "#F44336",
-            stopped: "#9E9E9E",
-            unavailable: "#9E9E9E"
-        }[info.status] || "#9E9E9E";
+        const colors = getStatusColors();
+        const statusColor = colors[info.status] || colors.unavailable;
         const statusText = {
             connected: _("Connected"),
             connecting: _("Connecting"),
@@ -1168,7 +1242,7 @@ const actionButtons = {};
             class: "cbi-button cbi-button-action",
             onclick: ()=>{
                 const nodeName = L.uci.get("portweaver", section_id, "name");
-                const logViewer = new LogViewer({
+                const logViewer = new LogViewerDialog({
                     name: nodeName,
                     title: _("FRP Logs - %s").format(nodeName),
                     fetcher: async ()=>await rpcClient.getFrpInfo(String(nodeName)),
@@ -1225,7 +1299,10 @@ const actionButtons = {};
                         if (container && container.childNodes.length >= 2) {
                             const indicator = container.childNodes[0];
                             const textSpan = container.childNodes[1];
-                            const statusColor = STATUS_COLORS[newStatus] || STATUS_COLORS.unavailable;
+                            // Get fresh theme colors at update time
+                            const colors = getStatusColors();
+                            const statusColor = colors[newStatus] || colors.unavailable;
+                            indicator.style.backgroundColor = statusColor;
                             indicator.style.backgroundColor = statusColor;
                             const statusText = STATUS_LABELS[newStatus] || newStatus;
                             textSpan.textContent = statusText;
@@ -2491,11 +2568,13 @@ const header_form = L.form;
 }
 
 ;// CONCATENATED MODULE: ./modules/logs.tsx
+
 const logs_form = L.form;
 const fs = L.fs;
 L.uci;
 const ui = L.ui;
 const LOG_FILE = "/tmp/portweaver.log";
+let logViewerCore = null;
 /* export default */ function logs(_m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, logs_form.Flag, "log_enabled", _("Enable Logging"));
@@ -2504,26 +2583,36 @@ const LOG_FILE = "/tmp/portweaver.log";
     o.description = _("Enable logging output to /tmp/portweaver.log");
     o = s.taboption(tab_id, logs_form.DummyValue, "_logs_viewer");
     o.rawhtml = true;
-    let pollInterval = null;
-    let logContainer = null;
-    const updateLogs = ()=>{
-        if (!logContainer) return;
-        fs.read_direct(LOG_FILE, "text").then((res)=>{
-            if (logContainer) logContainer.textContent = res.trim() || _("Log is empty.");
-        }).catch((err)=>{
-            if (!logContainer) return;
-            if (err.toString().includes("NotFoundError")) logContainer.textContent = _("Log file does not exist.");
-            else logContainer.textContent = _("Error reading log: %s").format(err.toString());
-        });
+    const fetcher = async ()=>{
+        try {
+            const content = await fs.read_direct(LOG_FILE, "text");
+            const lines = content.trim().split("\n").filter(Boolean);
+            return {
+                status: "running",
+                last_error: "",
+                logs: lines
+            };
+        } catch (err) {
+            if (err.toString().includes("NotFoundError")) return {
+                status: "stopped",
+                last_error: _("Log file does not exist."),
+                logs: []
+            };
+            else return {
+                status: "error",
+                last_error: _("Error reading log: %s").format(err.toString()),
+                logs: []
+            };
+        }
     };
-    const clearLogs = async ()=>{
-        if (!confirm(_("Are you sure you want to clear all logs?"))) return;
+    const clearer = async ()=>{
+        if (!confirm(_("Are you sure you want to clear all logs?"))) throw new Error("User cancelled");
         try {
             await fs.write(LOG_FILE, "");
             ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
-            updateLogs();
-        } catch (_err) {
+        } catch (err) {
             ui.addNotification(null, E("p", _("Failed to clear logs")), "error");
+            throw err;
         }
     };
     const restartService = async ()=>{
@@ -2533,52 +2622,36 @@ const LOG_FILE = "/tmp/portweaver.log";
                 "restart"
             ]);
             ui.addNotification(null, E("p", _("Service restarted successfully")), "info");
-            setTimeout(updateLogs, 2000);
         } catch (_err) {
             ui.addNotification(null, E("p", _("Failed to restart service")), "error");
         }
     };
     o.render = ()=>{
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(updateLogs, 3000);
-        setTimeout(updateLogs, 100);
-        const preEl = E("pre", {
-            id: "portweaver-log-container",
-            style: "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;"
-        }, [
-            _("Loading logs...")
-        ]);
-        logContainer = preEl;
-        return E("div", {
+        if (logViewerCore) logViewerCore.destroy();
+        logViewerCore = new LogViewerCore({
+            name: "system",
+            title: _("System Logs"),
+            fetcher: ()=>fetcher(),
+            clearer: ()=>clearer(),
+            showHeader: false
+        });
+        const coreElement = logViewerCore.render();
+        logViewerCore.init();
+        const restartButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-apply",
+            onclick: ()=>restartService()
+        }, _("Restart Service"));
+        const footer = coreElement.querySelector(".button-row");
+        if (footer) {
+            var _clearButton_parentNode;
+            const clearButton = footer.querySelector("button:last-child");
+            if (clearButton) (_clearButton_parentNode = clearButton.parentNode) === null || _clearButton_parentNode === void 0 ? void 0 : _clearButton_parentNode.insertBefore(restartButton, clearButton);
+            else footer.appendChild(restartButton);
+        }
+        return /*#__PURE__*/ createJsxElement("div", {
             class: "cbi-section"
-        }, [
-            E("div", {
-                style: "display: flex; gap: 10px; margin-bottom: 10px; align-items: center;"
-            }, [
-                E("button", {
-                    class: "btn cbi-button cbi-button-action",
-                    click: updateLogs
-                }, [
-                    _("Refresh")
-                ]),
-                E("button", {
-                    class: "btn cbi-button cbi-button-remove",
-                    click: clearLogs
-                }, [
-                    _("Clear logs")
-                ]),
-                E("button", {
-                    class: "btn cbi-button cbi-button-apply",
-                    click: restartService
-                }, [
-                    _("Restart service")
-                ]),
-                E("small", {
-                    style: "color: #666; margin-left: auto;"
-                }, _("Auto-refresh every 3 seconds"))
-            ]),
-            preEl
-        ]);
+        }, coreElement);
     };
 }
 
@@ -2834,7 +2907,7 @@ const ddns_statusElements = {};
         }, _("View Logs"));
         const nodeName = L.uci.get("portweaver", section_id, "name");
         viewLogsBtn.onclick = ()=>{
-            const viewer = new LogViewer({
+            const viewer = new LogViewerDialog({
                 name: nodeName,
                 title: _("DDNS Logs - %s").format(nodeName),
                 fetcher: (name)=>rpcClient.getDdnsInfo(name),
