@@ -480,6 +480,7 @@ class Client {
 const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
 const REGEX_PORT = /:\d{2,5}\b/g;
 const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
+const REGEX_SUCCESS = /\b(success|ok|done|complete)\b/gi;
 const REGEX_UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 class LogViewer {
     highlightLog(text) {
@@ -487,15 +488,20 @@ class LogViewer {
         const matches = [];
         const addMatch = (regex, replacement)=>{
             let match;
-            while((match = regex.exec(text)) !== null)matches.push({
-                start: match.index,
-                end: match.index + match[0].length,
-                html: replacement.replace("$&", match[0])
-            });
+            while(true){
+                match = regex.exec(text);
+                if (match === null) break;
+                matches.push({
+                    start: match.index,
+                    end: match.index + match[0].length,
+                    html: replacement.replace("$&", match[0])
+                });
+            }
         };
         addMatch(REGEX_IP, '<strong class="text-primary">$&</strong>');
         addMatch(REGEX_PORT, '<strong class="text-success">$&</strong>');
         addMatch(REGEX_ERROR, '<strong class="text-danger">$&</strong>');
+        addMatch(REGEX_SUCCESS, '<strong class="text-success">$&</strong>');
         addMatch(REGEX_UUID, "<code>$&</code>");
         matches.sort((a, b)=>a.start - b.start);
         let offset = 0;
@@ -732,14 +738,15 @@ class LogViewer {
     updateDisplay() {
         if (this.statusSpan) {
             this.statusSpan.textContent = this.status;
-            const color = {
+            const backgroundColor = {
+                running: "#4CAF50",
                 connected: "#4CAF50",
                 connecting: "#FFC107",
                 error: "#F44336",
                 stopped: "#9E9E9E",
                 unavailable: "#9E9E9E"
             }[this.status] || "#9E9E9E";
-            this.statusSpan.setAttribute("style", "color: ".concat(color, "; font-weight: 600;"));
+            this.statusSpan.setAttribute("style", "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(backgroundColor, "; color: white; font-weight: 600; font-size: 0.85em;"));
         }
         if (this.errorSpan) {
             if (this.lastError) {
@@ -752,13 +759,13 @@ class LogViewer {
             while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
             if (this.filteredLogs.length === 0) {
                 const noLogs = document.createElement("div");
-                noLogs.style.cssText = "color: #6c757d; text-align: center; padding: 2em;";
+                noLogs.style.cssText = "color: #6c757d; text-align: center; padding: 2em; font-family: monospace;";
                 noLogs.textContent = this.searchFilter ? "No logs match your search" : "No logs available";
                 this.logContainer.appendChild(noLogs);
             } else this.filteredLogs.forEach((log, index)=>{
                 const isSelected = this.selectedLines.has(index);
                 const lineDiv = document.createElement("div");
-                lineDiv.style.cssText = "cursor: pointer; padding: 0.2em; ".concat(isSelected ? "background: #e3f2fd;" : "");
+                lineDiv.style.cssText = "cursor: pointer; padding: 0.25em 0.5em; ".concat(isSelected ? "background: #e3f2fd;" : "", " font-family: monospace; font-size: 0.85em; line-height: 1.4;");
                 lineDiv.onclick = (e)=>{
                     if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
                     else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
@@ -769,7 +776,7 @@ class LogViewer {
                     this.updateDisplay();
                 };
                 const lineNum = document.createElement("span");
-                lineNum.style.cssText = "color: #999; margin-right: 1em;";
+                lineNum.style.cssText = "color: #999; margin-right: 1em; min-width: 2em; display: inline-block; text-align: right;";
                 lineNum.textContent = "".concat(index + 1);
                 const content = document.createElement("span");
                 content.innerHTML = this.highlightLog(log);

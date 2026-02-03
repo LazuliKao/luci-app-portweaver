@@ -1,5 +1,3 @@
-
-
 interface ProxyStatsViewerProps {
   clientId: string;
   clientName: string;

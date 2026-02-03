@@ -28,7 +28,8 @@ export default function (
 
     fs.read_direct(LOG_FILE, "text")
       .then((res: string) => {
-        if (logContainer) logContainer.textContent = res.trim() || _("Log is empty.");
+        if (logContainer)
+          logContainer.textContent = res.trim() || _("Log is empty.");
       })
       .catch((err: Error) => {
         if (!logContainer) return;
@@ -83,11 +84,15 @@ export default function (
 
     setTimeout(updateLogs, 100);
 
-    const preEl = E("pre", {
-      id: "portweaver-log-container",
-      style:
-        "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;",
-    }, [_("Loading logs...")]) as HTMLElement;
+    const preEl = E(
+      "pre",
+      {
+        id: "portweaver-log-container",
+        style:
+          "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;",
+      },
+      [_("Loading logs...")],
+    ) as HTMLElement;
     logContainer = preEl;
 
     return E("div", { class: "cbi-section" }, [

@@ -34,7 +34,6 @@ export class Client {
     this.frpStatus = data[2] || { frp_enabled: false };
     this.events = data[3] || [];
     L.Poll.add(async () => {
-
       try {
         const results = await Promise.all([
           rpcClient.getStatus(),
@@ -53,27 +52,45 @@ export class Client {
           degraded: "orange",
         };
         if (this.statusPanel?.statusValueEl) {
-          this.statusPanel.statusValueEl.textContent = this.globalStatus.status || "-";
+          this.statusPanel.statusValueEl.textContent =
+            this.globalStatus.status || "-";
           (this.statusPanel.statusValueEl.style as any).color =
             statusColors[this.globalStatus.status || ""] || "gray";
         }
 
-        if (this.statusPanel?.totalProjectsEl) this.statusPanel.totalProjectsEl.textContent = String(this.globalStatus.total_projects || 0);
-        if (this.statusPanel?.activePortsEl) this.statusPanel.activePortsEl.textContent = String(this.globalStatus.active_ports || 0);
-        if (this.statusPanel?.uptimeEl) this.statusPanel.uptimeEl.textContent = formatUptime(this.globalStatus.uptime || 0);
-        if (this.statusPanel?.trafficInEl) this.statusPanel.trafficInEl.textContent = formatBytes(this.globalStatus.total_bytes_in || 0);
-        if (this.statusPanel?.trafficOutEl) this.statusPanel.trafficOutEl.textContent = formatBytes(this.globalStatus.total_bytes_out || 0);
+        if (this.statusPanel?.totalProjectsEl)
+          this.statusPanel.totalProjectsEl.textContent = String(
+            this.globalStatus.total_projects || 0,
+          );
+        if (this.statusPanel?.activePortsEl)
+          this.statusPanel.activePortsEl.textContent = String(
+            this.globalStatus.active_ports || 0,
+          );
+        if (this.statusPanel?.uptimeEl)
+          this.statusPanel.uptimeEl.textContent = formatUptime(
+            this.globalStatus.uptime || 0,
+          );
+        if (this.statusPanel?.trafficInEl)
+          this.statusPanel.trafficInEl.textContent = formatBytes(
+            this.globalStatus.total_bytes_in || 0,
+          );
+        if (this.statusPanel?.trafficOutEl)
+          this.statusPanel.trafficOutEl.textContent = formatBytes(
+            this.globalStatus.total_bytes_out || 0,
+          );
 
         if (this.statusPanel?.frpEnabledEl) {
           this.statusPanel.frpEnabledEl.textContent = this.frpStatus.frp_enabled
             ? _("Enabled")
             : _("Disabled");
-          (this.statusPanel.frpEnabledEl.style as any).color = this.frpStatus.frp_enabled
+          (this.statusPanel.frpEnabledEl.style as any).color = this.frpStatus
+            .frp_enabled
             ? "#28a745"
             : "#6c757d";
         }
         if (this.statusPanel?.frpVersionEl && this.frpStatus.frp_version) {
-          this.statusPanel.frpVersionEl.textContent = this.frpStatus.frp_version;
+          this.statusPanel.frpVersionEl.textContent =
+            this.frpStatus.frp_version;
         }
 
         this.updateProjectHealthIndicator();
@@ -94,14 +111,10 @@ export class Client {
               status,
               section_id,
             );
-            const newContainer = <div id={`project-status-${section_id}`}>
-              {newStatusElements}
-            </div> as HTMLElement;
-            section.replaceWith(
-              <span>
-                {newContainer}
-              </span>,
-            );
+            const newContainer = (
+              <div id={`project-status-${section_id}`}>{newStatusElements}</div>
+            ) as HTMLElement;
+            section.replaceWith(<span>{newContainer}</span>);
             this.projectContainers[section_id] = newContainer;
           }
         })();

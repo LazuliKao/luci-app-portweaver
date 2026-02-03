@@ -51,7 +51,9 @@ export class LogViewer {
 
     const addMatch = (regex: RegExp, replacement: string) => {
       let match: RegExpExecArray | null;
-      while ((match = regex.exec(text)) !== null) {
+      while (true) {
+        match = regex.exec(text);
+        if (match === null) break;
         matches.push({
           start: match.index,
           end: match.index + match[0].length,
@@ -63,6 +65,7 @@ export class LogViewer {
     addMatch(REGEX_IP, '<strong class="text-primary">$&</strong>');
     addMatch(REGEX_PORT, '<strong class="text-success">$&</strong>');
     addMatch(REGEX_ERROR, '<strong class="text-danger">$&</strong>');
+    addMatch(REGEX_SUCCESS, '<strong class="text-success">$&</strong>');
     addMatch(REGEX_UUID, "<code>$&</code>");
 
     matches.sort((a, b) => a.start - b.start);
@@ -452,8 +455,9 @@ export class LogViewer {
   private updateDisplay(): void {
     if (this.statusSpan) {
       this.statusSpan.textContent = this.status;
-      const color =
+      const backgroundColor =
         {
+          running: "#4CAF50",
           connected: "#4CAF50",
           connecting: "#FFC107",
           error: "#F44336",
@@ -462,7 +466,7 @@ export class LogViewer {
         }[this.status] || "#9E9E9E";
       this.statusSpan.setAttribute(
         "style",
-        `color: ${color}; font-weight: 600;`,
+        `display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ${backgroundColor}; color: white; font-weight: 600; font-size: 0.85em;`,
       );
     }
 
@@ -487,7 +491,7 @@ export class LogViewer {
       if (this.filteredLogs.length === 0) {
         const noLogs = document.createElement("div");
         noLogs.style.cssText =
-          "color: #6c757d; text-align: center; padding: 2em;";
+          "color: #6c757d; text-align: center; padding: 2em; font-family: monospace;";
         noLogs.textContent = this.searchFilter
           ? "No logs match your search"
           : "No logs available";
@@ -497,7 +501,7 @@ export class LogViewer {
           const isSelected = this.selectedLines.has(index);
 
           const lineDiv = document.createElement("div");
-          lineDiv.style.cssText = `cursor: pointer; padding: 0.2em; ${isSelected ? "background: #e3f2fd;" : ""}`;
+          lineDiv.style.cssText = `cursor: pointer; padding: 0.25em 0.5em; ${isSelected ? "background: #e3f2fd;" : ""} font-family: monospace; font-size: 0.85em; line-height: 1.4;`;
           lineDiv.onclick = (e: MouseEvent) => {
             if (e.ctrlKey || e.metaKey) {
               this.toggleLineSelection(index);
@@ -511,7 +515,8 @@ export class LogViewer {
           };
 
           const lineNum = document.createElement("span");
-          lineNum.style.cssText = "color: #999; margin-right: 1em;";
+          lineNum.style.cssText =
+            "color: #999; margin-right: 1em; min-width: 2em; display: inline-block; text-align: right;";
           lineNum.textContent = `${index + 1}`;
 
           const content = document.createElement("span");
