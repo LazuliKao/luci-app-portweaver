@@ -2197,42 +2197,42 @@ class StatusPanel {
             }, status.status || "-");
             this.statusValueEl = statusValueEl;
             return this.card(_("Status"), statusValueEl);
-        })(), '"', (()=>{
+        })(), (()=>{
             const totalProjectsEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1.1em; font-weight: 600;",
                 id: "total-projects-value"
             }, status.total_projects || 0);
             this.totalProjectsEl = totalProjectsEl;
             return this.card(_("Total Projects"), totalProjectsEl);
-        })(), '"', (()=>{
+        })(), (()=>{
             const activePortsEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1.1em; font-weight: 600;",
                 id: "active-ports-value"
             }, status.active_ports || 0);
             this.activePortsEl = activePortsEl;
             return this.card(_("Active Ports"), activePortsEl);
-        })(), '"', (()=>{
+        })(), (()=>{
             const uptimeEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1.1em; font-weight: 600;",
                 id: "uptime-value"
             }, formatUptime(status.uptime || 0));
             this.uptimeEl = uptimeEl;
             return this.card(_("Uptime"), uptimeEl);
-        })(), '"', (()=>{
+        })(), (()=>{
             const trafficInEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1.1em; font-weight: 600;",
                 id: "traffic-in-value"
             }, formatBytes(status.total_bytes_in || 0));
             this.trafficInEl = trafficInEl;
             return this.card(_("Traffic In"), trafficInEl);
-        })(), '"', (()=>{
+        })(), (()=>{
             const trafficOutEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1.1em; font-weight: 600;",
                 id: "traffic-out-value"
             }, formatBytes(status.total_bytes_out || 0));
             this.trafficOutEl = trafficOutEl;
             return this.card(_("Traffic Out"), trafficOutEl);
-        })(), '"', hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
+        })(), hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
             id: "project-health-value"
         }, /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600; color: ".concat(runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545", ";")
@@ -2252,7 +2252,7 @@ class StatusPanel {
             return this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, frpEnabledEl, frpVersionEl, frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
                 style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
             }, frpStatus.client_count, " ", _("client(s)"))));
-        })(), '"', (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && (()=>{
+        })(), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && (()=>{
             const frpErrorEl = /*#__PURE__*/ createJsxElement("div", {
                 style: "cursor: help;",
                 title: frpStatus.last_error,
@@ -2262,7 +2262,7 @@ class StatusPanel {
             }, this.truncateError(frpStatus.last_error, 50)));
             this.frpErrorEl = frpErrorEl;
             return this.card(_("FRP Error"), frpErrorEl);
-        })(), '"'), events && events.length > 0 && this.renderActivityLog(events));
+        })()), events && events.length > 0 && this.renderActivityLog(events));
     }
     getFrpStatusColor(frpStatus) {
         if (!frpStatus.frp_enabled) return "#6c757d";
