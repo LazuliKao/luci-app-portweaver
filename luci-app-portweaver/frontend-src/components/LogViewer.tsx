@@ -452,7 +452,37 @@ export class LogViewer {
       });
   }
 
+  private getThemeColors(): { isDark: boolean; selectionBg: string; lineNumberColor: string } {
+    try {
+      const bodyBg = getComputedStyle(document.body).backgroundColor;
+      const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (match) {
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+        const isDark = luminance < 128;
+        
+        return {
+          isDark,
+          selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
+          lineNumberColor: isDark ? "#aaa" : "#999"
+        };
+      }
+    } catch (e) {
+      console.warn("Failed to detect theme, using light mode defaults");
+    }
+    
+    return {
+      isDark: false,
+      selectionBg: "#e3f2fd",
+      lineNumberColor: "#999"
+    };
+  }
+
   private updateDisplay(): void {
+    const themeColors = this.getThemeColors();
+    
     if (this.statusSpan) {
       this.statusSpan.textContent = this.status;
       const backgroundColor =
@@ -489,49 +519,42 @@ export class LogViewer {
       }
 
       if (this.filteredLogs.length === 0) {
-        const noLogs = (
-          <div style="color: #6c757d; text-align: center; padding: 2em; font-family: monospace;">
-            {this.searchFilter
-              ? "No logs match your search"
-              : "No logs available"}
-          </div>
-        );
+        const noLogs = document.createElement("div");
+        noLogs.style.cssText = `color: ${themeColors.lineNumberColor}; text-align: center; padding: 2em; font-family: monospace;`;
+        noLogs.textContent = this.searchFilter
+          ? "No logs match your search"
+          : "No logs available";
         this.logContainer.appendChild(noLogs);
       } else {
         this.filteredLogs.forEach((log, index) => {
           const isSelected = this.selectedLines.has(index);
 
-          const lineNum = (
-            <span style="color: #999; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;">
-              {index + 1}
-            </span>
-          );
+          const lineDiv = document.createElement("div");
+          lineDiv.style.cssText = `cursor: pointer; padding: 0.25em 0.5em; ${isSelected ? `background: ${themeColors.selectionBg};` : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`;
+          lineDiv.onclick = (e: MouseEvent) => {
+            if (e.ctrlKey || e.metaKey) {
+              this.toggleLineSelection(index);
+            } else if (e.shiftKey && this.selectedLines.size > 0) {
+              this.selectRange(index);
+            } else {
+              this.selectedLines.clear();
+              this.toggleLineSelection(index);
+            }
+            this.updateDisplay();
+          };
 
-          const content = (
-            <span style="flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;">
-              {this.highlightLog(log)}
-            </span>
-          );
+          const lineNum = document.createElement("span");
+          lineNum.style.cssText =
+            `color: ${themeColors.lineNumberColor}; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;`;
+          lineNum.textContent = `${index + 1}`;
 
-          const lineDiv = (
-            <div
-              style={`cursor: pointer; padding: 0.25em 0.5em; ${isSelected ? "background: #e3f2fd;" : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`}
-              onclick={(e: MouseEvent) => {
-                if (e.ctrlKey || e.metaKey) {
-                  this.toggleLineSelection(index);
-                } else if (e.shiftKey && this.selectedLines.size > 0) {
-                  this.selectRange(index);
-                } else {
-                  this.selectedLines.clear();
-                  this.toggleLineSelection(index);
-                }
-                this.updateDisplay();
-              }}
-            >
-              {lineNum}
-              {content}
-            </div>
-          );
+          const content = document.createElement("span");
+          content.style.cssText =
+            "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;";
+          content.innerHTML = this.highlightLog(log);
+
+          lineDiv.appendChild(lineNum);
+          lineDiv.appendChild(content);
 
           this.logContainer?.appendChild(lineDiv);
         });

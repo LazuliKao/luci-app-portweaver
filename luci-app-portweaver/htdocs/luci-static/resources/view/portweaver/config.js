@@ -735,7 +735,33 @@ class LogViewer {
             this.updateDisplay();
         });
     }
+    getThemeColors() {
+        try {
+            const bodyBg = getComputedStyle(document.body).backgroundColor;
+            const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (match) {
+                const r = parseInt(match[1], 10);
+                const g = parseInt(match[2], 10);
+                const b = parseInt(match[3], 10);
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                const isDark = luminance < 128;
+                return {
+                    isDark,
+                    selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
+                    lineNumberColor: isDark ? "#aaa" : "#999"
+                };
+            }
+        } catch (e) {
+            console.warn("Failed to detect theme, using light mode defaults");
+        }
+        return {
+            isDark: false,
+            selectionBg: "#e3f2fd",
+            lineNumberColor: "#999"
+        };
+    }
     updateDisplay() {
+        const themeColors = this.getThemeColors();
         if (this.statusSpan) {
             this.statusSpan.textContent = this.status;
             const backgroundColor = {
@@ -758,31 +784,32 @@ class LogViewer {
             const wasAtBottom = this.logContainer.scrollHeight - this.logContainer.scrollTop <= this.logContainer.clientHeight + 50;
             while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
             if (this.filteredLogs.length === 0) {
-                const noLogs = /*#__PURE__*/ createJsxElement("div", {
-                    style: "color: #6c757d; text-align: center; padding: 2em; font-family: monospace;"
-                }, this.searchFilter ? "No logs match your search" : "No logs available");
+                const noLogs = document.createElement("div");
+                noLogs.style.cssText = "color: ".concat(themeColors.lineNumberColor, "; text-align: center; padding: 2em; font-family: monospace;");
+                noLogs.textContent = this.searchFilter ? "No logs match your search" : "No logs available";
                 this.logContainer.appendChild(noLogs);
             } else this.filteredLogs.forEach((log, index)=>{
                 var _this_logContainer;
                 const isSelected = this.selectedLines.has(index);
-                const lineNum = /*#__PURE__*/ createJsxElement("span", {
-                    style: "color: #999; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;"
-                }, index + 1);
-                const content = /*#__PURE__*/ createJsxElement("span", {
-                    style: "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;"
-                }, this.highlightLog(log));
-                const lineDiv = /*#__PURE__*/ createJsxElement("div", {
-                    style: "cursor: pointer; padding: 0.25em 0.5em; ".concat(isSelected ? "background: #e3f2fd;" : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;"),
-                    onclick: (e)=>{
-                        if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
-                        else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
-                        else {
-                            this.selectedLines.clear();
-                            this.toggleLineSelection(index);
-                        }
-                        this.updateDisplay();
+                const lineDiv = document.createElement("div");
+                lineDiv.style.cssText = "cursor: pointer; padding: 0.25em 0.5em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;");
+                lineDiv.onclick = (e)=>{
+                    if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
+                    else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
+                    else {
+                        this.selectedLines.clear();
+                        this.toggleLineSelection(index);
                     }
-                }, lineNum, content);
+                    this.updateDisplay();
+                };
+                const lineNum = document.createElement("span");
+                lineNum.style.cssText = "color: ".concat(themeColors.lineNumberColor, "; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;");
+                lineNum.textContent = "".concat(index + 1);
+                const content = document.createElement("span");
+                content.style.cssText = "flex: 1; overflow-x: auto; white-space: pre-wrap; min-width: 0;";
+                content.innerHTML = this.highlightLog(log);
+                lineDiv.appendChild(lineNum);
+                lineDiv.appendChild(content);
                 (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(lineDiv);
             });
             if (this.isFollowing && wasAtBottom) this.logContainer.scrollTop = this.logContainer.scrollHeight;
