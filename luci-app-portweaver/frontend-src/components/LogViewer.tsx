@@ -274,19 +274,7 @@ export class LogViewer {
         class="cbi-button cbi-button-positive"
         onclick={() => {
           if (this.selectedLines.size > 0) {
-            const indices = Array.from(this.selectedLines).sort(
-              (a, b) => a - b,
-            );
-            console.log(navigator.clipboard);
-
-            const text = indices.map((i) => this.filteredLogs[i]).join("\n");
-            navigator.clipboard
-              .writeText(text)
-              .then(() => alert("Selected logs copied to clipboard"))
-              .catch((err: any) => {
-                console.error("Failed to copy logs:", err);
-                alert("Failed to copy logs");
-              });
+            this.copyToClipboard();
           } else {
             alert("No lines selected");
           }

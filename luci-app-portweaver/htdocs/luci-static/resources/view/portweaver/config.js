@@ -252,7 +252,45 @@ function createRpcClient(rpc) {
     };
 }
 
+;// CONCATENATED MODULE: ./utils/theme-utils.ts
+/**
+ * Detects the current theme (dark/light mode) based on body background color
+ * and returns appropriate color values for UI elements.
+ *
+ * This function analyzes the computed background color of the document body
+ * to determine if the current theme is dark or light, then returns suitable
+ * colors for selection backgrounds and line numbers that work well with
+ * the detected theme.
+ *
+ * @returns {ThemeColors} Object containing theme information and color values
+ */ function getThemeColors() {
+    try {
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+            const r = parseInt(match[1], 10);
+            const g = parseInt(match[2], 10);
+            const b = parseInt(match[3], 10);
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            const isDark = luminance < 128;
+            return {
+                isDark,
+                selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
+                lineNumberColor: isDark ? "#aaa" : "#999"
+            };
+        }
+    } catch (_e) {
+        console.warn("Failed to detect theme, using light mode defaults");
+    }
+    return {
+        isDark: false,
+        selectionBg: "#e3f2fd",
+        lineNumberColor: "#999"
+    };
+}
+
 ;// CONCATENATED MODULE: ./modules/client.tsx
+
 
 
 
@@ -311,10 +349,14 @@ class Client {
         return statusElements;
     }
     renderForwarderStats(forwarders) {
+        const themeColors = getThemeColors();
+        const borderColor = themeColors.isDark ? "#333" : "#eee";
+        const bgColor = themeColors.isDark ? "#222" : "#f8f9fa";
+        const textColor = themeColors.isDark ? "#ccc" : "#6c757d";
         const rows = forwarders.map((f)=>/*#__PURE__*/ createJsxElement("div", {
-                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;"
+                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(borderColor, ";")
             }, /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 35px; color: #6c757d;"
+                style: "min-width: 35px; color: ".concat(textColor, ";")
             }, f.protocol.toUpperCase()), /*#__PURE__*/ createJsxElement("span", {
                 style: "min-width: 45px;"
             }, ":", f.local_port), /*#__PURE__*/ createJsxElement("span", {
@@ -323,7 +365,7 @@ class Client {
                 style: "color: #dc3545;"
             }, "\u2191".concat(formatBytes(f.bytes_out)))));
         return /*#__PURE__*/ createJsxElement("div", {
-            style: "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;"
+            style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(bgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
         }, rows);
     }
     updateProjectHealthIndicator() {
@@ -473,43 +515,6 @@ class Client {
             }
         }, 3);
     }
-}
-
-;// CONCATENATED MODULE: ./utils/theme-utils.ts
-/**
- * Detects the current theme (dark/light mode) based on body background color
- * and returns appropriate color values for UI elements.
- *
- * This function analyzes the computed background color of the document body
- * to determine if the current theme is dark or light, then returns suitable
- * colors for selection backgrounds and line numbers that work well with
- * the detected theme.
- *
- * @returns {ThemeColors} Object containing theme information and color values
- */ function getThemeColors() {
-    try {
-        const bodyBg = getComputedStyle(document.body).backgroundColor;
-        const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (match) {
-            const r = parseInt(match[1], 10);
-            const g = parseInt(match[2], 10);
-            const b = parseInt(match[3], 10);
-            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-            const isDark = luminance < 128;
-            return {
-                isDark,
-                selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
-                lineNumberColor: isDark ? "#aaa" : "#999"
-            };
-        }
-    } catch (_e) {
-        console.warn("Failed to detect theme, using light mode defaults");
-    }
-    return {
-        isDark: false,
-        selectionBg: "#e3f2fd",
-        lineNumberColor: "#999"
-    };
 }
 
 ;// CONCATENATED MODULE: ./components/LogViewer.tsx
@@ -665,15 +670,8 @@ class LogViewer {
             type: "button",
             class: "cbi-button cbi-button-positive",
             onclick: ()=>{
-                if (this.selectedLines.size > 0) {
-                    const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
-                    console.log(navigator.clipboard);
-                    const text = indices.map((i)=>this.filteredLogs[i]).join("\n");
-                    navigator.clipboard.writeText(text).then(()=>alert("Selected logs copied to clipboard")).catch((err)=>{
-                        console.error("Failed to copy logs:", err);
-                        alert("Failed to copy logs");
-                    });
-                } else alert("No lines selected");
+                if (this.selectedLines.size > 0) this.copyToClipboard();
+                else alert("No lines selected");
             }
         }, "COPY SELECTED");
         const exportButton = /*#__PURE__*/ createJsxElement("button", {
@@ -2056,13 +2054,7 @@ const uci = L.uci;
         const status = client.getProjectStatus(section_id);
         const container = /*#__PURE__*/ createJsxElement("div", {
             id: "project-status-".concat(section_id)
-        }, client.renderStatusElements(status, section_id), (status === null || status === void 0 ? void 0 : status.enabled) && (status === null || status === void 0 ? void 0 : status.bytes_in) !== undefined ? /*#__PURE__*/ createJsxElement("div", {
-            style: {
-                marginTop: "8px",
-                fontSize: "12px",
-                color: "#666"
-            }
-        }, "\u2193 In: ", /*#__PURE__*/ createJsxElement("strong", null, (status.bytes_in / 1024).toFixed(1)), " KB | \u2191 Out: ", /*#__PURE__*/ createJsxElement("strong", null, (status.bytes_out / 1024).toFixed(1)), " KB") : null);
+        }, client.renderStatusElements(status, section_id));
         client.projectContainers = client.projectContainers || {};
         client.projectContainers[section_id] = container;
         return container;

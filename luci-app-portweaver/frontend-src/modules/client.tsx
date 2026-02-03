@@ -11,6 +11,7 @@ import {
   getErrorMessage,
 } from "../utils/formatters";
 import { createRpcClient } from "../utils/rpc-client";
+import { getThemeColors } from "../utils/theme-utils";
 import type { StatusPanel } from "../components/StatusPanel";
 export const rpcClient = createRpcClient(L.rpc);
 export class Client {
@@ -211,9 +212,16 @@ export class Client {
   }
 
   private renderForwarderStats(forwarders: ForwarderStats[]): HTMLElement {
+    const themeColors = getThemeColors();
+    const borderColor = themeColors.isDark ? "#333" : "#eee";
+    const bgColor = themeColors.isDark ? "#222" : "#f8f9fa";
+    const textColor = themeColors.isDark ? "#ccc" : "#6c757d";
+
     const rows = forwarders.map((f) => (
-      <div style="display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;">
-        <span style="min-width: 35px; color: #6c757d;">
+      <div
+        style={`display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ${borderColor};`}
+      >
+        <span style={`min-width: 35px; color: ${textColor};`}>
           {f.protocol.toUpperCase()}
         </span>
         <span style="min-width: 45px;">:{f.local_port}</span>
@@ -227,7 +235,9 @@ export class Client {
     ));
 
     return (
-      <div style="margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;">
+      <div
+        style={`margin-top: 0.3em; padding: 0.3em; background: ${bgColor}; border-radius: 3px; max-height: 80px; overflow-y: auto;`}
+      >
         {rows}
       </div>
     );
