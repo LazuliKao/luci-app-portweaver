@@ -370,6 +370,7 @@ export class LogViewerCore {
   }
 
   init(): void {
+    this.applyScrollbarStyles();
     this.updateDisplay();
     this.startPolling();
   }
@@ -423,6 +424,62 @@ export class LogViewerCore {
         this.lastError = "Failed to fetch logs";
         this.updateDisplay();
       });
+  }
+
+  private applyScrollbarStyles(): void {
+    const themeColors = getThemeColors();
+    if (!this.logContainer) return;
+
+    const styleId = "logviewer-scrollbar-styles";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    const scrollbarTrack = themeColors.isDark
+      ? "rgba(255, 255, 255, 0.08)"
+      : "rgba(0, 0, 0, 0.08)";
+    const scrollbarThumb = themeColors.isDark
+      ? "rgba(255, 255, 255, 0.35)"
+      : "rgba(0, 0, 0, 0.4)";
+    const scrollbarThumbHover = themeColors.isDark
+      ? "rgba(255, 255, 255, 0.5)"
+      : "rgba(0, 0, 0, 0.6)";
+    const scrollbarThumbActive = themeColors.isDark
+      ? "rgba(255, 255, 255, 0.7)"
+      : "rgba(0, 0, 0, 0.8)";
+
+    styleEl.textContent = `
+      .cbi-value-field::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      .cbi-value-field::-webkit-scrollbar-track {
+        background: ${scrollbarTrack};
+        border-radius: 5px;
+      }
+      .cbi-value-field::-webkit-scrollbar-thumb {
+        background: ${scrollbarThumb};
+        border-radius: 5px;
+        border: 2px solid ${scrollbarTrack};
+      }
+      .cbi-value-field::-webkit-scrollbar-thumb:hover {
+        background: ${scrollbarThumbHover};
+      }
+      .cbi-value-field::-webkit-scrollbar-thumb:active {
+        background: ${scrollbarThumbActive};
+      }
+      .cbi-value-field::-webkit-scrollbar-corner {
+        background: ${scrollbarTrack};
+      }
+      .cbi-value-field {
+        scrollbar-width: auto;
+        scrollbar-color: ${scrollbarThumb} ${scrollbarTrack};
+      }
+    `;
   }
 
   private updateDisplay(): void {

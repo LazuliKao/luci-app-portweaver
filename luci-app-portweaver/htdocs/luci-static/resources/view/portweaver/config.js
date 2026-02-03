@@ -716,6 +716,7 @@ class LogViewerCore {
         return this.footer;
     }
     init() {
+        this.applyScrollbarStyles();
         this.updateDisplay();
         this.startPolling();
     }
@@ -758,6 +759,22 @@ class LogViewerCore {
             this.lastError = "Failed to fetch logs";
             this.updateDisplay();
         });
+    }
+    applyScrollbarStyles() {
+        const themeColors = getThemeColors();
+        if (!this.logContainer) return;
+        const styleId = "logviewer-scrollbar-styles";
+        let styleEl = document.getElementById(styleId);
+        if (!styleEl) {
+            styleEl = document.createElement("style");
+            styleEl.id = styleId;
+            document.head.appendChild(styleEl);
+        }
+        const scrollbarTrack = themeColors.isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)";
+        const scrollbarThumb = themeColors.isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(0, 0, 0, 0.4)";
+        const scrollbarThumbHover = themeColors.isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.6)";
+        const scrollbarThumbActive = themeColors.isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.8)";
+        styleEl.textContent = "\n      .cbi-value-field::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .cbi-value-field::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .cbi-value-field::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .cbi-value-field::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .cbi-value-field::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .cbi-value-field::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .cbi-value-field {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    ");
     }
     updateDisplay() {
         const themeColors = getThemeColors();
