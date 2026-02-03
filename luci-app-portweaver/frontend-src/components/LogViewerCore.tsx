@@ -40,7 +40,7 @@ export class LogViewerCore {
   private isPaused: boolean = false;
   private isFollowing: boolean = true;
   private selectedLines: Set<number> = new Set();
-  private wrapText: boolean = true;
+  private wrapText: boolean = false;
 
   constructor(props: LogViewerCoreProps) {
     this.props = {
@@ -136,7 +136,6 @@ export class LogViewerCore {
     this.wrapText = !this.wrapText;
     if (this.logContainer) {
       this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
-      this.logContainer.style.overflowX = this.wrapText ? "auto" : "scroll";
     }
     if (this.wrapButton) {
       this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
@@ -246,14 +245,14 @@ export class LogViewerCore {
         class="cbi-button cbi-button-neutral"
         onclick={() => this.toggleWrap()}
       >
-        WRAP: ON
+        WRAP: OFF
       </button>
     );
 
     this.logContainer = (
       <div
         class="cbi-value-field"
-        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px;"
+        style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
       >
         {this.logs.length === 0 ? "No logs available" : null}
       </div>

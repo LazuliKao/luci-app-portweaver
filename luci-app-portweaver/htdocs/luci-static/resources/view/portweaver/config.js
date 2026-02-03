@@ -597,10 +597,7 @@ class LogViewerCore {
     }
     toggleWrap() {
         this.wrapText = !this.wrapText;
-        if (this.logContainer) {
-            this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
-            this.logContainer.style.overflowX = this.wrapText ? "auto" : "scroll";
-        }
+        if (this.logContainer) this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
         if (this.wrapButton) this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
     }
     render() {
@@ -657,10 +654,10 @@ class LogViewerCore {
             type: "button",
             class: "cbi-button cbi-button-neutral",
             onclick: ()=>this.toggleWrap()
-        }, "WRAP: ON");
+        }, "WRAP: OFF");
         this.logContainer = /*#__PURE__*/ createJsxElement("div", {
             class: "cbi-value-field",
-            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre-wrap; min-height: 200px;"
+            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
         }, this.logs.length === 0 ? "No logs available" : null);
         const copyButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
@@ -902,7 +899,7 @@ class LogViewerCore {
         _define_property(this, "isPaused", false);
         _define_property(this, "isFollowing", true);
         _define_property(this, "selectedLines", new Set());
-        _define_property(this, "wrapText", true);
+        _define_property(this, "wrapText", false);
         _define_property(this, "searchBar", null);
         _define_property(this, "footer", null);
         _define_property(this, "header", null);
@@ -957,8 +954,10 @@ class LogViewerDialog {
             class: "modal cbi-modal cbi-section-node",
             role: "dialog",
             "aria-modal": "true",
-            style: "width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
-        }, header, searchBar, logContainer, dialogFooter);
+            style: "width: 95vw; max-width: 1200px; max-height: 90vh; display: grid; grid-template-rows: auto auto 1fr auto;"
+        }, /*#__PURE__*/ createJsxElement("div", null, " ", header), /*#__PURE__*/ createJsxElement("div", null, searchBar), /*#__PURE__*/ createJsxElement("div", {
+            style: "max-height: min(calc(85vh - 220px), 100vh); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
+        }, logContainer), /*#__PURE__*/ createJsxElement("div", null, " ", dialogFooter));
         this.modal = /*#__PURE__*/ createJsxElement("div", {
             style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
             onclick: (e)=>{

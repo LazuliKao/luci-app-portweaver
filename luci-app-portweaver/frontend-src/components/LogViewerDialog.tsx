@@ -88,12 +88,14 @@ export class LogViewerDialog {
         class="modal cbi-modal cbi-section-node"
         role="dialog"
         aria-modal="true"
-        style="width: 95vw; max-width: 1200px; max-height: 85vh; min-width: 600px;"
+        style="width: 95vw; max-width: 1200px; max-height: 90vh; display: grid; grid-template-rows: auto auto 1fr auto;"
       >
-        {header}
-        {searchBar}
-        {logContainer}
-        {dialogFooter}
+        <div> {header}</div>
+        <div>{searchBar}</div>
+        <div style="max-height: min(calc(85vh - 220px), 100vh); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+          {logContainer}
+        </div>
+        <div> {dialogFooter}</div>
       </div>
     );
 
