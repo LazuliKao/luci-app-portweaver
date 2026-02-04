@@ -657,3 +657,60 @@ msgstr "启用日志输出到 /tmp/portweaver.log"
 
 msgid "PortWeaver"
 msgstr "端口工具箱"
+
+msgid "Degraded"
+msgstr "降级"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Address already in use"
+msgstr "地址已被占用"
+
+msgid "Address family not supported by protocol"
+msgstr "协议不支持该地址族"
+
+msgid "Address or port already in use (EADDRINUSE)"
+msgstr "地址或端口已被占用 (EADDRINUSE)"
+
+msgid "Cannot assign requested address"
+msgstr "无法分配请求的地址"
+
+msgid "Failed to bind to port"
+msgstr "绑定端口失败"
+
+msgid "Invalid address format"
+msgstr "无效的地址格式"
+
+msgid "Memory allocation failed"
+msgstr "内存分配失败"
+
+msgid "Network is down"
+msgstr "网络已断开"
+
+msgid "Network is unreachable"
+msgstr "网络不可达"
+
+msgid "OK"
+msgstr "确定"
+
+msgid "Operation not supported on transport endpoint"
+msgstr "传输端点不支持此操作"
+
+msgid "Permission denied - unable to bind to port (EACCES)"
+msgstr "权限被拒绝 - 无法绑定到端口 (EACCES)"
+
+msgid "Protocol family not supported"
+msgstr "不支持的协议族"
+
+msgid "Protocol not available"
+msgstr "协议不可用"
+
+msgid "Protocol not supported"
+msgstr "不支持的协议"
+
+msgid "Protocol wrong type for socket"
+msgstr "套接字类型不正确"
+
+msgid "Socket type not supported"
+msgstr "不支持的套接字类型"

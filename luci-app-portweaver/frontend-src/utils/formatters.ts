@@ -18,23 +18,31 @@ export function formatUptime(seconds: number = 0): string {
 export function getErrorMessage(error_code?: number): string | null {
   if (error_code === undefined || error_code === 0) return null;
   const messages: Record<string, string> = {
-    "0": "OK",
-    "-1": "Memory allocation failed",
-    "-2": "Failed to bind to port",
-    "-3": "Address or port already in use (EADDRINUSE)",
-    "-4": "Permission denied - unable to bind to port (EACCES)",
-    "-5": "Invalid address format",
-    "-98": "Address already in use",
-    "-91": "Protocol wrong type for socket",
-    "-92": "Protocol not available",
-    "-93": "Protocol not supported",
-    "-94": "Socket type not supported",
-    "-95": "Operation not supported on transport endpoint",
-    "-96": "Protocol family not supported",
-    "-97": "Address family not supported by protocol",
-    "-99": "Cannot assign requested address",
-    "-100": "Network is down",
-    "-101": "Network is unreachable",
+    "0": _("OK"),
+    "-1": _("Memory allocation failed"),
+    "-2": _("Failed to bind to port"),
+    "-3": _("Address or port already in use (EADDRINUSE)"),
+    "-4": _("Permission denied - unable to bind to port (EACCES)"),
+    "-5": _("Invalid address format"),
+    "-98": _("Address already in use"),
+    "-91": _("Protocol wrong type for socket"),
+    "-92": _("Protocol not available"),
+    "-93": _("Protocol not supported"),
+    "-94": _("Socket type not supported"),
+    "-95": _("Operation not supported on transport endpoint"),
+    "-96": _("Protocol family not supported"),
+    "-97": _("Address family not supported by protocol"),
+    "-99": _("Cannot assign requested address"),
+    "-100": _("Network is down"),
+    "-101": _("Network is unreachable"),
   };
   return messages[String(error_code)] || `Unknown error (code: ${error_code})`;
+}
+
+export function translateStatus(str: string | undefined) {
+  if (!str) return str;
+  if (str === "running") return _("Running");
+  if (str === "stopped") return _("Stopped");
+  if (str === "degraded") return _("Degraded");
+  return str;
 }

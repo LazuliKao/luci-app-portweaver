@@ -140,25 +140,32 @@ function formatUptime() {
 function getErrorMessage(error_code) {
     if (error_code === undefined || error_code === 0) return null;
     const messages = {
-        "0": "OK",
-        "-1": "Memory allocation failed",
-        "-2": "Failed to bind to port",
-        "-3": "Address or port already in use (EADDRINUSE)",
-        "-4": "Permission denied - unable to bind to port (EACCES)",
-        "-5": "Invalid address format",
-        "-98": "Address already in use",
-        "-91": "Protocol wrong type for socket",
-        "-92": "Protocol not available",
-        "-93": "Protocol not supported",
-        "-94": "Socket type not supported",
-        "-95": "Operation not supported on transport endpoint",
-        "-96": "Protocol family not supported",
-        "-97": "Address family not supported by protocol",
-        "-99": "Cannot assign requested address",
-        "-100": "Network is down",
-        "-101": "Network is unreachable"
+        "0": _("OK"),
+        "-1": _("Memory allocation failed"),
+        "-2": _("Failed to bind to port"),
+        "-3": _("Address or port already in use (EADDRINUSE)"),
+        "-4": _("Permission denied - unable to bind to port (EACCES)"),
+        "-5": _("Invalid address format"),
+        "-98": _("Address already in use"),
+        "-91": _("Protocol wrong type for socket"),
+        "-92": _("Protocol not available"),
+        "-93": _("Protocol not supported"),
+        "-94": _("Socket type not supported"),
+        "-95": _("Operation not supported on transport endpoint"),
+        "-96": _("Protocol family not supported"),
+        "-97": _("Address family not supported by protocol"),
+        "-99": _("Cannot assign requested address"),
+        "-100": _("Network is down"),
+        "-101": _("Network is unreachable")
     };
     return messages[String(error_code)] || "Unknown error (code: ".concat(error_code, ")");
+}
+function translateStatus(str) {
+    if (!str) return str;
+    if (str === "running") return _("Running");
+    if (str === "stopped") return _("Stopped");
+    if (str === "degraded") return _("Degraded");
+    return str;
 }
 
 ;// CONCATENATED MODULE: ./utils/rpc-client.ts
@@ -317,7 +324,7 @@ class Client {
         const statusElements = [
             /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("span", statusBadgeAttrs, /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
-            }, startupFailed ? "failed" : status.status || "unknown")))
+            }, startupFailed ? "failed" : translateStatus(status.status || "unknown"))))
         ];
         if (errorMessage && status.status !== "stopped") statusElements.push(/*#__PURE__*/ createJsxElement("small", {
             style: "color: #dc3545; margin-top: 0.3em;"
@@ -467,7 +474,7 @@ class Client {
                     degraded: "orange"
                 };
                 if ((_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.statusValueEl) {
-                    this.statusPanel.statusValueEl.textContent = this.globalStatus.status || "-";
+                    this.statusPanel.statusValueEl.textContent = translateStatus(this.globalStatus.status) || "-";
                     this.statusPanel.statusValueEl.style.color = statusColors[this.globalStatus.status || ""] || "gray";
                 }
                 if ((_this_statusPanel1 = this.statusPanel) === null || _this_statusPanel1 === void 0 ? void 0 : _this_statusPanel1.totalProjectsEl) this.statusPanel.totalProjectsEl.textContent = String(this.globalStatus.total_projects || 0);
@@ -992,7 +999,6 @@ class LogViewerDialog {
     updateStatus() {
         if (!this.core) return;
         this.props.fetcher(this.props.name).then((response)=>{
-            console.log(response);
             const status = response.status || "unavailable";
             const lastError = response.last_error || "";
             const statusColor = {
@@ -1034,6 +1040,7 @@ class LogViewerDialog {
 }
 
 ;// CONCATENATED MODULE: ./components/ProxyStatsViewer.tsx
+
 
 
 class ProxyStatsViewer {
@@ -1110,7 +1117,7 @@ class ProxyStatsViewer {
                 }, /*#__PURE__*/ createJsxElement("span", {
                     class: "ifacebadge",
                     style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
-                }, statusText));
+                }, translateStatus(statusText)));
                 this.statsEl.appendChild(statusBadge);
                 const countEl = /*#__PURE__*/ createJsxElement("small", {
                     style: "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";")

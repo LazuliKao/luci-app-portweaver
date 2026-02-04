@@ -10,7 +10,7 @@ export default function (
   client: Client,
   tab_id: string,
 ) {
-  let o: LuCI.form.CBIAbstractValue;
+  let o: LuCI.form.CBIAbstractSectionValue;
 
   o = s.taboption(
     tab_id,

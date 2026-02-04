@@ -9,6 +9,7 @@ import {
   formatBytes,
   formatUptime,
   getErrorMessage,
+  translateStatus,
 } from "../utils/formatters";
 import { rpcClient } from "../utils/rpc-client";
 import { getThemeColors } from "../utils/theme-utils";
@@ -53,7 +54,7 @@ export class Client {
         };
         if (this.statusPanel?.statusValueEl) {
           this.statusPanel.statusValueEl.textContent =
-            this.globalStatus.status || "-";
+            translateStatus(this.globalStatus.status) || "-";
           (this.statusPanel.statusValueEl.style as any).color =
             statusColors[this.globalStatus.status || ""] || "gray";
         }
@@ -168,7 +169,9 @@ export class Client {
           <strong
             style={`font-size: 1em; font-weight: 600; color: ${statusColor};`}
           >
-            {startupFailed ? "failed" : status.status || "unknown"}
+            {startupFailed
+              ? "failed"
+              : translateStatus(status.status || "unknown")}
           </strong>
         </span>
       </div>,

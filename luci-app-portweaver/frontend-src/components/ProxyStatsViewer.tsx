@@ -1,6 +1,7 @@
 import type { RpcClient } from "../utils/rpc-client";
 import type { FrpProxy } from "../types/portweaver/frp";
 import { getThemeColors } from "../utils/theme-utils";
+import { translateStatus } from "../utils/formatters";
 
 interface ProxyStatsViewerProps {
   clientId: string;
@@ -140,7 +141,7 @@ export class ProxyStatsViewer {
               class="ifacebadge"
               style={`font-size: 1em; font-weight: 600; color: ${statusColor};`}
             >
-              {statusText}
+              {translateStatus(statusText)}
             </span>
           </div>
         );

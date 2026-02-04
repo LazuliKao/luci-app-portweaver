@@ -165,8 +165,6 @@ export class LogViewerDialog {
     this.props
       .fetcher(this.props.name)
       .then((response) => {
-        console.log(response);
-
         const status = response.status || "unavailable";
         const lastError = response.last_error || "";
 
