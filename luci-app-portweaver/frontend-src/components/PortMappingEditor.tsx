@@ -211,7 +211,7 @@ class PortMappingEditor extends L.form.Value {
         <div
           class="portmapping-preview"
           data-index={index}
-          style="margin-top: 6px; padding: 6px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
+          style="margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
         >
           {_("Preview: ")}
           {this.buildString(mapping)}
@@ -321,7 +321,7 @@ class PortMappingEditor extends L.form.Value {
           id={row_id}
           class="portmapping-row"
           data-index={index}
-          style="margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;"
+          style="margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
         >
           {buttonRow}
           {titleRow}

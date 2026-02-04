@@ -165,13 +165,11 @@ function getErrorMessage(error_code) {
 function createRpcClient(rpc) {
     const getStatus = rpc.declare({
         object: "portweaver",
-        method: "get_status",
-        expect: {}
+        method: "get_status"
     });
     const listProjects = rpc.declare({
         object: "portweaver",
-        method: "list_projects",
-        expect: {}
+        method: "list_projects"
     });
     const setEnabled = rpc.declare({
         object: "portweaver",
@@ -179,55 +177,54 @@ function createRpcClient(rpc) {
         params: [
             "id",
             "enabled"
-        ],
-        expect: {}
+        ]
     });
     const getFrpStatus = rpc.declare({
         object: "portweaver",
-        method: "get_frp_status",
-        expect: {}
+        method: "get_frp_status"
     });
     const getFrpInfo = rpc.declare({
         object: "portweaver",
         method: "get_frp_info",
         params: [
             "id"
-        ],
-        expect: {}
+        ]
     });
     const clearFrpLogs = rpc.declare({
         object: "portweaver",
         method: "clear_frp_logs",
         params: [
             "id"
-        ],
-        expect: {}
+        ]
+    });
+    const getFrpProxyStats = rpc.declare({
+        object: "portweaver",
+        method: "get_frp_proxy_stats",
+        params: [
+            "id"
+        ]
     });
     const getEvents = rpc.declare({
         object: "portweaver",
-        method: "get_events",
-        expect: {}
+        method: "get_events"
     });
     const getDdnsStatus = rpc.declare({
         object: "portweaver",
-        method: "get_ddns_status",
-        expect: {}
+        method: "get_ddns_status"
     });
     const getDdnsInfo = rpc.declare({
         object: "portweaver",
         method: "get_ddns_info",
         params: [
             "name"
-        ],
-        expect: {}
+        ]
     });
     const clearDdnsLogs = rpc.declare({
         object: "portweaver",
         method: "clear_ddns_logs",
         params: [
             "name"
-        ],
-        expect: {}
+        ]
     });
     return {
         getStatus,
@@ -235,6 +232,7 @@ function createRpcClient(rpc) {
         setEnabled,
         getFrpStatus,
         getFrpInfo,
+        getFrpProxyStats,
         clearFrpLogs,
         getEvents,
         getDdnsStatus,
@@ -242,12 +240,50 @@ function createRpcClient(rpc) {
         clearDdnsLogs
     };
 }
+const rpcClient = createRpcClient(L.rpc);
+
+;// CONCATENATED MODULE: ./utils/theme-utils.ts
+/**
+ * Detects the current theme (dark/light mode) based on body background color
+ * and returns appropriate color values for UI elements.
+ *
+ * This function analyzes the computed background color of the document body
+ * to determine if the current theme is dark or light, then returns suitable
+ * colors for selection backgrounds and line numbers that work well with
+ * the detected theme.
+ *
+ * @returns {ThemeColors} Object containing theme information and color values
+ */ function getThemeColors() {
+    try {
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        const match = bodyBg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+            const r = parseInt(match[1], 10);
+            const g = parseInt(match[2], 10);
+            const b = parseInt(match[3], 10);
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            const isDark = luminance < 128;
+            return {
+                isDark,
+                selectionBg: isDark ? "rgba(66, 165, 245, 0.2)" : "#e3f2fd",
+                lineNumberColor: isDark ? "#aaa" : "#999"
+            };
+        }
+    } catch (_e) {
+        console.warn("Failed to detect theme, using light mode defaults");
+    }
+    return {
+        isDark: false,
+        selectionBg: "#e3f2fd",
+        lineNumberColor: "#999"
+    };
+}
 
 ;// CONCATENATED MODULE: ./modules/client.tsx
 
 
 
-const rpcClient = createRpcClient(L.rpc);
+
 class Client {
     getProjectIndex(section_id) {
         const sections = L.uci.sections("portweaver", "project");
@@ -302,10 +338,14 @@ class Client {
         return statusElements;
     }
     renderForwarderStats(forwarders) {
+        const themeColors = getThemeColors();
+        const borderColor = themeColors.isDark ? "#333" : "#eee";
+        const bgColor = themeColors.isDark ? "#222" : "#f8f9fa";
+        const textColor = themeColors.isDark ? "#ccc" : "#6c757d";
         const rows = forwarders.map((f)=>/*#__PURE__*/ createJsxElement("div", {
-                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;"
+                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(borderColor, ";")
             }, /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 35px; color: #6c757d;"
+                style: "min-width: 35px; color: ".concat(textColor, ";")
             }, f.protocol.toUpperCase()), /*#__PURE__*/ createJsxElement("span", {
                 style: "min-width: 45px;"
             }, ":", f.local_port), /*#__PURE__*/ createJsxElement("span", {
@@ -314,14 +354,14 @@ class Client {
                 style: "color: #dc3545;"
             }, "\u2191".concat(formatBytes(f.bytes_out)))));
         return /*#__PURE__*/ createJsxElement("div", {
-            style: "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;"
+            style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(bgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
         }, rows);
     }
     updateProjectHealthIndicator() {
-        var _this_projectStatuses;
+        var _this_projectStatuses, _this_statusPanel;
         const enabledProjects = ((_this_projectStatuses = this.projectStatuses) === null || _this_projectStatuses === void 0 ? void 0 : _this_projectStatuses.filter((p)=>p.enabled)) || [];
         const runningProjects = enabledProjects.filter((p)=>p.status === "running");
-        const healthElem = document.getElementById("project-health-value");
+        const healthElem = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.projectHealthEl;
         if (healthElem) {
             const healthColor = runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545";
             healthElem.innerHTML = "";
@@ -333,7 +373,8 @@ class Client {
         }
     }
     updateFrpErrorDisplay() {
-        const errorElem = document.getElementById("frp-error-value");
+        var _this_statusPanel;
+        const errorElem = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.frpErrorEl;
         if (errorElem && this.frpStatus.last_error) {
             const truncated = this.frpStatus.last_error.length > 50 ? "".concat(this.frpStatus.last_error.substring(0, 47), "...") : this.frpStatus.last_error;
             errorElem.title = this.frpStatus.last_error;
@@ -344,7 +385,8 @@ class Client {
         }
     }
     updateActivityLog() {
-        const logContainer = document.getElementById("activity-log-container");
+        var _this_statusPanel;
+        const logContainer = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.activityLogContainer;
         if (logContainer && this.events && this.events.length > 0) {
             const recentEvents = this.events.slice(-5).reverse();
             logContainer.innerHTML = "";
@@ -395,6 +437,9 @@ class Client {
         _define_property(this, "projectStatuses", void 0);
         _define_property(this, "frpStatus", void 0);
         _define_property(this, "events", void 0);
+        // References to UI elements provided by StatusPanel and config
+        _define_property(this, "statusPanel", void 0);
+        _define_property(this, "projectContainers", {});
         this.globalStatus = data[0] || {};
         this.projectStatuses = data[1] ? data[1].projects || [] : [];
         this.frpStatus = data[2] || {
@@ -402,12 +447,8 @@ class Client {
         };
         this.events = data[3] || [];
         L.Poll.add(async ()=>{
-            const updateText = (id, value)=>{
-                const elem = document.getElementById(id);
-                if (elem) elem.textContent = String(value);
-            };
             try {
-                var _results_, _results_1;
+                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7;
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
@@ -420,28 +461,25 @@ class Client {
                     frp_enabled: false
                 };
                 this.events = ((_results_1 = results[3]) === null || _results_1 === void 0 ? void 0 : _results_1.events) || [];
-                const statusElem = document.getElementById("status-value");
                 const statusColors = {
                     running: "green",
                     stopped: "red",
                     degraded: "orange"
                 };
-                if (statusElem) {
-                    statusElem.textContent = this.globalStatus.status || "-";
-                    statusElem.style.color = statusColors[this.globalStatus.status || ""] || "gray";
+                if ((_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.statusValueEl) {
+                    this.statusPanel.statusValueEl.textContent = this.globalStatus.status || "-";
+                    this.statusPanel.statusValueEl.style.color = statusColors[this.globalStatus.status || ""] || "gray";
                 }
-                updateText("total-projects-value", this.globalStatus.total_projects || 0);
-                updateText("active-ports-value", this.globalStatus.active_ports || 0);
-                updateText("uptime-value", formatUptime(this.globalStatus.uptime || 0));
-                updateText("traffic-in-value", formatBytes(this.globalStatus.total_bytes_in || 0));
-                updateText("traffic-out-value", formatBytes(this.globalStatus.total_bytes_out || 0));
-                const frpEnabledElem = document.getElementById("frp-enabled-value");
-                if (frpEnabledElem) {
-                    frpEnabledElem.textContent = this.frpStatus.frp_enabled ? _("Enabled") : _("Disabled");
-                    frpEnabledElem.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
+                if ((_this_statusPanel1 = this.statusPanel) === null || _this_statusPanel1 === void 0 ? void 0 : _this_statusPanel1.totalProjectsEl) this.statusPanel.totalProjectsEl.textContent = String(this.globalStatus.total_projects || 0);
+                if ((_this_statusPanel2 = this.statusPanel) === null || _this_statusPanel2 === void 0 ? void 0 : _this_statusPanel2.activePortsEl) this.statusPanel.activePortsEl.textContent = String(this.globalStatus.active_ports || 0);
+                if ((_this_statusPanel3 = this.statusPanel) === null || _this_statusPanel3 === void 0 ? void 0 : _this_statusPanel3.uptimeEl) this.statusPanel.uptimeEl.textContent = formatUptime(this.globalStatus.uptime || 0);
+                if ((_this_statusPanel4 = this.statusPanel) === null || _this_statusPanel4 === void 0 ? void 0 : _this_statusPanel4.trafficInEl) this.statusPanel.trafficInEl.textContent = formatBytes(this.globalStatus.total_bytes_in || 0);
+                if ((_this_statusPanel5 = this.statusPanel) === null || _this_statusPanel5 === void 0 ? void 0 : _this_statusPanel5.trafficOutEl) this.statusPanel.trafficOutEl.textContent = formatBytes(this.globalStatus.total_bytes_out || 0);
+                if ((_this_statusPanel6 = this.statusPanel) === null || _this_statusPanel6 === void 0 ? void 0 : _this_statusPanel6.frpEnabledEl) {
+                    this.statusPanel.frpEnabledEl.textContent = this.frpStatus.frp_enabled ? _("Enabled") : _("Disabled");
+                    this.statusPanel.frpEnabledEl.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
                 }
-                const frpVersionElem = document.getElementById("frp-version-value");
-                if (frpVersionElem && this.frpStatus.frp_version) frpVersionElem.textContent = this.frpStatus.frp_version;
+                if (((_this_statusPanel7 = this.statusPanel) === null || _this_statusPanel7 === void 0 ? void 0 : _this_statusPanel7.frpVersionEl) && this.frpStatus.frp_version) this.statusPanel.frpVersionEl.textContent = this.frpStatus.frp_version;
                 this.updateProjectHealthIndicator();
                 this.updateFrpErrorDisplay();
                 this.updateActivityLog();
@@ -451,12 +489,14 @@ class Client {
                         const section_id = sections[i][".name"];
                         if (!section_id) continue;
                         const status = this.getProjectStatus(section_id);
-                        const section = document.getElementById("project-status-".concat(section_id));
+                        const section = this.projectContainers[section_id];
                         if (!section) continue;
                         const newStatusElements = this.renderStatusElements(status, section_id);
-                        section.replaceWith(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("div", {
+                        const newContainer = /*#__PURE__*/ createJsxElement("div", {
                             id: "project-status-".concat(section_id)
-                        }, newStatusElements)));
+                        }, newStatusElements);
+                        section.replaceWith(newContainer);
+                        this.projectContainers[section_id] = newContainer;
                     }
                 })();
             } catch (err) {
@@ -466,90 +506,232 @@ class Client {
     }
 }
 
-;// CONCATENATED MODULE: ./components/LogViewer.tsx
+;// CONCATENATED MODULE: ./components/LogViewerCore.tsx
 
-class LogViewer {
+
+
+
+const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
+const REGEX_LOG_TIMESTAMP = /\d{4}[-/]\d{2}[-/]\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})?/g;
+const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
+const REGEX_SUCCESS = /\b(success|ok|done|complete)\b/gi;
+const REGEX_UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+class LogViewerCore {
+    highlightLog(text) {
+        const matches = [];
+        const collect = (regex, render)=>{
+            let m;
+            while(m = regex.exec(text))matches.push({
+                start: m.index,
+                end: m.index + m[0].length,
+                render
+            });
+        };
+        collect(REGEX_IP, (s)=>/*#__PURE__*/ createJsxElement("strong", null, s));
+        collect(REGEX_ERROR, (s)=>/*#__PURE__*/ createJsxElement("strong", null, s));
+        collect(REGEX_LOG_TIMESTAMP, (s)=>/*#__PURE__*/ createJsxElement("span", {
+                style: "font-weight: 300; opacity: 0.7;"
+            }, s));
+        collect(REGEX_SUCCESS, (s)=>/*#__PURE__*/ createJsxElement("strong", null, s));
+        collect(REGEX_UUID, (s)=>/*#__PURE__*/ createJsxElement("code", null, s));
+        // 按开始位置排序
+        matches.sort((a, b)=>a.start - b.start);
+        // 如果有重叠，只保留最长（或最先定义的）
+        const resolved = [];
+        let lastEnd = -1;
+        for (const m of matches)if (m.start >= lastEnd) {
+            resolved.push(m);
+            lastEnd = m.end;
+        }
+        // 生成 JSX segments
+        const output = [];
+        let cursor = 0;
+        let key = 0;
+        for (const m of resolved){
+            if (cursor < m.start) output.push(text.slice(cursor, m.start));
+            output.push(m.render(text.slice(m.start, m.end), key++));
+            cursor = m.end;
+        }
+        if (cursor < text.length) output.push(text.slice(cursor));
+        return output;
+    }
+    applyFilters() {
+        let filtered = this.logs;
+        if (this.searchFilter.trim()) {
+            const query = this.searchFilter.toLowerCase();
+            filtered = filtered.filter((log)=>log.toLowerCase().includes(query));
+        }
+        this.filteredLogs = filtered;
+    }
+    toggleLineSelection(index) {
+        if (this.selectedLines.has(index)) this.selectedLines.delete(index);
+        else this.selectedLines.add(index);
+    }
+    selectRange(endIndex) {
+        if (this.selectedLines.size === 0) {
+            this.selectedLines.add(endIndex);
+            return;
+        }
+        const indices = Array.from(this.selectedLines);
+        const startIndex = Math.max(...indices);
+        const min = Math.min(startIndex, endIndex);
+        const max = Math.max(startIndex, endIndex);
+        for(let i = min; i <= max; i++)this.selectedLines.add(i);
+    }
+    exportAll() {
+        const text = this.logs.join("\n");
+        const blob = new Blob([
+            text
+        ], {
+            type: "text/plain"
+        });
+        const url = URL.createObjectURL(blob);
+        const a = /*#__PURE__*/ createJsxElement("a", {
+            href: url,
+            download: "".concat(this.props.name, "-logs.txt")
+        }, _("Download Logs"));
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    toggleWrap() {
+        this.wrapText = !this.wrapText;
+        if (this.logContainer) this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
+        if (this.wrapButton) this.wrapButton.textContent = this.wrapText ? _("WRAP: ON") : _("WRAP: OFF");
+    }
     render() {
         const statusColor = {
+            running: "#4CAF50",
             connected: "#4CAF50",
             connecting: "#FFC107",
             error: "#F44336",
             stopped: "#9E9E9E",
             unavailable: "#9E9E9E"
         }[this.status] || "#9E9E9E";
-        // Store refs to DOM nodes directly (no querySelector/getElementById)
         this.statusSpan = /*#__PURE__*/ createJsxElement("span", {
-            style: "color: ".concat(statusColor, "; font-weight: 600;")
+            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;")
         }, this.status);
         this.errorSpan = /*#__PURE__*/ createJsxElement("div", {
             style: this.lastError ? "color: #F44336; margin-top: 0.3em; display:block" : "color: #F44336; margin-top: 0.3em; display:none"
         }, this.lastError);
-        const placeholder = /*#__PURE__*/ createJsxElement("div", {
-            style: "color: #6c757d; text-align: center; padding: 2em;"
-        }, "No logs available");
-        this.logContainer = /*#__PURE__*/ createJsxElement("div", {
-            style: "flex: 1; overflow-y: auto; padding: 1em; background: #f8f9fa; font-family: monospace; font-size: 0.85em; line-height: 1.5;"
-        }, this.logs.length === 0 ? placeholder : null);
-        this.modal = /*#__PURE__*/ createJsxElement("div", {
-            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
-            onclick: (e)=>{
-                if (e.target === e.currentTarget) this.close();
+        this.searchInput = /*#__PURE__*/ createJsxElement("input", {
+            type: "text",
+            class: "cbi-input-text",
+            placeholder: _("Search logs..."),
+            style: "flex: 1; min-width: 150px; max-width: 400px;",
+            oninput: (e)=>{
+                const target = e.target;
+                this.searchFilter = target.value;
+                this.applyFilters();
+                this.updateDisplay();
             }
-        }, /*#__PURE__*/ createJsxElement("div", {
-            style: "background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;"
-        }, /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 1.5em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
-        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h3", {
+        });
+        const refreshButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>this.fetchLogs()
+        }, _("REFRESH"));
+        this.pauseButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>{
+                this.isPaused = !this.isPaused;
+                if (this.pauseButton) this.pauseButton.textContent = this.isPaused ? _("PAUSED") : _("PAUSE");
+                if (this.isPaused) this.stopPolling();
+                else this.startPolling();
+            }
+        }, _("PAUSE"));
+        this.followButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>{
+                this.isFollowing = !this.isFollowing;
+                if (this.followButton) this.followButton.textContent = this.isFollowing ? _("FOLLOW: ON") : _("FOLLOW: OFF");
+            }
+        }, _("FOLLOW: ON"));
+        this.wrapButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>this.toggleWrap()
+        }, _("WRAP: OFF"));
+        this.logContainer = /*#__PURE__*/ createJsxElement("div", {
+            class: "log-container",
+            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
+        }, this.logs.length === 0 ? _("No logs available") : null);
+        const copyButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.copyToClipboard()
+        }, _("COPY"));
+        const copySelectedButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-positive",
+            onclick: ()=>{
+                if (this.selectedLines.size > 0) this.copyToClipboard();
+                else alert(_("No lines selected"));
+            }
+        }, _("COPY SELECTED"));
+        const exportButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-positive",
+            onclick: ()=>this.exportAll()
+        }, _("EXPORT"));
+        const clearButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.clearLogs(),
+            style: "background: #dc3545; color: white;"
+        }, _("CLEAR"));
+        this.searchBar = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;"
+        }, this.searchInput, refreshButton, this.pauseButton, this.followButton, this.wrapButton);
+        this.footer = /*#__PURE__*/ createJsxElement("div", {
+            class: "button-row",
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
+        }, copyButton, copySelectedButton, exportButton, clearButton);
+        this.header = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
+        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
             style: "margin: 0; font-size: 1.2em; font-weight: 600;"
         }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, "Status: ", this.statusSpan, this.errorSpan)), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.close(),
-            style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-        }, "\xd7")), this.logContainer, /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 1em; border-top: 1px solid #dee2e6; display: flex; gap: 0.5em; justify-content: flex-end;"
-        }, /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.copyToClipboard(),
-            style: "padding: 0.5em 1em; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-        }, "Copy to Clipboard"), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.clearLogs(),
-            style: "padding: 0.5em 1em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-        }, "Clear Logs"), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.close(),
-            style: "padding: 0.5em 1em; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
-        }, "Close"))));
-        return this.modal;
+        }, _("Status:"), " ", this.statusSpan, this.errorSpan)));
+        const content = /*#__PURE__*/ createJsxElement("div", {
+            class: "log-viewer-core",
+            style: "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
+        }, this.props.showHeader ? this.header : null, this.searchBar, this.applyScrollbarStyles(), this.logContainer, this.footer);
+        return content;
     }
-    open() {
-        if (this.isOpen) return;
-        this.isOpen = true;
-        // Render and attach modal, then populate initial content
-        const node = this.render();
-        document.body.appendChild(node);
+    getSearchBar() {
+        return this.searchBar;
+    }
+    getLogContainer() {
+        return this.logContainer;
+    }
+    getFooter() {
+        return this.footer;
+    }
+    init() {
         this.updateDisplay();
         this.startPolling();
     }
-    close() {
-        var _this_modal_parentElement, _this_modal;
-        if (!this.isOpen) return;
-        this.isOpen = false;
+    destroy() {
         this.stopPolling();
-        (_this_modal = this.modal) === null || _this_modal === void 0 ? void 0 : (_this_modal_parentElement = _this_modal.parentElement) === null || _this_modal_parentElement === void 0 ? void 0 : _this_modal_parentElement.removeChild(this.modal);
-        // Release DOM references to avoid retaining detached nodes
-        this.modal = null;
         this.logContainer = null;
         this.statusSpan = null;
         this.errorSpan = null;
+        this.searchInput = null;
+        this.pauseButton = null;
+        this.followButton = null;
+        this.wrapButton = null;
+        this.searchBar = null;
+        this.footer = null;
+        this.header = null;
     }
     startPolling() {
         this.fetchLogs();
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = window.setInterval(()=>{
-            if (this.isOpen) this.fetchLogs();
+            if (!this.isPaused) this.fetchLogs();
         }, 3000);
     }
     stopPolling() {
@@ -563,100 +745,461 @@ class LogViewer {
             this.status = response.status || "unavailable";
             this.lastError = response.last_error || "";
             this.logs = response.logs || [];
+            this.applyFilters();
             this.updateDisplay();
         }).catch((err)=>{
             console.error("Failed to fetch logs:", err);
             this.status = "error";
-            this.lastError = "Failed to fetch logs";
+            this.lastError = _("Failed to fetch logs");
             this.updateDisplay();
         });
     }
+    applyScrollbarStyles() {
+        const themeColors = getThemeColors();
+        if (!this.logContainer) return;
+        const scrollbarTrack = themeColors.isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)";
+        const scrollbarThumb = themeColors.isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(0, 0, 0, 0.4)";
+        const scrollbarThumbHover = themeColors.isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.6)";
+        const scrollbarThumbActive = themeColors.isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.8)";
+        return /*#__PURE__*/ createJsxElement("style", null, "\n      .log-container::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .log-container::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .log-container::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .log-container::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .log-container {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    "));
+    }
     updateDisplay() {
-        // Update status
+        const themeColors = getThemeColors();
         if (this.statusSpan) {
             this.statusSpan.textContent = this.status;
-            // update color
-            const color = {
+            const backgroundColor = {
+                running: "#4CAF50",
                 connected: "#4CAF50",
                 connecting: "#FFC107",
                 error: "#F44336",
                 stopped: "#9E9E9E",
                 unavailable: "#9E9E9E"
             }[this.status] || "#9E9E9E";
-            this.statusSpan.setAttribute("style", "color: ".concat(color, "; font-weight: 600;"));
+            this.statusSpan.setAttribute("style", "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(backgroundColor, "; color: white; font-weight: 600; font-size: 0.85em;"));
         }
-        // Update error
         if (this.errorSpan) {
             if (this.lastError) {
                 this.errorSpan.style.display = "";
                 this.errorSpan.textContent = this.lastError;
             } else this.errorSpan.style.display = "none";
         }
-        // Update logs
         if (this.logContainer) {
-            // clear existing children
+            const wasAtBottom = this.logContainer.scrollHeight - this.logContainer.scrollTop <= this.logContainer.clientHeight + 50;
             while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
-            if (this.logs.length === 0) {
-                var _this_logContainer;
-                const noLogs = document.createElement("div");
-                noLogs.style.cssText = "color: #6c757d; text-align: center; padding: 2em;";
-                noLogs.textContent = "No logs available";
-                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(noLogs);
-            } else this.logs.forEach((log)=>{
-                var _this_logContainer;
-                const logEl = document.createElement("div");
-                logEl.style.cssText = "color: #333; word-break: break-word; margin-bottom: 0.2em;";
-                logEl.textContent = log;
-                (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(logEl);
-            });
-            this.logContainer.scrollTop = this.logContainer.scrollHeight;
+            if (this.filteredLogs.length === 0) {
+                const noLogs = /*#__PURE__*/ createJsxElement("div", {
+                    style: "color: ".concat(themeColors.lineNumberColor, "; text-align: center; padding: 2em; font-family: monospace;")
+                }, this.searchFilter ? _("No logs match your search") : _("No logs available"));
+                this.logContainer.appendChild(noLogs);
+            } else {
+                const lineNumberWidth = "".concat(this.filteredLogs.length.toString().length, ".5ch");
+                this.filteredLogs.forEach((log, index)=>{
+                    var _this_logContainer;
+                    const isSelected = this.selectedLines.has(index);
+                    (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                        onclick: (e)=>{
+                            e.preventDefault();
+                            if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
+                            else if (e.shiftKey && this.selectedLines.size > 0) this.selectRange(index);
+                            else {
+                                this.selectedLines.clear();
+                                this.toggleLineSelection(index);
+                            }
+                            this.updateDisplay();
+                        },
+                        style: "cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.15em 0.25em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;")
+                    }, /*#__PURE__*/ createJsxElement("span", {
+                        style: "color: ".concat(themeColors.lineNumberColor, "; margin-right: 1ch; min-width: ").concat(lineNumberWidth, "; display: inline-block; text-align: right; flex-shrink: 0;")
+                    }, index + 1), /*#__PURE__*/ createJsxElement("span", null, this.highlightLog(log))));
+                });
+            }
+            if (this.isFollowing && wasAtBottom) this.logContainer.scrollTop = this.logContainer.scrollHeight;
         }
     }
     copyToClipboard() {
-        const text = this.logs.join("\n");
-        navigator.clipboard.writeText(text).then(()=>{
-            alert("Logs copied to clipboard");
+        let text = "";
+        if (this.selectedLines.size > 0) {
+            // Copy selected lines from filteredLogs (what user sees)
+            const indices = Array.from(this.selectedLines).sort((a, b)=>a - b);
+            text = indices.map((i)=>this.filteredLogs[i]).join("\n");
+        } else // Copy all original logs (not filtered)
+        text = this.logs.join("\n");
+        let useModernClipboard = false;
+        try {
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+                navigator.clipboard.writeText("");
+                useModernClipboard = true;
+            }
+        } catch (_e) {
+            useModernClipboard = false;
+        }
+        if (useModernClipboard) navigator.clipboard.writeText(text).then(()=>{
+            alert(_("Logs copied to clipboard"));
         }).catch((err)=>{
             console.error("Failed to copy logs:", err);
-            alert("Failed to copy logs");
+            alert(_("Failed to copy logs"));
         });
+        else {
+            const textarea = /*#__PURE__*/ createJsxElement("textarea", {
+                style: "position: fixed; opacity: 0; display: none;"
+            }, text);
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                const success = document.execCommand("copy");
+                if (success) alert(_("Logs copied to clipboard"));
+                else throw new Error("execCommand failed");
+            } catch (err) {
+                console.error("Failed to copy logs:", err);
+                alert(_("Failed to copy logs - please select and copy manually"));
+            } finally{
+                document.body.removeChild(textarea);
+            }
+        }
     }
     clearLogs() {
-        if (confirm("Are you sure you want to clear the logs?")) this.props.clearer(this.props.name).then(()=>{
+        if (confirm(_("Are you sure you want to clear the logs?"))) this.props.clearer(this.props.name).then(()=>{
             this.logs = [];
+            this.filteredLogs = [];
+            this.selectedLines.clear();
             this.updateDisplay();
         }).catch((err)=>{
             console.error("Failed to clear logs:", err);
-            alert("Failed to clear logs");
+            alert(_("Failed to clear logs"));
+        });
+    }
+    constructor(props){
+        var _props_showHeader;
+        _define_property(this, "props", void 0);
+        _define_property(this, "logContainer", null);
+        _define_property(this, "statusSpan", null);
+        _define_property(this, "errorSpan", null);
+        _define_property(this, "searchInput", null);
+        _define_property(this, "pauseButton", null);
+        _define_property(this, "followButton", null);
+        _define_property(this, "wrapButton", null);
+        _define_property(this, "status", "unavailable");
+        _define_property(this, "logs", []);
+        _define_property(this, "lastError", "");
+        _define_property(this, "pollInterval", null);
+        _define_property(this, "searchFilter", "");
+        _define_property(this, "filteredLogs", []);
+        _define_property(this, "isPaused", false);
+        _define_property(this, "isFollowing", true);
+        _define_property(this, "selectedLines", new Set());
+        _define_property(this, "wrapText", false);
+        _define_property(this, "searchBar", null);
+        _define_property(this, "footer", null);
+        _define_property(this, "header", null);
+        this.props = _object_spread_props(_object_spread({}, props), {
+            showHeader: (_props_showHeader = props.showHeader) !== null && _props_showHeader !== void 0 ? _props_showHeader : true
+        });
+    }
+}
+
+;// CONCATENATED MODULE: ./components/LogViewerDialog.tsx
+
+
+
+
+class LogViewerDialog {
+    render() {
+        this.core = new LogViewerCore(_object_spread_props(_object_spread({}, this.props), {
+            showHeader: false
+        }));
+        this.core.render();
+        const statusColor = "#9E9E9E";
+        this.statusSpan = /*#__PURE__*/ createJsxElement("span", {
+            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;")
+        }, _("unavailable"));
+        this.errorSpan = /*#__PURE__*/ createJsxElement("div", {
+            style: "color: #F44336; margin-top: 0.3em; display:none"
+        });
+        const header = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
+        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
+            style: "margin: 0; font-size: 1.2em; font-weight: 600;"
+        }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+        }, _("Status:"), this.statusSpan, this.errorSpan)), /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            onclick: ()=>this.close(),
+            style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
+        }, "\xd7"));
+        const searchBar = this.core.getSearchBar();
+        const logContainer = this.core.getLogContainer();
+        const footer = this.core.getFooter();
+        const closeFooterButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button",
+            onclick: ()=>this.close()
+        }, _("Close"));
+        const dialogFooter = /*#__PURE__*/ createJsxElement("div", {
+            class: "button-row",
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
+        }, /*#__PURE__*/ createJsxElement("span", null, footer ? Array.from(footer.children) : null), /*#__PURE__*/ createJsxElement("span", null, closeFooterButton));
+        const content = /*#__PURE__*/ createJsxElement("div", {
+            class: "modal cbi-modal cbi-section-node",
+            role: "dialog",
+            "aria-modal": "true",
+            style: "width: 95vw; max-width: 1200px; max-height: 90vh; display: grid; grid-template-rows: auto auto 1fr auto;"
+        }, /*#__PURE__*/ createJsxElement("div", null, " ", header), /*#__PURE__*/ createJsxElement("div", null, searchBar), /*#__PURE__*/ createJsxElement("div", {
+            style: "max-height: min(calc(85vh - 220px), 100vh); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
+        }, logContainer), /*#__PURE__*/ createJsxElement("div", null, " ", dialogFooter));
+        this.modal = /*#__PURE__*/ createJsxElement("div", {
+            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
+            onclick: (e)=>{
+                if (e.target === e.currentTarget) this.close();
+            }
+        }, content);
+        return this.modal;
+    }
+    open() {
+        if (this.isOpen) return;
+        this.isOpen = true;
+        const node = this.render();
+        document.body.appendChild(node);
+        if (this.core) {
+            this.core.init();
+            this.startStatusPolling();
+        }
+    }
+    close() {
+        var _this_modal_parentElement, _this_modal;
+        if (!this.isOpen) return;
+        this.isOpen = false;
+        this.stopStatusPolling();
+        if (this.core) this.core.destroy();
+        (_this_modal = this.modal) === null || _this_modal === void 0 ? void 0 : (_this_modal_parentElement = _this_modal.parentElement) === null || _this_modal_parentElement === void 0 ? void 0 : _this_modal_parentElement.removeChild(this.modal);
+        this.modal = null;
+        this.core = null;
+        this.statusSpan = null;
+        this.errorSpan = null;
+    }
+    startStatusPolling() {
+        this.updateStatus();
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        this.pollInterval = window.setInterval(()=>{
+            this.updateStatus();
+        }, 3000);
+    }
+    stopStatusPolling() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+    }
+    updateStatus() {
+        if (!this.core) return;
+        this.props.fetcher(this.props.name).then((response)=>{
+            console.log(response);
+            const status = response.status || "unavailable";
+            const lastError = response.last_error || "";
+            const statusColor = {
+                running: "#4CAF50",
+                connected: "#4CAF50",
+                connecting: "#FFC107",
+                error: "#F44336",
+                stopped: "#9E9E9E",
+                unavailable: "#9E9E9E"
+            }[status] || "#9E9E9E";
+            if (this.statusSpan) {
+                this.statusSpan.textContent = status;
+                this.statusSpan.setAttribute("style", "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;"));
+            }
+            if (this.errorSpan) {
+                if (lastError) {
+                    this.errorSpan.style.display = "block";
+                    this.errorSpan.textContent = lastError;
+                } else this.errorSpan.style.display = "none";
+            }
+        }).catch((err)=>{
+            console.error("Failed to fetch status:", err);
+            if (this.statusSpan) {
+                this.statusSpan.textContent = _("error");
+                this.statusSpan.setAttribute("style", "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: #F44336; color: white; font-weight: 600; font-size: 0.85em;");
+            }
         });
     }
     constructor(props){
         _define_property(this, "props", void 0);
+        _define_property(this, "core", null);
         _define_property(this, "modal", null);
-        _define_property(this, "logContainer", null);
+        _define_property(this, "isOpen", false);
         _define_property(this, "statusSpan", null);
         _define_property(this, "errorSpan", null);
-        // Added state fields
-        _define_property(this, "status", "unavailable");
-        _define_property(this, "logs", []);
-        _define_property(this, "lastError", "");
-        _define_property(this, "isOpen", false);
         _define_property(this, "pollInterval", null);
         this.props = props;
+    }
+}
+
+;// CONCATENATED MODULE: ./components/ProxyStatsViewer.tsx
+
+
+class ProxyStatsViewer {
+    getStatsColors() {
+        const { isDark } = getThemeColors();
+        return {
+            borderColor: isDark ? "#404040" : "#ddd",
+            bgColor: isDark ? "#1e1e1e" : "#ffffff",
+            innerBgColor: isDark ? "#2d2d2d" : "#f8f9fa",
+            textColor: isDark ? "#e0e0e0" : "#333333",
+            mutedTextColor: isDark ? "#aaa" : "#6c757d",
+            successColor: isDark ? "#4CAF50" : "#28a745",
+            errorColor: isDark ? "#FF5252" : "#dc3545",
+            rowBorderColor: isDark ? "#333" : "#eee"
+        };
+    }
+    render() {
+        const colors = this.getStatsColors();
+        const container = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 12px; border: 1px solid ".concat(colors.borderColor, "; border-radius: 4px; background-color: ").concat(colors.bgColor, ";")
+        });
+        this.loadingEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 14px; color: ".concat(colors.textColor, ";")
+        }, _("Loading stats..."));
+        container.appendChild(this.loadingEl);
+        this.errorEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "color: ".concat(colors.errorColor, "; font-size: 14px; display: none;")
+        });
+        container.appendChild(this.errorEl);
+        this.statsEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "display: none; color: ".concat(colors.textColor, ";")
+        });
+        container.appendChild(this.statsEl);
+        this.fetchStats();
+        this.refreshInterval = window.setInterval(()=>this.fetchStats(), this.refreshRate);
+        this.visibilityHandler = ()=>this.handleVisibilityChange();
+        document.addEventListener("visibilitychange", this.visibilityHandler);
+        return container;
+    }
+    handleVisibilityChange() {
+        if (document.hidden) this.isPaused = true;
+        else {
+            this.isPaused = false;
+            this.fetchStats();
+        }
+    }
+    async fetchStats() {
+        if (this.isPaused) return;
+        try {
+            const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
+            const currentStats = JSON.stringify(stats);
+            if (currentStats === this.lastStats) return;
+            this.lastStats = currentStats;
+            this.retryCount = 0;
+            if (this.loadingEl) this.loadingEl.style.display = "none";
+            if (this.errorEl) this.errorEl.style.display = "none";
+            if (this.statsEl) {
+                this.statsEl.style.display = "block";
+                this.statsEl.innerHTML = "";
+                const proxies = stats.proxies || [];
+                if (!Array.isArray(proxies) || proxies.length === 0) {
+                    const colors = this.getStatsColors();
+                    this.statsEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                        style: "font-size: 14px; color: ".concat(colors.textColor, ";")
+                    }, _("No proxies configured")));
+                    return;
+                }
+                const colors = this.getStatsColors();
+                const hasError = proxies.some((p)=>p.err && p.err.length > 0);
+                const statusColor = hasError ? colors.errorColor : colors.successColor;
+                const statusText = hasError ? _("error") : _("running");
+                const statusBadge = /*#__PURE__*/ createJsxElement("div", {
+                    style: "margin-bottom: 8px;"
+                }, /*#__PURE__*/ createJsxElement("span", {
+                    class: "ifacebadge",
+                    style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
+                }, statusText));
+                this.statsEl.appendChild(statusBadge);
+                const countEl = /*#__PURE__*/ createJsxElement("small", {
+                    style: "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";")
+                }, /*#__PURE__*/ createJsxElement("span", null, _("Proxies: %d").format(proxies.length)), /*#__PURE__*/ createJsxElement("br", null));
+                this.statsEl.appendChild(countEl);
+                const container = /*#__PURE__*/ createJsxElement("div", {
+                    style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(colors.innerBgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
+                }, proxies.map((proxy)=>{
+                    var _proxy_cfg;
+                    return /*#__PURE__*/ createJsxElement("div", {
+                        style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(colors.rowBorderColor, ";")
+                    }, /*#__PURE__*/ createJsxElement("span", {
+                        style: "min-width: 35px; color: ".concat(colors.mutedTextColor, ";")
+                    }, proxy.type.toUpperCase()), /*#__PURE__*/ createJsxElement("span", {
+                        style: "min-width: 45px; color: ".concat(colors.textColor, ";")
+                    }, ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remotePort) || proxy.remote_addr || "N/A")), /*#__PURE__*/ createJsxElement("span", {
+                        style: "color: ".concat(colors.successColor, ";")
+                    }, "\u21930 B"), /*#__PURE__*/ createJsxElement("span", {
+                        style: "color: ".concat(colors.errorColor, ";")
+                    }, "\u21910 B"));
+                }));
+                this.statsEl.appendChild(container);
+            }
+        } catch (error) {
+            this.retryCount++;
+            if (this.retryCount < this.maxRetries) {
+                const backoffDelay = Math.min(1000 * 2 ** this.retryCount, 30000);
+                setTimeout(()=>this.fetchStats(), backoffDelay);
+                return;
+            }
+            if (this.loadingEl) this.loadingEl.style.display = "none";
+            if (this.errorEl) {
+                this.errorEl.style.display = "block";
+                this.errorEl.textContent = _("Error: %s").format(error instanceof Error ? error.message : _("Unknown error"));
+            }
+        }
+    }
+    destroy() {
+        if (this.refreshInterval !== null) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+        if (this.visibilityHandler) {
+            document.removeEventListener("visibilitychange", this.visibilityHandler);
+            this.visibilityHandler = null;
+        }
+        this.isPaused = true;
+    }
+    constructor(props){
+        var _props_refreshInterval;
+        _define_property(this, "clientId", void 0);
+        _define_property(this, "rpcClient", void 0);
+        _define_property(this, "statsEl", null);
+        _define_property(this, "errorEl", null);
+        _define_property(this, "loadingEl", null);
+        _define_property(this, "refreshInterval", null);
+        _define_property(this, "refreshRate", void 0);
+        _define_property(this, "isPaused", false);
+        _define_property(this, "visibilityHandler", null);
+        _define_property(this, "lastStats", "");
+        _define_property(this, "retryCount", 0);
+        _define_property(this, "maxRetries", 3);
+        this.clientId = props.clientId;
+        this.rpcClient = props.rpcClient;
+        this.refreshRate = (_props_refreshInterval = props.refreshInterval) !== null && _props_refreshInterval !== void 0 ? _props_refreshInterval : 5000;
     }
 }
 
 ;// CONCATENATED MODULE: ./modules/frp.tsx
 
 
+
+
 const frp_form = L.form;
-const STATUS_COLORS = {
-    connected: "#4CAF50",
-    connecting: "#FFC107",
-    error: "#F44336",
-    stopped: "#9E9E9E",
-    unavailable: "#9E9E9E"
-};
+function getStatusColors() {
+    const { isDark } = getThemeColors();
+    // Dark mode adjustments for better visibility
+    const connectedColor = isDark ? "#4CAF50" : "#4CAF50"; // Green works well in both
+    const connectingColor = isDark ? "#FFD700" : "#FFC107"; // Brighter gold for dark mode
+    const errorColor = isDark ? "#FF5252" : "#F44336"; // Brighter red for dark mode
+    const inactiveColor = isDark ? "#BDBDBD" : "#9E9E9E"; // Lighter gray for dark mode
+    return {
+        connected: connectedColor,
+        connecting: connectingColor,
+        error: errorColor,
+        stopped: inactiveColor,
+        unavailable: inactiveColor
+    };
+}
 const STATUS_LABELS = {
     connected: _("Connected"),
     connecting: _("Connecting"),
@@ -701,13 +1244,8 @@ const actionButtons = {};
         const info = nodeStatuses[section_id] || {
             status: "unavailable"
         };
-        const statusColor = {
-            connected: "#4CAF50",
-            connecting: "#FFC107",
-            error: "#F44336",
-            stopped: "#9E9E9E",
-            unavailable: "#9E9E9E"
-        }[info.status] || "#9E9E9E";
+        const colors = getStatusColors();
+        const statusColor = colors[info.status] || colors.unavailable;
         const statusText = {
             connected: _("Connected"),
             connecting: _("Connecting"),
@@ -771,7 +1309,7 @@ const actionButtons = {};
             class: "cbi-button cbi-button-action",
             onclick: ()=>{
                 const nodeName = L.uci.get("portweaver", section_id, "name");
-                const logViewer = new LogViewer({
+                const logViewer = new LogViewerDialog({
                     name: nodeName,
                     title: _("FRP Logs - %s").format(nodeName),
                     fetcher: async ()=>await rpcClient.getFrpInfo(String(nodeName)),
@@ -784,17 +1322,33 @@ const actionButtons = {};
         actionButtons[section_id] = btn;
         return btn;
     };
-    L.Poll.add(async ()=>{
+    o = ss.option(frp_form.DummyValue, "proxy_stats", _("Proxy Stats"));
+    o.modalonly = false;
+    o.textvalue = (section_id)=>{
+        const nodeName = L.uci.get("portweaver", section_id, "name");
+        const container = /*#__PURE__*/ createJsxElement("div", {
+            style: "display: flex; gap: 8px; flex-wrap: wrap;"
+        });
+        // Create stats viewer for the client (now shows all proxies)
+        const statsViewer = new ProxyStatsViewer({
+            clientId: nodeName,
+            rpcClient: rpcClient
+        });
+        const statsEl = statsViewer.render();
+        statsEl.style.cssText = "flex: 1; min-width: 300px; ".concat(statsEl.style.cssText);
+        container.appendChild(statsEl);
+        return container;
+    };
+    async function pollFrpStatus() {
         try {
             const sections = await L.uci.sections("portweaver", "frp_node");
             const promises = sections.map((sec)=>{
                 const nodeName = sec.name;
                 return rpcClient.getFrpInfo(nodeName).then((res)=>{
-                    var _ref, _res_frp_status;
+                    var _res_status;
                     var _nodeStatuses_sec_name;
                     const oldStatus = (_nodeStatuses_sec_name = nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
-                    // Normalize backend response (support both 'frp_status' and 'status')
-                    const rawStatus = (_ref = (_res_frp_status = res.frp_status) !== null && _res_frp_status !== void 0 ? _res_frp_status : res.status) !== null && _ref !== void 0 ? _ref : "unavailable";
+                    const rawStatus = (_res_status = res.status) !== null && _res_status !== void 0 ? _res_status : "unavailable";
                     const newStatus = [
                         "connected",
                         "connecting",
@@ -811,7 +1365,10 @@ const actionButtons = {};
                         if (container && container.childNodes.length >= 2) {
                             const indicator = container.childNodes[0];
                             const textSpan = container.childNodes[1];
-                            const statusColor = STATUS_COLORS[newStatus] || STATUS_COLORS.unavailable;
+                            // Get fresh theme colors at update time
+                            const colors = getStatusColors();
+                            const statusColor = colors[newStatus] || colors.unavailable;
+                            indicator.style.backgroundColor = statusColor;
                             indicator.style.backgroundColor = statusColor;
                             const statusText = STATUS_LABELS[newStatus] || newStatus;
                             textSpan.textContent = statusText;
@@ -842,7 +1399,9 @@ const actionButtons = {};
         } catch (e) {
             console.error("Polling for FRP status failed:", e);
         }
-    }, 5);
+    }
+    pollFrpStatus();
+    L.Poll.add(pollFrpStatus, 5);
 }
 
 ;// CONCATENATED MODULE: ./components/ValidatedInput.tsx
@@ -1281,7 +1840,7 @@ class PortMappingEditor extends L.form.Value {
             const previewDiv = /*#__PURE__*/ createJsxElement("div", {
                 class: "portmapping-preview",
                 "data-index": index,
-                style: "margin-top: 6px; padding: 6px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
+                style: "margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
             }, _("Preview: "), this.buildString(mapping));
             const updatePreview = ()=>{
                 const listen = listenInput.value.trim();
@@ -1348,7 +1907,7 @@ class PortMappingEditor extends L.form.Value {
                 id: row_id,
                 class: "portmapping-row",
                 "data-index": index,
-                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;"
+                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
             }, buttonRow, titleRow, textModeInput, frpContainer, errorDiv, previewDiv);
             const validateAndUpdate = ()=>{
                 const listen = listenInput.value.trim();
@@ -1638,9 +2197,12 @@ const uci = L.uci;
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const status = client.getProjectStatus(section_id);
-        return /*#__PURE__*/ createJsxElement("div", {
+        const container = /*#__PURE__*/ createJsxElement("div", {
             id: "project-status-".concat(section_id)
         }, client.renderStatusElements(status, section_id));
+        client.projectContainers = client.projectContainers || {};
+        client.projectContainers[section_id] = container;
+        return container;
     };
     o = ss.option(config_form.Button, "_runtime_toggle", _("Toggle"));
     o.modalonly = false;
@@ -1668,13 +2230,13 @@ const uci = L.uci;
         const dest_zones = L.toArray(uci.get("portweaver", section_id, "dest_zone"));
         const proto_text = {
             both: _("TCP and UDP"),
-            tcp: "TCP",
-            udp: "UDP"
+            tcp: _("TCP"),
+            udp: _("UDP")
         }[protocol] || String(protocol).toUpperCase();
         const family_text = {
             any: _("IPv4 and IPv6"),
-            ipv4: "IPv4",
-            ipv6: "IPv6"
+            ipv4: _("IPv4"),
+            ipv6: _("IPv6")
         }[family] || family;
         const lines = [];
         lines.push(/*#__PURE__*/ createJsxElement("span", null, _("Incoming "), /*#__PURE__*/ createJsxElement("var", null, family_text), _(" protocol "), /*#__PURE__*/ createJsxElement("var", null, proto_text)));
@@ -1832,6 +2394,7 @@ const uci = L.uci;
 
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
 
+
 class StatusPanel {
     render(status, frpStatus, projectStatuses, events) {
         const statusColor = {
@@ -1845,45 +2408,79 @@ class StatusPanel {
         const hasEnabledProjects = enabledProjects.length > 0;
         return /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("div", {
             style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;"
-        }, this.card(_("Status"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
-            id: "status-value"
-        }, status.status || "-")), this.card(_("Total Projects"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "total-projects-value"
-        }, status.total_projects || 0)), this.card(_("Active Ports"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "active-ports-value"
-        }, status.active_ports || 0)), this.card(_("Uptime"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "uptime-value"
-        }, formatUptime(status.uptime || 0))), this.card(_("Traffic In"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "traffic-in-value"
-        }, formatBytes(status.total_bytes_in || 0))), this.card(_("Traffic Out"), /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600;",
-            id: "traffic-out-value"
-        }, formatBytes(status.total_bytes_out || 0))), hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
+        }, (()=>{
+            const statusValueEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
+                id: "status-value"
+            }, status.status || "-");
+            this.statusValueEl = statusValueEl;
+            return this.card(_("Status"), statusValueEl);
+        })(), (()=>{
+            const totalProjectsEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "total-projects-value"
+            }, status.total_projects || 0);
+            this.totalProjectsEl = totalProjectsEl;
+            return this.card(_("Total Projects"), totalProjectsEl);
+        })(), (()=>{
+            const activePortsEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "active-ports-value"
+            }, status.active_ports || 0);
+            this.activePortsEl = activePortsEl;
+            return this.card(_("Active Ports"), activePortsEl);
+        })(), (()=>{
+            const uptimeEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "uptime-value"
+            }, formatUptime(status.uptime || 0));
+            this.uptimeEl = uptimeEl;
+            return this.card(_("Uptime"), uptimeEl);
+        })(), (()=>{
+            const trafficInEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "traffic-in-value"
+            }, formatBytes(status.total_bytes_in || 0));
+            this.trafficInEl = trafficInEl;
+            return this.card(_("Traffic In"), trafficInEl);
+        })(), (()=>{
+            const trafficOutEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600;",
+                id: "traffic-out-value"
+            }, formatBytes(status.total_bytes_out || 0));
+            this.trafficOutEl = trafficOutEl;
+            return this.card(_("Traffic Out"), trafficOutEl);
+        })(), hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
             id: "project-health-value"
         }, /*#__PURE__*/ createJsxElement("strong", {
             style: "font-size: 1.1em; font-weight: 600; color: ".concat(runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545", ";")
         }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, _("projects running")))), frpStatus && this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600; color: ".concat(this.getFrpStatusColor(frpStatus), ";"),
-            id: "frp-enabled-value"
-        }, this.getFrpStatusText(frpStatus)), frpStatus.frp_version && /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
-            id: "frp-version-value"
-        }, frpStatus.frp_version), frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
-        }, frpStatus.client_count, " ", _("client(s)")))), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && this.card(_("FRP Error"), /*#__PURE__*/ createJsxElement("div", {
-            style: "cursor: help;",
-            title: frpStatus.last_error,
-            id: "frp-error-value"
-        }, /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
-        }, this.truncateError(frpStatus.last_error, 50))))), events && events.length > 0 && this.renderActivityLog(events));
+        }, _("projects running")))), frpStatus && (()=>{
+            const frpEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600; color: ".concat(this.getFrpStatusColor(frpStatus), ";"),
+                id: "frp-enabled-value"
+            }, this.getFrpStatusText(frpStatus));
+            this.frpEnabledEl = frpEnabledEl;
+            const frpVersionEl = frpStatus.frp_version ? /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                id: "frp-version-value"
+            }, frpStatus.frp_version) : null;
+            if (frpVersionEl) this.frpVersionEl = frpVersionEl;
+            return this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, frpEnabledEl, frpVersionEl, frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
+            }, frpStatus.client_count, " ", _("client(s)"))));
+        })(), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && (()=>{
+            const frpErrorEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "cursor: help;",
+                title: frpStatus.last_error,
+                id: "frp-error-value"
+            }, /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
+            }, this.truncateError(frpStatus.last_error, 50)));
+            this.frpErrorEl = frpErrorEl;
+            return this.card(_("FRP Error"), frpErrorEl);
+        })()), events && events.length > 0 && this.renderActivityLog(events));
     }
     getFrpStatusColor(frpStatus) {
         if (!frpStatus.frp_enabled) return "#6c757d";
@@ -1927,10 +2524,14 @@ class StatusPanel {
             style: "margin-top: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;"
         }, /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;"
-        }, _("Recent Activity")), /*#__PURE__*/ createJsxElement("div", {
-            style: "max-height: 150px; overflow-y: auto;",
-            id: "activity-log-container"
-        }, recentEvents.map((event)=>this.renderEventRow(event))));
+        }, _("Recent Activity")), (()=>{
+            const activityLogContainer = /*#__PURE__*/ createJsxElement("div", {
+                style: "max-height: 150px; overflow-y: auto;",
+                id: "activity-log-container"
+            }, recentEvents.map((event)=>this.renderEventRow(event)));
+            this.activityLogContainer = activityLogContainer;
+            return activityLogContainer;
+        })());
     }
     renderEventRow(event) {
         const eventColors = {
@@ -1977,13 +2578,26 @@ class StatusPanel {
             style: "font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;"
         }, label), valueEl);
     }
+    constructor(){
+        _define_property(this, "statusValueEl", void 0);
+        _define_property(this, "totalProjectsEl", void 0);
+        _define_property(this, "activePortsEl", void 0);
+        _define_property(this, "uptimeEl", void 0);
+        _define_property(this, "trafficInEl", void 0);
+        _define_property(this, "trafficOutEl", void 0);
+        _define_property(this, "projectHealthEl", void 0);
+        _define_property(this, "frpEnabledEl", void 0);
+        _define_property(this, "frpVersionEl", void 0);
+        _define_property(this, "frpErrorEl", void 0);
+        _define_property(this, "activityLogContainer", void 0);
+    }
 }
 
 ;// CONCATENATED MODULE: ./modules/header.tsx
 
-const header_form = L.form;
 
-/* export default */ function header(_m, s, client, tab_id) {
+const header_form = L.form;
+/* export default */ function modules_header(_m, s, client, tab_id) {
     let o;
     o = s.taboption(tab_id, header_form.Flag, "enabled", _("Enable PortWeaver"));
     o.default = "1";
@@ -1992,6 +2606,7 @@ const header_form = L.form;
     o.rawhtml = true;
     o.cfgvalue = ()=>{
         const panel = new StatusPanel();
+        client.statusPanel = panel;
         return panel.render(client.globalStatus, client.frpStatus, client.projectStatuses, client.events);
     };
     const runtimeToggle = async (section_id)=>{
@@ -2021,11 +2636,12 @@ const header_form = L.form;
 }
 
 ;// CONCATENATED MODULE: ./modules/logs.tsx
+
 const logs_form = L.form;
 const fs = L.fs;
-L.uci;
 const ui = L.ui;
 const LOG_FILE = "/tmp/portweaver.log";
+let logViewerCore = null;
 /* export default */ function logs(_m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, logs_form.Flag, "log_enabled", _("Enable Logging"));
@@ -2034,25 +2650,36 @@ const LOG_FILE = "/tmp/portweaver.log";
     o.description = _("Enable logging output to /tmp/portweaver.log");
     o = s.taboption(tab_id, logs_form.DummyValue, "_logs_viewer");
     o.rawhtml = true;
-    let pollInterval = null;
-    const updateLogs = ()=>{
-        const container = document.getElementById("portweaver-log-container");
-        if (!container) return;
-        fs.read_direct(LOG_FILE, "text").then((res)=>{
-            container.textContent = res.trim() || _("Log is empty.");
-        }).catch((err)=>{
-            if (err.toString().includes("NotFoundError")) container.textContent = _("Log file does not exist.");
-            else container.textContent = _("Error reading log: %s").format(err.toString());
-        });
+    const fetcher = async ()=>{
+        try {
+            const content = await fs.read_direct(LOG_FILE, "text");
+            const lines = content.trim().split("\n").filter(Boolean);
+            return {
+                status: "running",
+                last_error: "",
+                logs: lines
+            };
+        } catch (err) {
+            if (err.toString().includes("NotFoundError")) return {
+                status: "stopped",
+                last_error: _("Log file does not exist."),
+                logs: []
+            };
+            else return {
+                status: "error",
+                last_error: _("Error reading log: %s").format(err.toString()),
+                logs: []
+            };
+        }
     };
-    const clearLogs = async ()=>{
-        if (!confirm(_("Are you sure you want to clear all logs?"))) return;
+    const clearer = async ()=>{
+        if (!confirm(_("Are you sure you want to clear all logs?"))) throw new Error("User cancelled");
         try {
             await fs.write(LOG_FILE, "");
             ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
-            updateLogs();
-        } catch (_err) {
+        } catch (err) {
             ui.addNotification(null, E("p", _("Failed to clear logs")), "error");
+            throw err;
         }
     };
     const restartService = async ()=>{
@@ -2062,50 +2689,36 @@ const LOG_FILE = "/tmp/portweaver.log";
                 "restart"
             ]);
             ui.addNotification(null, E("p", _("Service restarted successfully")), "info");
-            setTimeout(updateLogs, 2000);
         } catch (_err) {
             ui.addNotification(null, E("p", _("Failed to restart service")), "error");
         }
     };
     o.render = ()=>{
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(updateLogs, 3000);
-        setTimeout(updateLogs, 100);
-        return E("div", {
-            class: "cbi-section"
-        }, [
-            E("div", {
-                style: "display: flex; gap: 10px; margin-bottom: 10px; align-items: center;"
-            }, [
-                E("button", {
-                    class: "btn cbi-button cbi-button-action",
-                    click: updateLogs
-                }, [
-                    _("Refresh")
-                ]),
-                E("button", {
-                    class: "btn cbi-button cbi-button-remove",
-                    click: clearLogs
-                }, [
-                    _("Clear logs")
-                ]),
-                E("button", {
-                    class: "btn cbi-button cbi-button-apply",
-                    click: restartService
-                }, [
-                    _("Restart service")
-                ]),
-                E("small", {
-                    style: "color: #666; margin-left: auto;"
-                }, _("Auto-refresh every 3 seconds"))
-            ]),
-            E("pre", {
-                id: "portweaver-log-container",
-                style: "padding: 10px; background: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; margin: 0;"
-            }, [
-                _("Loading logs...")
-            ])
-        ]);
+        if (logViewerCore) logViewerCore.destroy();
+        logViewerCore = new LogViewerCore({
+            name: "system",
+            title: _("System Logs"),
+            fetcher: ()=>fetcher(),
+            clearer: ()=>clearer(),
+            showHeader: false
+        });
+        const coreElement = logViewerCore.render();
+        logViewerCore.init();
+        const restartButton = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-apply",
+            onclick: ()=>restartService()
+        }, _("Restart Service"));
+        const footer = coreElement.querySelector(".button-row");
+        if (footer) {
+            var _clearButton_parentNode;
+            const clearButton = footer.querySelector("button:last-child");
+            if (clearButton) (_clearButton_parentNode = clearButton.parentNode) === null || _clearButton_parentNode === void 0 ? void 0 : _clearButton_parentNode.insertBefore(restartButton, clearButton);
+            else footer.appendChild(restartButton);
+        }
+        return /*#__PURE__*/ createJsxElement("div", {
+            style: "height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;"
+        }, coreElement);
     };
 }
 
@@ -2277,7 +2890,8 @@ const ddns_statusElements = {};
     o = ss.option(ddns_form.DummyValue, "_status", _("Status"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
-        const status = ddnsStatuses[section_id] || {
+        const name = ddns_uci.get("portweaver", section_id, "name");
+        const status = ddnsStatuses[name] || {
             status: "unknown",
             name: "",
             provider: "",
@@ -2318,10 +2932,12 @@ const ddns_statusElements = {};
             }, _("IP: "), /*#__PURE__*/ createJsxElement("code", null, status.last_ip));
             container.appendChild(ipInfo);
         }
-        if (status.last_update) {
+        if (status.last_update > 0) {
+            const date = new Date(status.last_update * 1000);
+            const formattedTime = date.toLocaleString();
             const updateInfo = /*#__PURE__*/ createJsxElement("small", {
                 style: "color:#666;"
-            }, _("Updated: "), status.last_update);
+            }, _("Updated: "), formattedTime);
             container.appendChild(updateInfo);
         }
         if (status.message && status.status === "error") {
@@ -2331,7 +2947,7 @@ const ddns_statusElements = {};
             }, status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message);
             container.appendChild(errorMsg);
         }
-        ddns_statusElements[section_id] = container;
+        ddns_statusElements[name] = container;
         return container;
     };
     o = ss.option(ddns_form.DummyValue, "_provider", _("Provider"));
@@ -2361,7 +2977,7 @@ const ddns_statusElements = {};
         }, _("View Logs"));
         const nodeName = L.uci.get("portweaver", section_id, "name");
         viewLogsBtn.onclick = ()=>{
-            const viewer = new LogViewer({
+            const viewer = new LogViewerDialog({
                 name: nodeName,
                 title: _("DDNS Logs - %s").format(nodeName),
                 fetcher: (name)=>rpcClient.getDdnsInfo(name),
@@ -2529,15 +3145,15 @@ const ddns_statusElements = {};
     o.depends({
         webhook_url: /^.+$/
     });
-    L.Poll.add(async ()=>{
+    async function pollDdnsStatus() {
         try {
             const result = await rpcClient.getDdnsStatus();
-            const statuses = (result === null || result === void 0 ? void 0 : result.statuses) || [];
+            const statuses = (result === null || result === void 0 ? void 0 : result.ddns_status) || [];
             for (const status of statuses){
-                const oldStatus = ddnsStatuses[status.section];
-                ddnsStatuses[status.section] = status;
+                const oldStatus = ddnsStatuses[status.name];
+                ddnsStatuses[status.name] = status;
                 if (!oldStatus || oldStatus.status !== status.status || oldStatus.last_ip !== status.last_ip || oldStatus.last_update !== status.last_update) {
-                    const container = ddns_statusElements[status.section];
+                    const container = ddns_statusElements[status.name];
                     if (container) {
                         const statusColors = {
                             success: "#4CAF50",
@@ -2573,10 +3189,12 @@ const ddns_statusElements = {};
                             }, _("IP: "), /*#__PURE__*/ createJsxElement("code", null, status.last_ip));
                             container.appendChild(ipInfo);
                         }
-                        if (status.last_update) {
+                        if (status.last_update > 0) {
+                            const date = new Date(status.last_update * 1000);
+                            const formattedTime = date.toLocaleString();
                             const updateInfo = /*#__PURE__*/ createJsxElement("small", {
                                 style: "color:#666;"
-                            }, _("Updated: "), status.last_update);
+                            }, _("Updated: "), formattedTime);
                             container.appendChild(updateInfo);
                         }
                         if (status.message && status.status === "error") {
@@ -2592,10 +3210,13 @@ const ddns_statusElements = {};
         } catch (err) {
             console.warn("Failed to fetch DDNS statuses:", err);
         }
-    }, 5);
+    }
+    pollDdnsStatus();
+    L.Poll.add(pollDdnsStatus, 5);
 }
 
 ;// CONCATENATED MODULE: ./main.tsx
+
 
 
 
@@ -2652,7 +3273,7 @@ class main extends L.view {
             data[4],
             data[5]
         ]);
-        header(m, s, client, "settings");
+        modules_header(m, s, client, "settings");
         config(m, s, client, "projects");
         ddns(m, s, "ddns");
         logs(m, s, "logs");

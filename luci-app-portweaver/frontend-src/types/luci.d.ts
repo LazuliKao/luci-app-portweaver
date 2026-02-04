@@ -21,6 +21,14 @@ declare namespace LuCI {
     handleSaveApply?(): Promise<void>;
     handleReset?(): Promise<void>;
   }
+  interface FS {
+    write(path: string, content: string): Promise<void>;
+    read_direct(path: string, format?: "text" | "json" | "blob"): Promise<any>;
+    exec(
+      command: string,
+      args?: string[],
+    ): Promise<{ stdout: string; stderr: string }>;
+  }
   interface Form {
     Value: typeof LuCI.form.CBIValue;
     TextValue: typeof LuCI.form.CBIValue;
@@ -46,15 +54,19 @@ declare namespace LuCI {
     hideModal(): void;
   }
 
+  type ParamsForArgs<Args extends any[]> = Args extends []
+    ? never
+    : { length: Args["length"] } & readonly string[];
+
+  type InferReturn<R> = unknown extends R ? undefined : R;
+  type RpcFn<A extends readonly any[], R> = (...args: A) => Promise<R>;
   interface RPC {
-    declare(options: {
+    declare<R = unknown, Args extends any[] = []>(options: {
       object: string;
       method: string;
-      params?: string[];
-      expect?: any;
-    }): (...args: any[]) => Promise<any>;
+      params?: ParamsForArgs<Args>;
+    }): RpcFn<Args, InferReturn<R>>;
   }
-
   interface UCI {
     load(config: string): Promise<void>;
     get(config: string, section: string, option?: string): any;
@@ -77,6 +89,7 @@ declare const L: {
     extend<TN>(proto: Partial<View<TN>>): View<TN>;
   };
   form: LuCI.Form;
+  fs: LuCI.FS;
   ui: LuCI.UI;
   rpc: LuCI.RPC;
   uci: LuCI.UCI;
@@ -90,11 +103,30 @@ declare const L: {
 
 declare const E: (...args: any[]) => HTMLElement;
 
+type SpecifierMap = {
+  d: number;
+  s: string;
+  f: number;
+};
+
+type ParseFormat<
+  S extends string,
+  Acc extends any[] = [],
+> = S extends `${infer _}%${infer K}${infer Rest}`
+  ? K extends keyof SpecifierMap
+    ? ParseFormat<Rest, [...Acc, SpecifierMap[K]]>
+    : ParseFormat<Rest, Acc>
+  : Acc;
+
+declare class Formatter<S extends string> {
+  format(...args: ParseFormat<S>): string;
+}
 // i18n translate function
-declare function _(
-  text: string,
-  ...args: any[]
-): string & { format(...args: any[]): string };
+declare function _<S extends string>(s: S): Formatter<S> & string;
+// declare function _(
+//   text: string,
+//   ...args: any[]
+// ): string & { format(...args: any[]): string };
 
 declare const widgets: any;
 declare const fwmodel: { getZoneColorStyle(zone: string): string };

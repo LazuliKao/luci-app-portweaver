@@ -1,5 +1,6 @@
 import "./utils/jsx-factory";
-import { Client, rpcClient } from "./modules/client";
+
+import { Client } from "./modules/client";
 import type {
   PortWeaverStatus,
   ProjectStatus,
@@ -11,6 +12,7 @@ import config from "./modules/config";
 import header from "./modules/header";
 import logs from "./modules/logs";
 import ddns from "./modules/ddns";
+import { rpcClient } from "./utils/rpc-client";
 
 const form = L.form;
 const uci = L.uci;

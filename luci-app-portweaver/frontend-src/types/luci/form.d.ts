@@ -544,6 +544,7 @@ declare namespace LuCI.form {
     datatype: string | undefined;
     placeholder: string | undefined;
     description: string | undefined;
+    render(): Node;
     textvalue:
       | ((section_id: string) => HTMLElement)
       | ((section_id: string) => string);

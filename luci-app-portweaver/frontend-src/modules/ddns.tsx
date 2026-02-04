@@ -1,6 +1,6 @@
-import { LogViewer } from "../components/LogViewer";
-import { rpcClient } from "./client";
-import type { DdnsStatus } from "../types/portweaver";
+import { LogViewerDialog } from "../components/LogViewerDialog";
+import type { DdnsStatus } from "../types/portweaver/ddns";
+import { rpcClient } from "../utils/rpc-client";
 
 const form = L.form;
 const uci = L.uci;
@@ -144,7 +144,9 @@ export default function (
   o = ss.option(form.DummyValue, "_status", _("Status"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
-    const status = ddnsStatuses[section_id] || {
+    const name = uci.get("portweaver", section_id, "name") as string;
+
+    const status = ddnsStatuses[name] || {
       status: "unknown",
       name: "",
       provider: "",
@@ -199,11 +201,13 @@ export default function (
       container.appendChild(ipInfo);
     }
 
-    if (status.last_update) {
+    if (status.last_update > 0) {
+      const date = new Date(status.last_update * 1000);
+      const formattedTime = date.toLocaleString();
       const updateInfo = (
         <small style="color:#666;">
           {_("Updated: ")}
-          {status.last_update}
+          {formattedTime}
         </small>
       ) as HTMLElement;
       container.appendChild(updateInfo);
@@ -220,7 +224,7 @@ export default function (
       container.appendChild(errorMsg);
     }
 
-    statusElements[section_id] = container;
+    statusElements[name] = container;
     return container;
   };
 
@@ -256,7 +260,7 @@ export default function (
 
     const nodeName = L.uci.get("portweaver", section_id, "name") as string;
     viewLogsBtn.onclick = () => {
-      const viewer = new LogViewer({
+      const viewer = new LogViewerDialog({
         name: nodeName,
         title: _("DDNS Logs - %s").format(nodeName),
         fetcher: (name) => rpcClient.getDdnsInfo(name),
@@ -449,14 +453,15 @@ export default function (
   o.description = _("One header per line (Header: Value)");
   o.depends({ webhook_url: /^.+$/ });
 
-  L.Poll.add(async () => {
+  async function pollDdnsStatus() {
     try {
       const result = await rpcClient.getDdnsStatus();
-      const statuses = result?.statuses || [];
+
+      const statuses = result?.ddns_status || [];
 
       for (const status of statuses) {
-        const oldStatus = ddnsStatuses[status.section];
-        ddnsStatuses[status.section] = status;
+        const oldStatus = ddnsStatuses[status.name];
+        ddnsStatuses[status.name] = status;
 
         if (
           !oldStatus ||
@@ -464,7 +469,7 @@ export default function (
           oldStatus.last_ip !== status.last_ip ||
           oldStatus.last_update !== status.last_update
         ) {
-          const container = statusElements[status.section];
+          const container = statusElements[status.name];
           if (container) {
             const statusColors: Record<string, string> = {
               success: "#4CAF50",
@@ -517,11 +522,13 @@ export default function (
               container.appendChild(ipInfo);
             }
 
-            if (status.last_update) {
+            if (status.last_update > 0) {
+              const date = new Date(status.last_update * 1000);
+              const formattedTime = date.toLocaleString();
               const updateInfo = (
                 <small style="color:#666;">
                   {_("Updated: ")}
-                  {status.last_update}
+                  {formattedTime}
                 </small>
               ) as HTMLElement;
               container.appendChild(updateInfo);
@@ -543,5 +550,8 @@ export default function (
     } catch (err) {
       console.warn("Failed to fetch DDNS statuses:", err);
     }
-  }, 5);
+  }
+
+  pollDdnsStatus();
+  L.Poll.add(pollDdnsStatus, 5);
 }

@@ -7,6 +7,18 @@ import type {
 import { formatBytes, formatUptime } from "../utils/formatters";
 
 export class StatusPanel {
+  public statusValueEl?: HTMLElement;
+  public totalProjectsEl?: HTMLElement;
+  public activePortsEl?: HTMLElement;
+  public uptimeEl?: HTMLElement;
+  public trafficInEl?: HTMLElement;
+  public trafficOutEl?: HTMLElement;
+  public projectHealthEl?: HTMLElement;
+  public frpEnabledEl?: HTMLElement;
+  public frpVersionEl?: HTMLElement;
+  public frpErrorEl?: HTMLElement;
+  public activityLogContainer?: HTMLElement;
+
   render(
     status: PortWeaverStatus,
     frpStatus?: FrpStatus,
@@ -30,65 +42,83 @@ export class StatusPanel {
     return (
       <div>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;">
-          {this.card(
-            _("Status"),
-            <strong
-              style={`color: ${statusColor}; font-size: 1.1em; font-weight: 600;`}
-              id="status-value"
-            >
-              {status.status || "-"}
-            </strong>,
-          )}
+          {(() => {
+            const statusValueEl = (
+              <strong
+                style={`color: ${statusColor}; font-size: 1.1em; font-weight: 600;`}
+                id="status-value"
+              >
+                {status.status || "-"}
+              </strong>
+            );
+            this.statusValueEl = statusValueEl as HTMLElement;
+            return this.card(_("Status"), statusValueEl);
+          })()}
 
-          {this.card(
-            _("Total Projects"),
-            <strong
-              style="font-size: 1.1em; font-weight: 600;"
-              id="total-projects-value"
-            >
-              {status.total_projects || 0}
-            </strong>,
-          )}
+          {(() => {
+            const totalProjectsEl = (
+              <strong
+                style="font-size: 1.1em; font-weight: 600;"
+                id="total-projects-value"
+              >
+                {status.total_projects || 0}
+              </strong>
+            );
+            this.totalProjectsEl = totalProjectsEl as HTMLElement;
+            return this.card(_("Total Projects"), totalProjectsEl);
+          })()}
 
-          {this.card(
-            _("Active Ports"),
-            <strong
-              style="font-size: 1.1em; font-weight: 600;"
-              id="active-ports-value"
-            >
-              {status.active_ports || 0}
-            </strong>,
-          )}
+          {(() => {
+            const activePortsEl = (
+              <strong
+                style="font-size: 1.1em; font-weight: 600;"
+                id="active-ports-value"
+              >
+                {status.active_ports || 0}
+              </strong>
+            );
+            this.activePortsEl = activePortsEl as HTMLElement;
+            return this.card(_("Active Ports"), activePortsEl);
+          })()}
 
-          {this.card(
-            _("Uptime"),
-            <strong
-              style="font-size: 1.1em; font-weight: 600;"
-              id="uptime-value"
-            >
-              {formatUptime(status.uptime || 0)}
-            </strong>,
-          )}
+          {(() => {
+            const uptimeEl = (
+              <strong
+                style="font-size: 1.1em; font-weight: 600;"
+                id="uptime-value"
+              >
+                {formatUptime(status.uptime || 0)}
+              </strong>
+            );
+            this.uptimeEl = uptimeEl as HTMLElement;
+            return this.card(_("Uptime"), uptimeEl);
+          })()}
 
-          {this.card(
-            _("Traffic In"),
-            <strong
-              style="font-size: 1.1em; font-weight: 600;"
-              id="traffic-in-value"
-            >
-              {formatBytes(status.total_bytes_in || 0)}
-            </strong>,
-          )}
+          {(() => {
+            const trafficInEl = (
+              <strong
+                style="font-size: 1.1em; font-weight: 600;"
+                id="traffic-in-value"
+              >
+                {formatBytes(status.total_bytes_in || 0)}
+              </strong>
+            );
+            this.trafficInEl = trafficInEl as HTMLElement;
+            return this.card(_("Traffic In"), trafficInEl);
+          })()}
 
-          {this.card(
-            _("Traffic Out"),
-            <strong
-              style="font-size: 1.1em; font-weight: 600;"
-              id="traffic-out-value"
-            >
-              {formatBytes(status.total_bytes_out || 0)}
-            </strong>,
-          )}
+          {(() => {
+            const trafficOutEl = (
+              <strong
+                style="font-size: 1.1em; font-weight: 600;"
+                id="traffic-out-value"
+              >
+                {formatBytes(status.total_bytes_out || 0)}
+              </strong>
+            );
+            this.trafficOutEl = trafficOutEl as HTMLElement;
+            return this.card(_("Traffic Out"), trafficOutEl);
+          })()}
 
           {/* Global Project Health Indicator */}
           {hasEnabledProjects &&
@@ -107,46 +137,59 @@ export class StatusPanel {
             )}
 
           {frpStatus &&
-            this.card(
-              _("FRP Status"),
-              <div>
+            (() => {
+              const frpEnabledEl = (
                 <strong
                   style={`font-size: 1.1em; font-weight: 600; color: ${this.getFrpStatusColor(frpStatus)};`}
                   id="frp-enabled-value"
                 >
                   {this.getFrpStatusText(frpStatus)}
                 </strong>
-                {frpStatus.frp_version && (
-                  <div
-                    style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-                    id="frp-version-value"
-                  >
-                    {frpStatus.frp_version}
-                  </div>
-                )}
-                {frpStatus.client_count !== undefined &&
-                  frpStatus.client_count > 0 && (
-                    <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.2em;">
-                      {frpStatus.client_count} {_("client(s)")}
-                    </div>
-                  )}
-              </div>,
-            )}
+              );
+              this.frpEnabledEl = frpEnabledEl as HTMLElement;
+
+              const frpVersionEl = frpStatus.frp_version ? (
+                <div
+                  style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+                  id="frp-version-value"
+                >
+                  {frpStatus.frp_version}
+                </div>
+              ) : null;
+              if (frpVersionEl) this.frpVersionEl = frpVersionEl as HTMLElement;
+
+              return this.card(
+                _("FRP Status"),
+                <div>
+                  {frpEnabledEl}
+                  {frpVersionEl}
+                  {frpStatus.client_count !== undefined &&
+                    frpStatus.client_count > 0 && (
+                      <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.2em;">
+                        {frpStatus.client_count} {_("client(s)")}
+                      </div>
+                    )}
+                </div>,
+              );
+            })()}
 
           {/* FRP Error Display */}
           {frpStatus?.last_error &&
-            this.card(
-              _("FRP Error"),
-              <div
-                style="cursor: help;"
-                title={frpStatus.last_error}
-                id="frp-error-value"
-              >
-                <strong style="font-size: 0.95em; font-weight: 600; color: #dc3545;">
-                  {this.truncateError(frpStatus.last_error, 50)}
-                </strong>
-              </div>,
-            )}
+            (() => {
+              const frpErrorEl = (
+                <div
+                  style="cursor: help;"
+                  title={frpStatus.last_error}
+                  id="frp-error-value"
+                >
+                  <strong style="font-size: 0.95em; font-weight: 600; color: #dc3545;">
+                    {this.truncateError(frpStatus.last_error, 50)}
+                  </strong>
+                </div>
+              );
+              this.frpErrorEl = frpErrorEl as HTMLElement;
+              return this.card(_("FRP Error"), frpErrorEl);
+            })()}
         </div>
 
         {/* Activity Log Section */}
@@ -204,12 +247,18 @@ export class StatusPanel {
         <div style="font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;">
           {_("Recent Activity")}
         </div>
-        <div
-          style="max-height: 150px; overflow-y: auto;"
-          id="activity-log-container"
-        >
-          {recentEvents.map((event) => this.renderEventRow(event))}
-        </div>
+        {(() => {
+          const activityLogContainer = (
+            <div
+              style="max-height: 150px; overflow-y: auto;"
+              id="activity-log-container"
+            >
+              {recentEvents.map((event) => this.renderEventRow(event))}
+            </div>
+          );
+          this.activityLogContainer = activityLogContainer as HTMLElement;
+          return activityLogContainer;
+        })()}
       </div>
     );
   }

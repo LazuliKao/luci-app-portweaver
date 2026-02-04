@@ -33,11 +33,14 @@ export default function (
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
     const status = client.getProjectStatus(section_id);
-    return (
+    const container = (
       <div id={`project-status-${section_id}`}>
         {client.renderStatusElements(status, section_id)}
       </div>
-    );
+    ) as HTMLElement;
+    client.projectContainers = client.projectContainers || {};
+    client.projectContainers[section_id] = container;
+    return container;
   };
 
   o = ss.option(form.Button, "_runtime_toggle", _("Toggle"));
@@ -76,14 +79,19 @@ export default function (
     );
 
     const proto_text: string =
-      ({ both: _("TCP and UDP"), tcp: "TCP", udp: "UDP" } as any)[protocol] ||
-      String(protocol).toUpperCase();
+      (
+        {
+          both: _("TCP and UDP"),
+          tcp: _("TCP"),
+          udp: _("UDP"),
+        } as any
+      )[protocol] || String(protocol).toUpperCase();
     const family_text: string =
       (
         {
           any: _("IPv4 and IPv6"),
-          ipv4: "IPv4",
-          ipv6: "IPv6",
+          ipv4: _("IPv4"),
+          ipv6: _("IPv6"),
         } as any
       )[family] || family;
 

@@ -16,6 +16,7 @@ declare global {
     interface IntrinsicElements {
       // [elemName: string]: JSXElement<HTMLElement>;
       div: JSXElement<HTMLDivElement>;
+      style: JSXElement<HTMLStyleElement>;
       strong: JSXElement<HTMLElement>;
       button: JSXElement<HTMLButtonElement>;
       span: JSXElement<HTMLSpanElement>;
@@ -43,6 +44,7 @@ declare global {
       small: JSXElement<HTMLElement>;
       code: JSXElement<HTMLElement>;
       p: JSXElement<HTMLParagraphElement>;
+      a: JSXElement<HTMLAnchorElement>;
     }
   }
 }
