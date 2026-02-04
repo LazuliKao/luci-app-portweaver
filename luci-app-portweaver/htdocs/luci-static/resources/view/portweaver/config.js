@@ -165,6 +165,8 @@ function translateStatus(str) {
     if (str === "running") return _("Running");
     if (str === "stopped") return _("Stopped");
     if (str === "degraded") return _("Degraded");
+    if (str === "failed") return _("Failed");
+    if (str === "unknown") return _("Unknown");
     return str;
 }
 
@@ -226,6 +228,10 @@ function createRpcClient(rpc) {
             "name"
         ]
     });
+    const getDdnsGlobalStatus = rpc.declare({
+        object: "portweaver",
+        method: "get_ddns_global_status"
+    });
     const clearDdnsLogs = rpc.declare({
         object: "portweaver",
         method: "clear_ddns_logs",
@@ -244,6 +250,7 @@ function createRpcClient(rpc) {
         getEvents,
         getDdnsStatus,
         getDdnsInfo,
+        getDdnsGlobalStatus,
         clearDdnsLogs
     };
 }
@@ -324,7 +331,7 @@ class Client {
         const statusElements = [
             /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("span", statusBadgeAttrs, /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
-            }, startupFailed ? "failed" : translateStatus(status.status || "unknown"))))
+            }, translateStatus(startupFailed ? "failed" : status.status || "unknown"))))
         ];
         if (errorMessage && status.status !== "stopped") statusElements.push(/*#__PURE__*/ createJsxElement("small", {
             style: "color: #dc3545; margin-top: 0.3em;"

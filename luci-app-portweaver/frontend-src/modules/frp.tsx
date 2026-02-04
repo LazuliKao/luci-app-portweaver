@@ -171,6 +171,16 @@ export default function (
   o.value("warn", "Warning");
   o.value("error", "Error");
 
+  o = ss.option(form.Flag, "use_encryption", _("Use Encryption"));
+  o.modalonly = true;
+  o.rmempty = false;
+  o.default = o.enabled;
+
+  o = ss.option(form.Flag, "use_compression", _("Use Compression"));
+  o.modalonly = true;
+  o.rmempty = false;
+  o.default = o.enabled;
+
   o = ss.option(form.DummyValue, "actions", _("Actions"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {

@@ -3,6 +3,7 @@ import type {
   ProjectStatus,
   FrpStatus,
   EventsResponse,
+  DdnsGlobalStatus,
 } from "../types/portweaver";
 import type { InfoResponse } from "./../types/portweaver/index";
 import type { DdnsStatusResponse } from "../types/portweaver/ddns";
@@ -63,6 +64,11 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["name"],
   });
 
+  const getDdnsGlobalStatus = rpc.declare<DdnsGlobalStatus>({
+    object: "portweaver",
+    method: "get_ddns_global_status",
+  });
+
   const clearDdnsLogs = rpc.declare<void, [name: string]>({
     object: "portweaver",
     method: "clear_ddns_logs",
@@ -80,6 +86,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
     getEvents,
     getDdnsStatus,
     getDdnsInfo,
+    getDdnsGlobalStatus,
     clearDdnsLogs,
   };
 }

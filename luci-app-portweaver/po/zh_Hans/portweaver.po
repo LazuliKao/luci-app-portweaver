@@ -714,3 +714,6 @@ msgstr "套接字类型不正确"
 
 msgid "Socket type not supported"
 msgstr "不支持的套接字类型"
+
+msgid "Failed"
+msgstr "失败"

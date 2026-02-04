@@ -169,9 +169,9 @@ export class Client {
           <strong
             style={`font-size: 1em; font-weight: 600; color: ${statusColor};`}
           >
-            {startupFailed
-              ? "failed"
-              : translateStatus(status.status || "unknown")}
+            {translateStatus(
+              startupFailed ? "failed" : status.status || "unknown",
+            )}
           </strong>
         </span>
       </div>,

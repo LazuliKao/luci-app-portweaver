@@ -63,3 +63,8 @@ export interface PortMapping {
   frpNodes: string[];
   protocol: "tcp" | "udp" | "both";
 }
+
+export interface DdnsGlobalStatus {
+  ddns_enabled: boolean;
+  ddns_version: string | null;
+}
