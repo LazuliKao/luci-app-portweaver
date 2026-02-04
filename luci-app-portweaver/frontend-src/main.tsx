@@ -6,6 +6,7 @@ import type {
   ProjectStatus,
   FrpStatus,
   ActivityEvent,
+  DdnsGlobalStatus,
 } from "./types/portweaver";
 import frp from "./modules/frp";
 import config from "./modules/config";
@@ -50,6 +51,19 @@ export class main extends L.view {
           console.warn("ubus get_events failed:", err);
           return [] as ActivityEvent[];
         }),
+      rpcClient
+        .getDdnsGlobalStatus()
+        .then(
+          (res: DdnsGlobalStatus) =>
+            res || { ddns_enabled: false, ddns_version: null },
+        )
+        .catch((err: any) => {
+          console.warn("ubus get_ddns_global_status failed:", err);
+          return {
+            ddns_enabled: false,
+            ddns_version: null,
+          } as DdnsGlobalStatus;
+        }),
     ]);
   }
 
@@ -70,7 +84,7 @@ export class main extends L.view {
     s.tab("logs", _("System Logs"));
     s.tab("frp", _("FRP Tunnels"));
 
-    const client = new Client([data[2], data[3], data[4], data[5]]);
+    const client = new Client([data[2], data[3], data[4], data[5], data[6]]);
 
     header(m, s, client, "settings");
     config(m, s, client, "projects");

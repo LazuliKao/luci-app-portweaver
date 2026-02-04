@@ -3,6 +3,7 @@ import type {
   FrpStatus,
   ProjectStatus,
   ActivityEvent,
+  DdnsGlobalStatus,
 } from "../types/portweaver";
 import { formatBytes, formatUptime } from "../utils/formatters";
 
@@ -17,6 +18,8 @@ export class StatusPanel {
   public frpEnabledEl?: HTMLElement;
   public frpVersionEl?: HTMLElement;
   public frpErrorEl?: HTMLElement;
+  public ddnsEnabledEl?: HTMLElement;
+  public ddnsVersionEl?: HTMLElement;
   public activityLogContainer?: HTMLElement;
 
   render(
@@ -24,6 +27,7 @@ export class StatusPanel {
     frpStatus?: FrpStatus,
     projectStatuses?: ProjectStatus[],
     events?: ActivityEvent[],
+    ddnsGlobalStatus?: DdnsGlobalStatus,
   ): HTMLElement {
     const statusColor =
       {
@@ -169,6 +173,40 @@ export class StatusPanel {
                         {frpStatus.client_count} {_("client(s)")}
                       </div>
                     )}
+                </div>,
+              );
+            })()}
+
+          {ddnsGlobalStatus &&
+            (() => {
+              const ddnsEnabledEl = (
+                <strong
+                  style={`font-size: 1.1em; font-weight: 600; color: ${
+                    ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d"
+                  };`}
+                  id="ddns-enabled-value"
+                >
+                  {ddnsGlobalStatus.ddns_enabled ? _("Enabled") : _("Disabled")}
+                </strong>
+              );
+              this.ddnsEnabledEl = ddnsEnabledEl as HTMLElement;
+
+              const ddnsVersionEl = ddnsGlobalStatus.ddns_version ? (
+                <div
+                  style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+                  id="ddns-version-value"
+                >
+                  {ddnsGlobalStatus.ddns_version}
+                </div>
+              ) : null;
+              if (ddnsVersionEl)
+                this.ddnsVersionEl = ddnsVersionEl as HTMLElement;
+
+              return this.card(
+                _("DDNS-GO"),
+                <div>
+                  {ddnsEnabledEl}
+                  {ddnsVersionEl}
                 </div>,
               );
             })()}

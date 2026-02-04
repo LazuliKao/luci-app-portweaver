@@ -451,6 +451,7 @@ class Client {
         _define_property(this, "projectStatuses", void 0);
         _define_property(this, "frpStatus", void 0);
         _define_property(this, "events", void 0);
+        _define_property(this, "ddnsGlobalStatus", void 0);
         // References to UI elements provided by StatusPanel and config
         _define_property(this, "statusPanel", void 0);
         _define_property(this, "projectContainers", {});
@@ -460,14 +461,19 @@ class Client {
             frp_enabled: false
         };
         this.events = data[3] || [];
+        this.ddnsGlobalStatus = data[4] || {
+            ddns_enabled: false,
+            ddns_version: null
+        };
         L.Poll.add(async ()=>{
             try {
-                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7;
+                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7, _this_statusPanel8, _this_statusPanel9;
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
                     rpcClient.getFrpStatus(),
-                    rpcClient.getEvents()
+                    rpcClient.getEvents(),
+                    rpcClient.getDdnsGlobalStatus()
                 ]);
                 this.globalStatus = results[0] || {};
                 this.projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
@@ -475,6 +481,10 @@ class Client {
                     frp_enabled: false
                 };
                 this.events = ((_results_1 = results[3]) === null || _results_1 === void 0 ? void 0 : _results_1.events) || [];
+                this.ddnsGlobalStatus = results[4] || {
+                    ddns_enabled: false,
+                    ddns_version: null
+                };
                 const statusColors = {
                     running: "green",
                     stopped: "red",
@@ -494,6 +504,11 @@ class Client {
                     this.statusPanel.frpEnabledEl.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
                 }
                 if (((_this_statusPanel7 = this.statusPanel) === null || _this_statusPanel7 === void 0 ? void 0 : _this_statusPanel7.frpVersionEl) && this.frpStatus.frp_version) this.statusPanel.frpVersionEl.textContent = this.frpStatus.frp_version;
+                if ((_this_statusPanel8 = this.statusPanel) === null || _this_statusPanel8 === void 0 ? void 0 : _this_statusPanel8.ddnsEnabledEl) {
+                    this.statusPanel.ddnsEnabledEl.textContent = this.ddnsGlobalStatus.ddns_enabled ? _("Enabled") : _("Disabled");
+                    this.statusPanel.ddnsEnabledEl.style.color = this.ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d";
+                }
+                if (((_this_statusPanel9 = this.statusPanel) === null || _this_statusPanel9 === void 0 ? void 0 : _this_statusPanel9.ddnsVersionEl) && this.ddnsGlobalStatus.ddns_version) this.statusPanel.ddnsVersionEl.textContent = this.ddnsGlobalStatus.ddns_version;
                 this.updateProjectHealthIndicator();
                 this.updateFrpErrorDisplay();
                 this.updateActivityLog();
@@ -1313,6 +1328,14 @@ const actionButtons = {};
     o.value("info", "Info");
     o.value("warn", "Warning");
     o.value("error", "Error");
+    o = ss.option(frp_form.Flag, "use_encryption", _("Enable Encryption"));
+    o.modalonly = true;
+    o.rmempty = false;
+    o.default = "1";
+    o = ss.option(frp_form.Flag, "use_compression", _("Enable Compression"));
+    o.modalonly = true;
+    o.rmempty = false;
+    o.default = "1";
     o = ss.option(frp_form.DummyValue, "actions", _("Actions"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
@@ -2410,7 +2433,7 @@ const uci = L.uci;
 
 
 class StatusPanel {
-    render(status, frpStatus, projectStatuses, events) {
+    render(status, frpStatus, projectStatuses, events, ddnsGlobalStatus) {
         const statusColor = {
             running: "#28a745",
             stopped: "#dc3545",
@@ -2484,6 +2507,18 @@ class StatusPanel {
             return this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, frpEnabledEl, frpVersionEl, frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
                 style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
             }, frpStatus.client_count, " ", _("client(s)"))));
+        })(), ddnsGlobalStatus && (()=>{
+            const ddnsEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600; color: ".concat(ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d", ";"),
+                id: "ddns-enabled-value"
+            }, ddnsGlobalStatus.ddns_enabled ? _("Enabled") : _("Disabled"));
+            this.ddnsEnabledEl = ddnsEnabledEl;
+            const ddnsVersionEl = ddnsGlobalStatus.ddns_version ? /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                id: "ddns-version-value"
+            }, ddnsGlobalStatus.ddns_version) : null;
+            if (ddnsVersionEl) this.ddnsVersionEl = ddnsVersionEl;
+            return this.card(_("DDNS-GO"), /*#__PURE__*/ createJsxElement("div", null, ddnsEnabledEl, ddnsVersionEl));
         })(), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && (()=>{
             const frpErrorEl = /*#__PURE__*/ createJsxElement("div", {
                 style: "cursor: help;",
@@ -2603,6 +2638,8 @@ class StatusPanel {
         _define_property(this, "frpEnabledEl", void 0);
         _define_property(this, "frpVersionEl", void 0);
         _define_property(this, "frpErrorEl", void 0);
+        _define_property(this, "ddnsEnabledEl", void 0);
+        _define_property(this, "ddnsVersionEl", void 0);
         _define_property(this, "activityLogContainer", void 0);
     }
 }
@@ -2621,7 +2658,7 @@ const header_form = L.form;
     o.cfgvalue = ()=>{
         const panel = new StatusPanel();
         client.statusPanel = panel;
-        return panel.render(client.globalStatus, client.frpStatus, client.projectStatuses, client.events);
+        return panel.render(client.globalStatus, client.frpStatus, client.projectStatuses, client.events, client.ddnsGlobalStatus);
     };
     const runtimeToggle = async (section_id)=>{
         const idx = client.getProjectIndex(section_id);
@@ -3268,6 +3305,16 @@ class main extends L.view {
             rpcClient.getEvents().then((res)=>(res === null || res === void 0 ? void 0 : res.events) || []).catch((err)=>{
                 console.warn("ubus get_events failed:", err);
                 return [];
+            }),
+            rpcClient.getDdnsGlobalStatus().then((res)=>res || {
+                    ddns_enabled: false,
+                    ddns_version: null
+                }).catch((err)=>{
+                console.warn("ubus get_ddns_global_status failed:", err);
+                return {
+                    ddns_enabled: false,
+                    ddns_version: null
+                };
             })
         ]);
     }
@@ -3285,7 +3332,8 @@ class main extends L.view {
             data[2],
             data[3],
             data[4],
-            data[5]
+            data[5],
+            data[6]
         ]);
         modules_header(m, s, client, "settings");
         config(m, s, client, "projects");

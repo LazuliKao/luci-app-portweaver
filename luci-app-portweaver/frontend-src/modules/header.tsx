@@ -30,6 +30,7 @@ export default function (
       client.frpStatus,
       client.projectStatuses,
       client.events,
+      client.ddnsGlobalStatus,
     );
   };
 

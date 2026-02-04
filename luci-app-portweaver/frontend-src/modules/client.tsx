@@ -4,6 +4,7 @@ import type {
   FrpStatus,
   ActivityEvent,
   ForwarderStats,
+  DdnsGlobalStatus,
 } from "../types/portweaver";
 import {
   formatBytes,
@@ -19,6 +20,7 @@ export class Client {
   projectStatuses: ProjectStatus[];
   frpStatus: FrpStatus;
   events: ActivityEvent[];
+  ddnsGlobalStatus: DdnsGlobalStatus;
   // References to UI elements provided by StatusPanel and config
   statusPanel?: StatusPanel;
   projectContainers: Record<string, HTMLElement> = {};
@@ -28,12 +30,17 @@ export class Client {
       { projects: ProjectStatus[] },
       FrpStatus,
       ActivityEvent[],
+      DdnsGlobalStatus,
     ],
   ) {
     this.globalStatus = data[0] || {};
     this.projectStatuses = data[1] ? data[1].projects || [] : [];
     this.frpStatus = data[2] || { frp_enabled: false };
     this.events = data[3] || [];
+    this.ddnsGlobalStatus = data[4] || {
+      ddns_enabled: false,
+      ddns_version: null,
+    };
     L.Poll.add(async () => {
       try {
         const results = await Promise.all([
@@ -41,11 +48,16 @@ export class Client {
           rpcClient.listProjects(),
           rpcClient.getFrpStatus(),
           rpcClient.getEvents(),
+          rpcClient.getDdnsGlobalStatus(),
         ]);
         this.globalStatus = results[0] || {};
         this.projectStatuses = results[1]?.projects ? results[1].projects : [];
         this.frpStatus = results[2] || { frp_enabled: false };
         this.events = results[3]?.events || [];
+        this.ddnsGlobalStatus = results[4] || {
+          ddns_enabled: false,
+          ddns_version: null,
+        };
 
         const statusColors: Record<string, string> = {
           running: "green",
@@ -92,6 +104,24 @@ export class Client {
         if (this.statusPanel?.frpVersionEl && this.frpStatus.frp_version) {
           this.statusPanel.frpVersionEl.textContent =
             this.frpStatus.frp_version;
+        }
+
+        if (this.statusPanel?.ddnsEnabledEl) {
+          this.statusPanel.ddnsEnabledEl.textContent = this.ddnsGlobalStatus
+            .ddns_enabled
+            ? _("Enabled")
+            : _("Disabled");
+          (this.statusPanel.ddnsEnabledEl.style as any).color = this
+            .ddnsGlobalStatus.ddns_enabled
+            ? "#28a745"
+            : "#6c757d";
+        }
+        if (
+          this.statusPanel?.ddnsVersionEl &&
+          this.ddnsGlobalStatus.ddns_version
+        ) {
+          this.statusPanel.ddnsVersionEl.textContent =
+            this.ddnsGlobalStatus.ddns_version;
         }
 
         this.updateProjectHealthIndicator();
