@@ -30,16 +30,16 @@ export class ProxyStatsViewer {
   render(): HTMLElement {
     const container = document.createElement("div");
     container.style.cssText =
-      "padding: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;";
+      "padding: 12px; border: 1px solid #ddd; border-radius: 4px;";
 
     this.loadingEl = document.createElement("div");
     this.loadingEl.textContent = "Loading stats...";
-    this.loadingEl.style.cssText = "color: #666; font-size: 14px;";
+    this.loadingEl.style.cssText = "font-size: 14px;";
     container.appendChild(this.loadingEl);
 
     this.errorEl = document.createElement("div");
     this.errorEl.style.cssText =
-      "color: #d32f2f; font-size: 14px; display: none;";
+      "#d32f2f; font-size: 14px; display: none;";
     container.appendChild(this.errorEl);
 
     this.statsEl = document.createElement("div");
@@ -97,7 +97,7 @@ export class ProxyStatsViewer {
 
         if (!Array.isArray(proxies) || proxies.length === 0) {
           const noProxiesEl = document.createElement("div");
-          noProxiesEl.style.cssText = "color: #666; font-size: 14px;";
+          noProxiesEl.style.cssText = "font-size: 14px;";
           noProxiesEl.textContent = "No proxies configured";
           this.statsEl.appendChild(noProxiesEl);
           return;

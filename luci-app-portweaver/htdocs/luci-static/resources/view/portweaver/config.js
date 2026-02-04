@@ -996,13 +996,13 @@ class LogViewerDialog {
 class ProxyStatsViewer {
     render() {
         const container = document.createElement("div");
-        container.style.cssText = "padding: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;";
+        container.style.cssText = "padding: 12px; border: 1px solid #ddd; border-radius: 4px;";
         this.loadingEl = document.createElement("div");
         this.loadingEl.textContent = "Loading stats...";
-        this.loadingEl.style.cssText = "color: #666; font-size: 14px;";
+        this.loadingEl.style.cssText = "font-size: 14px;";
         container.appendChild(this.loadingEl);
         this.errorEl = document.createElement("div");
-        this.errorEl.style.cssText = "color: #d32f2f; font-size: 14px; display: none;";
+        this.errorEl.style.cssText = "#d32f2f; font-size: 14px; display: none;";
         container.appendChild(this.errorEl);
         this.statsEl = document.createElement("div");
         this.statsEl.style.cssText = "display: none;";
@@ -1036,7 +1036,7 @@ class ProxyStatsViewer {
                 const proxies = stats.proxies ? JSON.parse(stats.proxies) : [];
                 if (!Array.isArray(proxies) || proxies.length === 0) {
                     const noProxiesEl = document.createElement("div");
-                    noProxiesEl.style.cssText = "color: #666; font-size: 14px;";
+                    noProxiesEl.style.cssText = "font-size: 14px;";
                     noProxiesEl.textContent = "No proxies configured";
                     this.statsEl.appendChild(noProxiesEl);
                     return;
@@ -1789,7 +1789,7 @@ class PortMappingEditor extends L.form.Value {
             const previewDiv = /*#__PURE__*/ createJsxElement("div", {
                 class: "portmapping-preview",
                 "data-index": index,
-                style: "margin-top: 6px; padding: 6px; background: #e8f4f8; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
+                style: "margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
             }, _("Preview: "), this.buildString(mapping));
             const updatePreview = ()=>{
                 const listen = listenInput.value.trim();
@@ -1856,7 +1856,7 @@ class PortMappingEditor extends L.form.Value {
                 id: row_id,
                 class: "portmapping-row",
                 "data-index": index,
-                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;"
+                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
             }, buttonRow, titleRow, textModeInput, frpContainer, errorDiv, previewDiv);
             const validateAndUpdate = ()=>{
                 const listen = listenInput.value.trim();
