@@ -251,6 +251,7 @@ function createRpcClient(rpc) {
         clearDdnsLogs
     };
 }
+const rpcClient = createRpcClient(L.rpc);
 
 ;// CONCATENATED MODULE: ./utils/theme-utils.ts
 /**
@@ -294,7 +295,6 @@ function createRpcClient(rpc) {
 
 
 
-const rpcClient = createRpcClient(L.rpc);
 class Client {
     getProjectIndex(section_id) {
         const sections = L.uci.sections("portweaver", "project");
@@ -993,19 +993,34 @@ class LogViewerDialog {
 
 ;// CONCATENATED MODULE: ./components/ProxyStatsViewer.tsx
 
+
 class ProxyStatsViewer {
+    getStatsColors() {
+        const { isDark } = getThemeColors();
+        return {
+            borderColor: isDark ? "#404040" : "#ddd",
+            bgColor: isDark ? "#1e1e1e" : "#ffffff",
+            innerBgColor: isDark ? "#2d2d2d" : "#f8f9fa",
+            textColor: isDark ? "#e0e0e0" : "#333333",
+            mutedTextColor: isDark ? "#aaa" : "#6c757d",
+            successColor: isDark ? "#4CAF50" : "#28a745",
+            errorColor: isDark ? "#FF5252" : "#dc3545",
+            rowBorderColor: isDark ? "#333" : "#eee"
+        };
+    }
     render() {
+        const colors = this.getStatsColors();
         const container = document.createElement("div");
-        container.style.cssText = "padding: 12px; border: 1px solid #ddd; border-radius: 4px;";
+        container.style.cssText = "padding: 12px; border: 1px solid ".concat(colors.borderColor, "; border-radius: 4px; background-color: ").concat(colors.bgColor, ";");
         this.loadingEl = document.createElement("div");
         this.loadingEl.textContent = "Loading stats...";
-        this.loadingEl.style.cssText = "font-size: 14px;";
+        this.loadingEl.style.cssText = "font-size: 14px; color: ".concat(colors.textColor, ";");
         container.appendChild(this.loadingEl);
         this.errorEl = document.createElement("div");
-        this.errorEl.style.cssText = "#d32f2f; font-size: 14px; display: none;";
+        this.errorEl.style.cssText = "color: ".concat(colors.errorColor, "; font-size: 14px; display: none;");
         container.appendChild(this.errorEl);
         this.statsEl = document.createElement("div");
-        this.statsEl.style.cssText = "display: none;";
+        this.statsEl.style.cssText = "display: none; color: ".concat(colors.textColor, ";");
         container.appendChild(this.statsEl);
         this.fetchStats();
         this.refreshInterval = window.setInterval(()=>this.fetchStats(), this.refreshRate);
@@ -1025,6 +1040,7 @@ class ProxyStatsViewer {
         try {
             const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
             const currentStats = JSON.stringify(stats);
+            console.log(stats);
             if (currentStats === this.lastStats) return;
             this.lastStats = currentStats;
             this.retryCount = 0;
@@ -1033,16 +1049,18 @@ class ProxyStatsViewer {
             if (this.statsEl) {
                 this.statsEl.style.display = "block";
                 this.statsEl.innerHTML = "";
-                const proxies = stats.proxies ? JSON.parse(stats.proxies) : [];
+                const proxies = stats.proxies || [];
                 if (!Array.isArray(proxies) || proxies.length === 0) {
+                    const colors = this.getStatsColors();
                     const noProxiesEl = document.createElement("div");
-                    noProxiesEl.style.cssText = "font-size: 14px;";
+                    noProxiesEl.style.cssText = "font-size: 14px; color: ".concat(colors.textColor, ";");
                     noProxiesEl.textContent = "No proxies configured";
                     this.statsEl.appendChild(noProxiesEl);
                     return;
                 }
+                const colors = this.getStatsColors();
                 const hasError = proxies.some((p)=>p.err && p.err.length > 0);
-                const statusColor = hasError ? "#dc3545" : "green";
+                const statusColor = hasError ? colors.errorColor : colors.successColor;
                 const statusText = hasError ? "error" : "running";
                 const statusBadge = document.createElement("div");
                 statusBadge.style.cssText = "margin-bottom: 8px;";
@@ -1053,29 +1071,29 @@ class ProxyStatsViewer {
                 statusBadge.appendChild(badge);
                 this.statsEl.appendChild(statusBadge);
                 const countEl = document.createElement("small");
-                countEl.style.cssText = "display: block; margin-bottom: 4px;";
+                countEl.style.cssText = "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";");
                 countEl.innerHTML = "<span>Proxies: ".concat(proxies.length, "</span><br>");
                 this.statsEl.appendChild(countEl);
                 const container = document.createElement("div");
-                container.style.cssText = "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;";
+                container.style.cssText = "margin-top: 0.3em; padding: 0.3em; background: ".concat(colors.innerBgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;");
                 proxies.forEach((proxy)=>{
                     var _proxy_cfg;
                     const row = document.createElement("div");
-                    row.style.cssText = "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;";
+                    row.style.cssText = "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(colors.rowBorderColor, ";");
                     const typeEl = document.createElement("span");
-                    typeEl.style.cssText = "min-width: 35px; color: #6c757d;";
+                    typeEl.style.cssText = "min-width: 35px; color: ".concat(colors.mutedTextColor, ";");
                     typeEl.textContent = proxy.type.toUpperCase();
                     row.appendChild(typeEl);
                     const portEl = document.createElement("span");
-                    portEl.style.cssText = "min-width: 45px;";
-                    portEl.textContent = ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remote_port) || proxy.remote_addr || "N/A");
+                    portEl.style.cssText = "min-width: 45px; color: ".concat(colors.textColor, ";");
+                    portEl.textContent = ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remotePort) || proxy.remote_addr || "N/A");
                     row.appendChild(portEl);
                     const inEl = document.createElement("span");
-                    inEl.style.cssText = "color: #28a745;";
+                    inEl.style.cssText = "color: ".concat(colors.successColor, ";");
                     inEl.textContent = "\u21930 B";
                     row.appendChild(inEl);
                     const outEl = document.createElement("span");
-                    outEl.style.cssText = "color: #dc3545;";
+                    outEl.style.cssText = "color: ".concat(colors.errorColor, ";");
                     outEl.textContent = "\u21910 B";
                     row.appendChild(outEl);
                     container.appendChild(row);
@@ -2544,8 +2562,8 @@ class StatusPanel {
 
 ;// CONCATENATED MODULE: ./modules/header.tsx
 
-const header_form = L.form;
 
+const header_form = L.form;
 /* export default */ function modules_header(_m, s, client, tab_id) {
     let o;
     o = s.taboption(tab_id, header_form.Flag, "enabled", _("Enable PortWeaver"));
@@ -3158,6 +3176,7 @@ const ddns_statusElements = {};
 }
 
 ;// CONCATENATED MODULE: ./main.tsx
+
 
 
 

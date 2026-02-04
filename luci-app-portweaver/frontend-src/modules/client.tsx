@@ -10,10 +10,9 @@ import {
   formatUptime,
   getErrorMessage,
 } from "../utils/formatters";
-import { createRpcClient } from "../utils/rpc-client";
+import { rpcClient } from "../utils/rpc-client";
 import { getThemeColors } from "../utils/theme-utils";
 import type { StatusPanel } from "../components/StatusPanel";
-export const rpcClient = createRpcClient(L.rpc);
 export class Client {
   globalStatus: PortWeaverStatus;
   projectStatuses: ProjectStatus[];

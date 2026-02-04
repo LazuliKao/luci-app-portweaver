@@ -1,6 +1,6 @@
 import { LogViewerDialog } from "../components/LogViewerDialog";
-import { rpcClient } from "./client";
 import type { DdnsStatus } from "../types/portweaver";
+import { rpcClient } from "../utils/rpc-client";
 
 const form = L.form;
 const uci = L.uci;

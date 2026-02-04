@@ -1,6 +1,7 @@
 import { StatusPanel } from "../components/StatusPanel";
+import { rpcClient } from "../utils/rpc-client";
 const form = L.form;
-import { type Client, rpcClient } from "./client";
+import type { Client } from "./client";
 
 export default function (
   _m: LuCI.form.CBIMap,

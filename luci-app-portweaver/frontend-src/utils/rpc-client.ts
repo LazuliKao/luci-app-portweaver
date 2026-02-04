@@ -97,3 +97,6 @@ export function createRpcClient(rpc: any) {
     clearDdnsLogs,
   };
 }
+
+export type RpcClient = ReturnType<typeof createRpcClient>;
+export const rpcClient = createRpcClient(L.rpc);

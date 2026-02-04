@@ -1,6 +1,6 @@
 import { LogViewerDialog } from "../components/LogViewerDialog";
 import { ProxyStatsViewer } from "../components/ProxyStatsViewer";
-import { rpcClient } from "./client";
+import { rpcClient } from "../utils/rpc-client";
 import { getThemeColors } from "../utils/theme-utils";
 const form = L.form;
 

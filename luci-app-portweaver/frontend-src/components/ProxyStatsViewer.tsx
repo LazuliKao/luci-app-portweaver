@@ -1,14 +1,18 @@
+import type { RpcClient } from "../utils/rpc-client";
+import type { FrpProxy } from "../types/portweaver";
+import { getThemeColors } from "../utils/theme-utils";
+
 interface ProxyStatsViewerProps {
   clientId: string;
   clientName: string;
-  rpcClient: any;
+  rpcClient: RpcClient;
   refreshInterval?: number;
 }
 
 export class ProxyStatsViewer {
   private clientId: string;
   private clientName: string;
-  private rpcClient: any;
+  private rpcClient: RpcClient;
   private statsEl: HTMLElement | null = null;
   private errorEl: HTMLElement | null = null;
   private loadingEl: HTMLElement | null = null;
@@ -27,23 +31,36 @@ export class ProxyStatsViewer {
     this.refreshRate = props.refreshInterval ?? 5000;
   }
 
+  private getStatsColors() {
+    const { isDark } = getThemeColors();
+    return {
+      borderColor: isDark ? "#404040" : "#ddd",
+      bgColor: isDark ? "#1e1e1e" : "#ffffff",
+      innerBgColor: isDark ? "#2d2d2d" : "#f8f9fa",
+      textColor: isDark ? "#e0e0e0" : "#333333",
+      mutedTextColor: isDark ? "#aaa" : "#6c757d",
+      successColor: isDark ? "#4CAF50" : "#28a745",
+      errorColor: isDark ? "#FF5252" : "#dc3545",
+      rowBorderColor: isDark ? "#333" : "#eee",
+    };
+  }
+
   render(): HTMLElement {
+    const colors = this.getStatsColors();
     const container = document.createElement("div");
-    container.style.cssText =
-      "padding: 12px; border: 1px solid #ddd; border-radius: 4px;";
+    container.style.cssText = `padding: 12px; border: 1px solid ${colors.borderColor}; border-radius: 4px; background-color: ${colors.bgColor};`;
 
     this.loadingEl = document.createElement("div");
     this.loadingEl.textContent = "Loading stats...";
-    this.loadingEl.style.cssText = "font-size: 14px;";
+    this.loadingEl.style.cssText = `font-size: 14px; color: ${colors.textColor};`;
     container.appendChild(this.loadingEl);
 
     this.errorEl = document.createElement("div");
-    this.errorEl.style.cssText =
-      "#d32f2f; font-size: 14px; display: none;";
+    this.errorEl.style.cssText = `color: ${colors.errorColor}; font-size: 14px; display: none;`;
     container.appendChild(this.errorEl);
 
     this.statsEl = document.createElement("div");
-    this.statsEl.style.cssText = "display: none;";
+    this.statsEl.style.cssText = `display: none; color: ${colors.textColor};`;
     container.appendChild(this.statsEl);
 
     this.fetchStats();
@@ -72,8 +89,8 @@ export class ProxyStatsViewer {
 
     try {
       const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
-
       const currentStats = JSON.stringify(stats);
+      console.log(stats);
 
       if (currentStats === this.lastStats) {
         return;
@@ -93,18 +110,22 @@ export class ProxyStatsViewer {
         this.statsEl.style.display = "block";
         this.statsEl.innerHTML = "";
 
-        const proxies = stats.proxies ? JSON.parse(stats.proxies) : [];
+        const proxies = stats.proxies || [];
 
         if (!Array.isArray(proxies) || proxies.length === 0) {
+          const colors = this.getStatsColors();
           const noProxiesEl = document.createElement("div");
-          noProxiesEl.style.cssText = "font-size: 14px;";
+          noProxiesEl.style.cssText = `font-size: 14px; color: ${colors.textColor};`;
           noProxiesEl.textContent = "No proxies configured";
           this.statsEl.appendChild(noProxiesEl);
           return;
         }
 
-        const hasError = proxies.some((p: any) => p.err && p.err.length > 0);
-        const statusColor = hasError ? "#dc3545" : "green";
+        const colors = this.getStatsColors();
+        const hasError = proxies.some(
+          (p: FrpProxy) => p.err && p.err.length > 0,
+        );
+        const statusColor = hasError ? colors.errorColor : colors.successColor;
         const statusText = hasError ? "error" : "running";
 
         const statusBadge = document.createElement("div");
@@ -117,36 +138,34 @@ export class ProxyStatsViewer {
         this.statsEl.appendChild(statusBadge);
 
         const countEl = document.createElement("small");
-        countEl.style.cssText = "display: block; margin-bottom: 4px;";
+        countEl.style.cssText = `display: block; margin-bottom: 4px; color: ${colors.textColor};`;
         countEl.innerHTML = `<span>Proxies: ${proxies.length}</span><br>`;
         this.statsEl.appendChild(countEl);
 
         const container = document.createElement("div");
-        container.style.cssText =
-          "margin-top: 0.3em; padding: 0.3em; background: #f8f9fa; border-radius: 3px; max-height: 80px; overflow-y: auto;";
+        container.style.cssText = `margin-top: 0.3em; padding: 0.3em; background: ${colors.innerBgColor}; border-radius: 3px; max-height: 80px; overflow-y: auto;`;
 
-        proxies.forEach((proxy: any) => {
+        proxies.forEach((proxy: FrpProxy) => {
           const row = document.createElement("div");
-          row.style.cssText =
-            "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid #eee;";
+          row.style.cssText = `display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ${colors.rowBorderColor};`;
 
           const typeEl = document.createElement("span");
-          typeEl.style.cssText = "min-width: 35px; color: #6c757d;";
+          typeEl.style.cssText = `min-width: 35px; color: ${colors.mutedTextColor};`;
           typeEl.textContent = proxy.type.toUpperCase();
           row.appendChild(typeEl);
 
           const portEl = document.createElement("span");
-          portEl.style.cssText = "min-width: 45px;";
-          portEl.textContent = `:${proxy.cfg?.remote_port || proxy.remote_addr || "N/A"}`;
+          portEl.style.cssText = `min-width: 45px; color: ${colors.textColor};`;
+          portEl.textContent = `:${proxy.cfg?.remotePort || proxy.remote_addr || "N/A"}`;
           row.appendChild(portEl);
 
           const inEl = document.createElement("span");
-          inEl.style.cssText = "color: #28a745;";
+          inEl.style.cssText = `color: ${colors.successColor};`;
           inEl.textContent = "↓0 B";
           row.appendChild(inEl);
 
           const outEl = document.createElement("span");
-          outEl.style.cssText = "color: #dc3545;";
+          outEl.style.cssText = `color: ${colors.errorColor};`;
           outEl.textContent = "↑0 B";
           row.appendChild(outEl);
 
