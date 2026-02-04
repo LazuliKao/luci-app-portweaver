@@ -251,7 +251,7 @@ export class LogViewerCore {
 
     this.logContainer = (
       <div
-        class="cbi-value-field"
+        class="log-container"
         style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
       >
         {this.logs.length === 0 ? "No logs available" : null}
@@ -452,29 +452,29 @@ export class LogViewerCore {
       : "rgba(0, 0, 0, 0.8)";
 
     styleEl.textContent = `
-      .cbi-value-field::-webkit-scrollbar {
+      .log-container::-webkit-scrollbar {
         width: 10px;
         height: 10px;
       }
-      .cbi-value-field::-webkit-scrollbar-track {
+      .log-container::-webkit-scrollbar-track {
         background: ${scrollbarTrack};
         border-radius: 5px;
       }
-      .cbi-value-field::-webkit-scrollbar-thumb {
+      .log-container::-webkit-scrollbar-thumb {
         background: ${scrollbarThumb};
         border-radius: 5px;
         border: 2px solid ${scrollbarTrack};
       }
-      .cbi-value-field::-webkit-scrollbar-thumb:hover {
+      .log-container::-webkit-scrollbar-thumb:hover {
         background: ${scrollbarThumbHover};
       }
-      .cbi-value-field::-webkit-scrollbar-thumb:active {
+      .log-container::-webkit-scrollbar-thumb:active {
         background: ${scrollbarThumbActive};
       }
-      .cbi-value-field::-webkit-scrollbar-corner {
+      .log-container::-webkit-scrollbar-corner {
         background: ${scrollbarTrack};
       }
-      .cbi-value-field {
+      .log-container {
         scrollbar-width: auto;
         scrollbar-color: ${scrollbarThumb} ${scrollbarTrack};
       }

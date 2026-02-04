@@ -656,7 +656,7 @@ class LogViewerCore {
             onclick: ()=>this.toggleWrap()
         }, "WRAP: OFF");
         this.logContainer = /*#__PURE__*/ createJsxElement("div", {
-            class: "cbi-value-field",
+            class: "log-container",
             style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
         }, this.logs.length === 0 ? "No logs available" : null);
         const copyButton = /*#__PURE__*/ createJsxElement("button", {
@@ -771,7 +771,7 @@ class LogViewerCore {
         const scrollbarThumb = themeColors.isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(0, 0, 0, 0.4)";
         const scrollbarThumbHover = themeColors.isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.6)";
         const scrollbarThumbActive = themeColors.isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.8)";
-        styleEl.textContent = "\n      .cbi-value-field::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .cbi-value-field::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .cbi-value-field::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .cbi-value-field::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .cbi-value-field::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .cbi-value-field::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .cbi-value-field {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    ");
+        styleEl.textContent = "\n      .log-container::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .log-container::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .log-container::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .log-container::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .log-container {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    ");
     }
     updateDisplay() {
         const themeColors = getThemeColors();
