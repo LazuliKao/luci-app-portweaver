@@ -790,15 +790,16 @@ class LogViewerCore {
             const wasAtBottom = this.logContainer.scrollHeight - this.logContainer.scrollTop <= this.logContainer.clientHeight + 50;
             while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
             if (this.filteredLogs.length === 0) {
-                const noLogs = document.createElement("div");
-                noLogs.style.cssText = "color: ".concat(themeColors.lineNumberColor, "; text-align: center; padding: 2em; font-family: monospace;");
-                noLogs.textContent = this.searchFilter ? "No logs match your search" : "No logs available";
+                const noLogs = /*#__PURE__*/ createJsxElement("div", {
+                    style: "color: ".concat(themeColors.lineNumberColor, "; text-align: center; padding: 2em; font-family: monospace;")
+                }, this.searchFilter ? "No logs match your search" : "No logs available");
                 this.logContainer.appendChild(noLogs);
             } else this.filteredLogs.forEach((log, index)=>{
                 var _this_logContainer;
                 const isSelected = this.selectedLines.has(index);
-                const lineDiv = document.createElement("div");
-                lineDiv.style.cssText = "cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.25em 0.5em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;");
+                const lineDiv = /*#__PURE__*/ createJsxElement("div", {
+                    style: "cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.25em 0.5em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;")
+                });
                 lineDiv.onclick = (e)=>{
                     e.preventDefault();
                     if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
@@ -844,10 +845,10 @@ class LogViewerCore {
             alert("Failed to copy logs");
         });
         else {
-            const textarea = document.createElement("textarea");
-            textarea.value = text;
-            textarea.style.position = "fixed";
-            textarea.style.opacity = "0";
+            const textarea = /*#__PURE__*/ createJsxElement("textarea", {
+                value: text,
+                style: "position: fixed; opacity: 0; display: none;"
+            });
             document.body.appendChild(textarea);
             textarea.select();
             try {
@@ -1047,52 +1048,42 @@ class ProxyStatsViewer {
                 const proxies = stats.proxies || [];
                 if (!Array.isArray(proxies) || proxies.length === 0) {
                     const colors = this.getStatsColors();
-                    const noProxiesEl = document.createElement("div");
-                    noProxiesEl.style.cssText = "font-size: 14px; color: ".concat(colors.textColor, ";");
-                    noProxiesEl.textContent = "No proxies configured";
-                    this.statsEl.appendChild(noProxiesEl);
+                    this.statsEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                        style: "font-size: 14px; color: ".concat(colors.textColor, ";")
+                    }, "No proxies configured"));
                     return;
                 }
                 const colors = this.getStatsColors();
                 const hasError = proxies.some((p)=>p.err && p.err.length > 0);
                 const statusColor = hasError ? colors.errorColor : colors.successColor;
                 const statusText = hasError ? "error" : "running";
-                const statusBadge = document.createElement("div");
-                statusBadge.style.cssText = "margin-bottom: 8px;";
-                const badge = document.createElement("span");
-                badge.className = "ifacebadge";
-                badge.style.cssText = "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";");
-                badge.textContent = statusText;
-                statusBadge.appendChild(badge);
+                const statusBadge = /*#__PURE__*/ createJsxElement("div", {
+                    style: "margin-bottom: 8px;"
+                }, /*#__PURE__*/ createJsxElement("span", {
+                    class: "ifacebadge",
+                    style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
+                }, statusText));
                 this.statsEl.appendChild(statusBadge);
-                const countEl = document.createElement("small");
-                countEl.style.cssText = "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";");
-                countEl.innerHTML = "<span>Proxies: ".concat(proxies.length, "</span><br>");
+                const countEl = /*#__PURE__*/ createJsxElement("small", {
+                    style: "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";")
+                }, /*#__PURE__*/ createJsxElement("span", null, _("Proxies: %d").format(proxies.length)), /*#__PURE__*/ createJsxElement("br", null));
                 this.statsEl.appendChild(countEl);
-                const container = document.createElement("div");
-                container.style.cssText = "margin-top: 0.3em; padding: 0.3em; background: ".concat(colors.innerBgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;");
-                proxies.forEach((proxy)=>{
+                const container = /*#__PURE__*/ createJsxElement("div", {
+                    style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(colors.innerBgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
+                }, proxies.map((proxy)=>{
                     var _proxy_cfg;
-                    const row = document.createElement("div");
-                    row.style.cssText = "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(colors.rowBorderColor, ";");
-                    const typeEl = document.createElement("span");
-                    typeEl.style.cssText = "min-width: 35px; color: ".concat(colors.mutedTextColor, ";");
-                    typeEl.textContent = proxy.type.toUpperCase();
-                    row.appendChild(typeEl);
-                    const portEl = document.createElement("span");
-                    portEl.style.cssText = "min-width: 45px; color: ".concat(colors.textColor, ";");
-                    portEl.textContent = ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remotePort) || proxy.remote_addr || "N/A");
-                    row.appendChild(portEl);
-                    const inEl = document.createElement("span");
-                    inEl.style.cssText = "color: ".concat(colors.successColor, ";");
-                    inEl.textContent = "\u21930 B";
-                    row.appendChild(inEl);
-                    const outEl = document.createElement("span");
-                    outEl.style.cssText = "color: ".concat(colors.errorColor, ";");
-                    outEl.textContent = "\u21910 B";
-                    row.appendChild(outEl);
-                    container.appendChild(row);
-                });
+                    return /*#__PURE__*/ createJsxElement("div", {
+                        style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(colors.rowBorderColor, ";")
+                    }, " ", /*#__PURE__*/ createJsxElement("span", {
+                        style: "min-width: 35px; color: ".concat(colors.mutedTextColor, ";")
+                    }, proxy.type.toUpperCase()), " ", /*#__PURE__*/ createJsxElement("span", {
+                        style: "min-width: 45px; color: ".concat(colors.textColor, ";")
+                    }, ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remotePort) || proxy.remote_addr || "N/A")), /*#__PURE__*/ createJsxElement("span", {
+                        style: "color: ".concat(colors.successColor, ";")
+                    }, "\u21930 B"), " ", /*#__PURE__*/ createJsxElement("span", {
+                        style: "color: ".concat(colors.errorColor, ";")
+                    }, "\u21910 B"));
+                }));
                 this.statsEl.appendChild(container);
             }
         } catch (error) {
@@ -1287,8 +1278,9 @@ const actionButtons = {};
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const nodeName = L.uci.get("portweaver", section_id, "name");
-        const container = document.createElement("div");
-        container.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap;";
+        const container = /*#__PURE__*/ createJsxElement("div", {
+            style: "display: flex; gap: 8px; flex-wrap: wrap;"
+        });
         // Create stats viewer for the client (now shows all proxies)
         const statsViewer = new ProxyStatsViewer({
             clientId: nodeName,
@@ -1299,7 +1291,7 @@ const actionButtons = {};
         container.appendChild(statsEl);
         return container;
     };
-    L.Poll.add(async ()=>{
+    async function pollFrpStatus() {
         try {
             const sections = await L.uci.sections("portweaver", "frp_node");
             const promises = sections.map((sec)=>{
@@ -1360,7 +1352,9 @@ const actionButtons = {};
         } catch (e) {
             console.error("Polling for FRP status failed:", e);
         }
-    }, 5);
+    }
+    pollFrpStatus();
+    L.Poll.add(pollFrpStatus, 5);
 }
 
 ;// CONCATENATED MODULE: ./components/ValidatedInput.tsx
@@ -3104,7 +3098,7 @@ const ddns_statusElements = {};
     o.depends({
         webhook_url: /^.+$/
     });
-    L.Poll.add(async ()=>{
+    async function pollDdnsStatus() {
         try {
             const result = await rpcClient.getDdnsStatus();
             const statuses = (result === null || result === void 0 ? void 0 : result.ddns_status) || [];
@@ -3169,7 +3163,9 @@ const ddns_statusElements = {};
         } catch (err) {
             console.warn("Failed to fetch DDNS statuses:", err);
         }
-    }, 5);
+    }
+    pollDdnsStatus();
+    L.Poll.add(pollDdnsStatus, 5);
 }
 
 ;// CONCATENATED MODULE: ./main.tsx

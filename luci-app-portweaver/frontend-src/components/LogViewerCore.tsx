@@ -126,7 +126,7 @@ export class LogViewerCore {
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = (
-      <a href={url} download={`${this.props.name}-logs.txt`} >
+      <a href={url} download={`${this.props.name}-logs.txt`}>
         Download Logs
       </a>
     );
@@ -519,18 +519,25 @@ export class LogViewerCore {
       }
 
       if (this.filteredLogs.length === 0) {
-        const noLogs = document.createElement("div");
-        noLogs.style.cssText = `color: ${themeColors.lineNumberColor}; text-align: center; padding: 2em; font-family: monospace;`;
-        noLogs.textContent = this.searchFilter
-          ? "No logs match your search"
-          : "No logs available";
+        const noLogs = (
+          <div
+            style={`color: ${themeColors.lineNumberColor}; text-align: center; padding: 2em; font-family: monospace;`}
+          >
+            {this.searchFilter
+              ? "No logs match your search"
+              : "No logs available"}
+          </div>
+        );
         this.logContainer.appendChild(noLogs);
       } else {
         this.filteredLogs.forEach((log, index) => {
           const isSelected = this.selectedLines.has(index);
 
-          const lineDiv = document.createElement("div");
-          lineDiv.style.cssText = `cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.25em 0.5em; ${isSelected ? `background: ${themeColors.selectionBg};` : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`;
+          const lineDiv = (
+            <div
+              style={`cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.25em 0.5em; ${isSelected ? `background: ${themeColors.selectionBg};` : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`}
+            ></div>
+          ) as HTMLDivElement;
           lineDiv.onclick = (e: MouseEvent) => {
             e.preventDefault();
             if (e.ctrlKey || e.metaKey) {
@@ -602,10 +609,9 @@ export class LogViewerCore {
           alert("Failed to copy logs");
         });
     } else {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
+      const textarea = (
+        <textarea value={text} style="position: fixed; opacity: 0; display: none;"></textarea>
+      ) as HTMLTextAreaElement;
       document.body.appendChild(textarea);
       textarea.select();
       try {

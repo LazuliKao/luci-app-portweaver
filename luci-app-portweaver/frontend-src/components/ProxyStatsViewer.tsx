@@ -44,16 +44,29 @@ export class ProxyStatsViewer {
 
   render(): HTMLElement {
     const colors = this.getStatsColors();
-    const container = <div style={ `padding: 12px; border: 1px solid ${colors.borderColor}; border-radius: 4px; background-color: ${colors.bgColor};`}>
-    </div>
+    const container = (
+      <div
+        style={`padding: 12px; border: 1px solid ${colors.borderColor}; border-radius: 4px; background-color: ${colors.bgColor};`}
+      ></div>
+    );
 
-    this.loadingEl = <div style={`font-size: 14px; color: ${colors.textColor};`}>Loading stats...</div>
+    this.loadingEl = (
+      <div style={`font-size: 14px; color: ${colors.textColor};`}>
+        Loading stats...
+      </div>
+    );
     container.appendChild(this.loadingEl);
 
-    this.errorEl = <div style={`color: ${colors.errorColor}; font-size: 14px; display: none;`}></div>
+    this.errorEl = (
+      <div
+        style={`color: ${colors.errorColor}; font-size: 14px; display: none;`}
+      ></div>
+    );
     container.appendChild(this.errorEl);
 
-    this.statsEl = <div style={`display: none; color: ${colors.textColor};`}></div>
+    this.statsEl = (
+      <div style={`display: none; color: ${colors.textColor};`}></div>
+    );
     container.appendChild(this.statsEl);
 
     this.fetchStats();
@@ -106,10 +119,11 @@ export class ProxyStatsViewer {
 
         if (!Array.isArray(proxies) || proxies.length === 0) {
           const colors = this.getStatsColors();
-          const noProxiesEl = document.createElement("div");
-          noProxiesEl.style.cssText = `font-size: 14px; color: ${colors.textColor};`;
-          noProxiesEl.textContent = "No proxies configured";
-          this.statsEl.appendChild(noProxiesEl);
+          this.statsEl.appendChild(
+            <div style={`font-size: 14px; color: ${colors.textColor};`}>
+              No proxies configured
+            </div>,
+          );
           return;
         }
 
@@ -120,49 +134,52 @@ export class ProxyStatsViewer {
         const statusColor = hasError ? colors.errorColor : colors.successColor;
         const statusText = hasError ? "error" : "running";
 
-        const statusBadge = document.createElement("div");
-        statusBadge.style.cssText = "margin-bottom: 8px;";
-        const badge = document.createElement("span");
-        badge.className = "ifacebadge";
-        badge.style.cssText = `font-size: 1em; font-weight: 600; color: ${statusColor};`;
-        badge.textContent = statusText;
-        statusBadge.appendChild(badge);
+        const statusBadge = (
+          <div style="margin-bottom: 8px;">
+            <span
+              class="ifacebadge"
+              style={`font-size: 1em; font-weight: 600; color: ${statusColor};`}
+            >
+              {statusText}
+            </span>
+          </div>
+        );
+
         this.statsEl.appendChild(statusBadge);
 
-        const countEl = document.createElement("small");
-        countEl.style.cssText = `display: block; margin-bottom: 4px; color: ${colors.textColor};`;
-        countEl.innerHTML = `<span>Proxies: ${proxies.length}</span><br>`;
+        const countEl = (
+          <small
+            style={`display: block; margin-bottom: 4px; color: ${colors.textColor};`}
+          >
+            <span>{_("Proxies: %d").format(proxies.length)}</span>
+            <br />
+          </small>
+        );
         this.statsEl.appendChild(countEl);
 
-        const container = document.createElement("div");
-        container.style.cssText = `margin-top: 0.3em; padding: 0.3em; background: ${colors.innerBgColor}; border-radius: 3px; max-height: 80px; overflow-y: auto;`;
-
-        proxies.forEach((proxy: FrpProxy) => {
-          const row = document.createElement("div");
-          row.style.cssText = `display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ${colors.rowBorderColor};`;
-
-          const typeEl = document.createElement("span");
-          typeEl.style.cssText = `min-width: 35px; color: ${colors.mutedTextColor};`;
-          typeEl.textContent = proxy.type.toUpperCase();
-          row.appendChild(typeEl);
-
-          const portEl = document.createElement("span");
-          portEl.style.cssText = `min-width: 45px; color: ${colors.textColor};`;
-          portEl.textContent = `:${proxy.cfg?.remotePort || proxy.remote_addr || "N/A"}`;
-          row.appendChild(portEl);
-
-          const inEl = document.createElement("span");
-          inEl.style.cssText = `color: ${colors.successColor};`;
-          inEl.textContent = "↓0 B";
-          row.appendChild(inEl);
-
-          const outEl = document.createElement("span");
-          outEl.style.cssText = `color: ${colors.errorColor};`;
-          outEl.textContent = "↑0 B";
-          row.appendChild(outEl);
-
-          container.appendChild(row);
-        });
+        const container = (
+          <div
+            style={`margin-top: 0.3em; padding: 0.3em; background: ${colors.innerBgColor}; border-radius: 3px; max-height: 80px; overflow-y: auto;`}
+          >
+            {proxies.map((proxy: FrpProxy) => (
+              <div
+                style={`display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ${colors.rowBorderColor};`}
+              >
+                {" "}
+                <span
+                  style={`min-width: 35px; color: ${colors.mutedTextColor};`}
+                >
+                  {proxy.type.toUpperCase()}
+                </span>{" "}
+                <span style={`min-width: 45px; color: ${colors.textColor};`}>
+                  {`:${proxy.cfg?.remotePort || proxy.remote_addr || "N/A"}`}
+                </span>
+                <span style={`color: ${colors.successColor};`}>↓0 B</span>{" "}
+                <span style={`color: ${colors.errorColor};`}>↑0 B</span>
+              </div>
+            ))}
+          </div>
+        );
 
         this.statsEl.appendChild(container);
       }

@@ -209,8 +209,9 @@ export default function (
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
     const nodeName = L.uci.get("portweaver", section_id, "name") as string;
-    const container = document.createElement("div");
-    container.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap;";
+    const container = (
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+    );
 
     // Create stats viewer for the client (now shows all proxies)
     const statsViewer = new ProxyStatsViewer({
@@ -224,7 +225,7 @@ export default function (
     return container;
   };
 
-  L.Poll.add(async () => {
+async function pollFrpStatus() {
     try {
       const sections = await L.uci.sections("portweaver", "frp_node");
       const promises = sections.map((sec: any) => {
@@ -298,5 +299,8 @@ export default function (
     } catch (e) {
       console.error("Polling for FRP status failed:", e);
     }
-  }, 5);
+  }
+
+  pollFrpStatus();
+  L.Poll.add(pollFrpStatus, 5);
 }

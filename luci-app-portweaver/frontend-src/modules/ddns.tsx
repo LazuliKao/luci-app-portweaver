@@ -453,7 +453,7 @@ export default function (
   o.description = _("One header per line (Header: Value)");
   o.depends({ webhook_url: /^.+$/ });
 
-  L.Poll.add(async () => {
+async function pollDdnsStatus() {
     try {
       const result = await rpcClient.getDdnsStatus();
 
@@ -550,5 +550,8 @@ export default function (
     } catch (err) {
       console.warn("Failed to fetch DDNS statuses:", err);
     }
-  }, 5);
+  }
+
+  pollDdnsStatus();
+  L.Poll.add(pollDdnsStatus, 5);
 }
