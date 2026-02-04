@@ -30,7 +30,7 @@ export interface ProjectStatus {
 }
 
 export interface FrpStatus {
-  frp_enabled: boolean;
+  frp_enabled?: boolean;
   frp_version?: string;
   /** Current FRP client status: connected, connecting, error, stopped */
   frp_status?: string;
@@ -62,11 +62,4 @@ export interface PortMapping {
   targetPort: string;
   frpNodes: string[];
   protocol: "tcp" | "udp" | "both";
-}
-
-/** Response from get_ddns_info UBUS endpoint */
-export interface DdnsInfoResponse {
-  status: string;
-  last_error: string;
-  logs: string[];
 }

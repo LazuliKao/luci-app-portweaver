@@ -59,7 +59,7 @@ export async function generatePOFile(
 	// Merge new translations into the PO data structure
 	for (const [msgid, msgstr] of translations) {
 		// Skip empty msgid (reserved for headers)
-		if (msgid === "") {
+		if (msgid === "" || msgid === msgstr) {
 			continue;
 		}
 

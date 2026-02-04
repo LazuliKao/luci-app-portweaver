@@ -79,14 +79,19 @@ export default function (
     );
 
     const proto_text: string =
-      ({ both: _("TCP and UDP"), tcp: "TCP", udp: "UDP" } as any)[protocol] ||
-      String(protocol).toUpperCase();
+      (
+        {
+          both: _("TCP and UDP"),
+          tcp: _("TCP"),
+          udp: _("UDP"),
+        } as any
+      )[protocol] || String(protocol).toUpperCase();
     const family_text: string =
       (
         {
           any: _("IPv4 and IPv6"),
-          ipv4: "IPv4",
-          ipv6: "IPv6",
+          ipv4: _("IPv4"),
+          ipv6: _("IPv6"),
         } as any
       )[family] || family;
 

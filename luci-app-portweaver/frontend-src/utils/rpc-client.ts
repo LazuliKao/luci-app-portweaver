@@ -4,83 +4,70 @@ import type {
   FrpStatus,
   EventsResponse,
 } from "../types/portweaver";
-import type { DdnsInfo, DdnsStatusResponse } from "../types/portweaver/ddns";
-import type { FrpProxyStats } from "../types/portweaver/frp-status";
+import type { InfoResponse } from "./../types/portweaver/index";
+import type { DdnsStatusResponse } from "../types/portweaver/ddns";
+import type { FrpProxyStats } from "../types/portweaver/frp";
 
-export function createRpcClient(rpc: any) {
-  const getStatus = rpc.declare({
+export function createRpcClient(rpc: typeof L.rpc) {
+  const getStatus = rpc.declare<PortWeaverStatus>({
     object: "portweaver",
     method: "get_status",
-    expect: {},
-  }) as () => Promise<PortWeaverStatus>;
+  });
 
-  const listProjects = rpc.declare({
+  const listProjects = rpc.declare<{ projects: ProjectStatus[] }>({
     object: "portweaver",
     method: "list_projects",
-    expect: {},
-  }) as () => Promise<{ projects: ProjectStatus[] }>;
+  });
 
-  const setEnabled = rpc.declare({
+  const setEnabled = rpc.declare<void, [id: number, enabled: boolean]>({
     object: "portweaver",
     method: "set_enabled",
     params: ["id", "enabled"],
-    expect: {},
-  }) as (id: number, enabled: boolean) => Promise<any>;
+  });
 
-  const getFrpStatus = rpc.declare({
+  const getFrpStatus = rpc.declare<FrpStatus>({
     object: "portweaver",
     method: "get_frp_status",
-    expect: {},
-  }) as () => Promise<FrpStatus>;
-
-  const getFrpInfo = rpc.declare({
+  });
+  const getFrpInfo = rpc.declare<InfoResponse, [id: string]>({
     object: "portweaver",
     method: "get_frp_info",
     params: ["id"],
-    expect: {},
-  }) as (
-    id: string,
-  ) => Promise<{ status: string; last_error: string; logs: string[] }>;
+  });
 
-  const clearFrpLogs = rpc.declare({
+  const clearFrpLogs = rpc.declare<void, [id: string]>({
     object: "portweaver",
     method: "clear_frp_logs",
     params: ["id"],
-    expect: {},
-  }) as (id: string) => Promise<any>;
+  });
 
-  const getFrpProxyStats = rpc.declare({
+  const getFrpProxyStats = rpc.declare<FrpProxyStats, [id: string]>({
     object: "portweaver",
     method: "get_frp_proxy_stats",
     params: ["id"],
-    expect: {},
-  }) as (id: string) => Promise<FrpProxyStats>;
+  });
 
-  const getEvents = rpc.declare({
+  const getEvents = rpc.declare<EventsResponse>({
     object: "portweaver",
     method: "get_events",
-    expect: {},
-  }) as () => Promise<EventsResponse>;
+  });
 
-  const getDdnsStatus = rpc.declare({
+  const getDdnsStatus = rpc.declare<DdnsStatusResponse>({
     object: "portweaver",
     method: "get_ddns_status",
-    expect: {},
-  }) as () => Promise<DdnsStatusResponse>;
+  });
 
-  const getDdnsInfo = rpc.declare({
+  const getDdnsInfo = rpc.declare<InfoResponse, [name: string]>({
     object: "portweaver",
     method: "get_ddns_info",
     params: ["name"],
-    expect: {},
-  }) as (name: string) => Promise<DdnsInfo>;
+  });
 
-  const clearDdnsLogs = rpc.declare({
+  const clearDdnsLogs = rpc.declare<void, [name: string]>({
     object: "portweaver",
     method: "clear_ddns_logs",
     params: ["name"],
-    expect: {},
-  }) as (name: string) => Promise<any>;
+  });
 
   return {
     getStatus,

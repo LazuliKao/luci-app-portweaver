@@ -15,12 +15,17 @@ export interface LogViewerCoreProps {
 }
 
 const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
-const REGEX_PORT = /:\d{2,5}\b/g;
+const REGEX_LOG_TIMESTAMP =
+  /\d{4}[-/]\d{2}[-/]\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})?/g;
 const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
 const REGEX_SUCCESS = /\b(success|ok|done|complete)\b/gi;
 const REGEX_UUID =
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
-
+type Match = {
+  start: number;
+  end: number;
+  render: (s: string, key: number) => JSX.Element;
+};
 export class LogViewerCore {
   private props: LogViewerCoreProps;
   private logContainer: HTMLElement | null = null;
@@ -49,40 +54,63 @@ export class LogViewerCore {
     };
   }
 
-  private highlightLog(text: string): string {
-    let result = text;
-    const matches: Array<{ start: number; end: number; html: string }> = [];
+  private highlightLog(text: string): (string | HTMLElement)[] {
+    const matches: Match[] = [];
 
-    const addMatch = (regex: RegExp, replacement: string) => {
-      let match: RegExpExecArray | null;
-      while (true) {
-        match = regex.exec(text);
-        if (match === null) break;
+    const collect = (regex: RegExp, render: (s: string) => JSX.Element) => {
+      let m: RegExpExecArray | null;
+
+      while ((m = regex.exec(text))) {
         matches.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          html: replacement.replace("$&", match[0]),
+          start: m.index,
+          end: m.index + m[0].length,
+          render,
         });
       }
     };
 
-    addMatch(REGEX_IP, '<strong class="text-primary">$&</strong>');
-    addMatch(REGEX_PORT, '<strong class="text-success">$&</strong>');
-    addMatch(REGEX_ERROR, '<strong class="text-danger">$&</strong>');
-    addMatch(REGEX_SUCCESS, '<strong class="text-success">$&</strong>');
-    addMatch(REGEX_UUID, "<code>$&</code>");
+    collect(REGEX_IP, (s) => <strong>{s}</strong>);
+    collect(REGEX_ERROR, (s) => <strong>{s}</strong>);
+    collect(REGEX_LOG_TIMESTAMP, (s) => (
+      <span style="font-weight: 300; opacity: 0.7;">{s}</span>
+    ));
+    collect(REGEX_SUCCESS, (s) => <strong>{s}</strong>);
+    collect(REGEX_UUID, (s) => <code>{s}</code>);
 
+    // 按开始位置排序
     matches.sort((a, b) => a.start - b.start);
 
-    let offset = 0;
-    for (const match of matches) {
-      const before = result.slice(0, match.start + offset);
-      const after = result.slice(match.end + offset);
-      result = before + match.html + after;
-      offset += match.html.length - (match.end - match.start);
+    // 如果有重叠，只保留最长（或最先定义的）
+    const resolved: Match[] = [];
+    let lastEnd = -1;
+
+    for (const m of matches) {
+      if (m.start >= lastEnd) {
+        resolved.push(m);
+        lastEnd = m.end;
+      }
     }
 
-    return result;
+    // 生成 JSX segments
+    const output: (string | HTMLElement)[] = [];
+
+    let cursor = 0;
+    let key = 0;
+
+    for (const m of resolved) {
+      if (cursor < m.start) {
+        output.push(text.slice(cursor, m.start));
+      }
+
+      output.push(m.render(text.slice(m.start, m.end), key++));
+      cursor = m.end;
+    }
+
+    if (cursor < text.length) {
+      output.push(text.slice(cursor));
+    }
+
+    return output;
   }
 
   private applyFilters(): void {
@@ -127,7 +155,7 @@ export class LogViewerCore {
     const url = URL.createObjectURL(blob);
     const a = (
       <a href={url} download={`${this.props.name}-logs.txt`}>
-        Download Logs
+        {_("Download Logs")}
       </a>
     );
     a.click();
@@ -140,7 +168,9 @@ export class LogViewerCore {
       this.logContainer.style.whiteSpace = this.wrapText ? "pre-wrap" : "pre";
     }
     if (this.wrapButton) {
-      this.wrapButton.textContent = this.wrapText ? "WRAP: ON" : "WRAP: OFF";
+      this.wrapButton.textContent = this.wrapText
+        ? _("WRAP: ON")
+        : _("WRAP: OFF");
     }
   }
 
@@ -183,7 +213,7 @@ export class LogViewerCore {
       <input
         type="text"
         class="cbi-input-text"
-        placeholder="Search logs..."
+        placeholder={_("Search logs...")}
         style="flex: 1; min-width: 150px; max-width: 400px;"
         oninput={(e: Event) => {
           const target = e.target as HTMLInputElement;
@@ -200,7 +230,7 @@ export class LogViewerCore {
         class="cbi-button cbi-button-neutral"
         onclick={() => this.fetchLogs()}
       >
-        REFRESH
+        {_("REFRESH")}
       </button>
     );
 
@@ -211,7 +241,9 @@ export class LogViewerCore {
         onclick={() => {
           this.isPaused = !this.isPaused;
           if (this.pauseButton) {
-            this.pauseButton.textContent = this.isPaused ? "PAUSED" : "PAUSE";
+            this.pauseButton.textContent = this.isPaused
+              ? _("PAUSED")
+              : _("PAUSE");
           }
           if (this.isPaused) {
             this.stopPolling();
@@ -220,7 +252,7 @@ export class LogViewerCore {
           }
         }}
       >
-        PAUSE
+        {_("PAUSE")}
       </button>
     );
 
@@ -232,12 +264,12 @@ export class LogViewerCore {
           this.isFollowing = !this.isFollowing;
           if (this.followButton) {
             this.followButton.textContent = this.isFollowing
-              ? "FOLLOW: ON"
-              : "FOLLOW: OFF";
+              ? _("FOLLOW: ON")
+              : _("FOLLOW: OFF");
           }
         }}
       >
-        FOLLOW: ON
+        {_("FOLLOW: ON")}
       </button>
     );
 
@@ -247,7 +279,7 @@ export class LogViewerCore {
         class="cbi-button cbi-button-neutral"
         onclick={() => this.toggleWrap()}
       >
-        WRAP: OFF
+        {_("WRAP: OFF")}
       </button>
     );
 
@@ -256,7 +288,7 @@ export class LogViewerCore {
         class="log-container"
         style="flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
       >
-        {this.logs.length === 0 ? "No logs available" : null}
+        {this.logs.length === 0 ? _("No logs available") : null}
       </div>
     );
 
@@ -266,7 +298,7 @@ export class LogViewerCore {
         class="cbi-button"
         onclick={() => this.copyToClipboard()}
       >
-        COPY
+        {_("COPY")}
       </button>
     );
 
@@ -278,11 +310,11 @@ export class LogViewerCore {
           if (this.selectedLines.size > 0) {
             this.copyToClipboard();
           } else {
-            alert("No lines selected");
+            alert(_("No lines selected"));
           }
         }}
       >
-        COPY SELECTED
+        {_("COPY SELECTED")}
       </button>
     );
 
@@ -292,7 +324,7 @@ export class LogViewerCore {
         class="cbi-button cbi-button-positive"
         onclick={() => this.exportAll()}
       >
-        EXPORT
+        {_("EXPORT")}
       </button>
     );
 
@@ -303,7 +335,7 @@ export class LogViewerCore {
         onclick={() => this.clearLogs()}
         style="background: #dc3545; color: white;"
       >
-        CLEAR
+        {_("CLEAR")}
       </button>
     );
 
@@ -336,7 +368,7 @@ export class LogViewerCore {
             {this.props.title}
           </h4>
           <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;">
-            Status: {this.statusSpan}
+            {_("Status:")} {this.statusSpan}
             {this.errorSpan}
           </div>
         </div>
@@ -422,7 +454,7 @@ export class LogViewerCore {
       .catch((err: any) => {
         console.error("Failed to fetch logs:", err);
         this.status = "error";
-        this.lastError = "Failed to fetch logs";
+        this.lastError = _("Failed to fetch logs");
         this.updateDisplay();
       });
   }
@@ -522,47 +554,39 @@ export class LogViewerCore {
             style={`color: ${themeColors.lineNumberColor}; text-align: center; padding: 2em; font-family: monospace;`}
           >
             {this.searchFilter
-              ? "No logs match your search"
-              : "No logs available"}
+              ? _("No logs match your search")
+              : _("No logs available")}
           </div>
         );
         this.logContainer.appendChild(noLogs);
       } else {
+        const lineNumberWidth = `${this.filteredLogs.length.toString().length}.5ch`;
         this.filteredLogs.forEach((log, index) => {
           const isSelected = this.selectedLines.has(index);
-
-          const lineDiv = (
+          this.logContainer?.appendChild(
             <div
-              style={`cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.25em 0.5em; ${isSelected ? `background: ${themeColors.selectionBg};` : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`}
-            ></div>
-          ) as HTMLDivElement;
-          lineDiv.onclick = (e: MouseEvent) => {
-            e.preventDefault();
-            if (e.ctrlKey || e.metaKey) {
-              this.toggleLineSelection(index);
-            } else if (e.shiftKey && this.selectedLines.size > 0) {
-              this.selectRange(index);
-            } else {
-              this.selectedLines.clear();
-              this.toggleLineSelection(index);
-            }
-            this.updateDisplay();
-          };
-
-          const lineNum = (
-            <span
-              style={`color: ${themeColors.lineNumberColor}; margin-right: 1em; min-width: 2.5em; display: inline-block; text-align: right; flex-shrink: 0;`}
+              onclick={(e) => {
+                e.preventDefault();
+                if (e.ctrlKey || e.metaKey) {
+                  this.toggleLineSelection(index);
+                } else if (e.shiftKey && this.selectedLines.size > 0) {
+                  this.selectRange(index);
+                } else {
+                  this.selectedLines.clear();
+                  this.toggleLineSelection(index);
+                }
+                this.updateDisplay();
+              }}
+              style={`cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.15em 0.25em; ${isSelected ? `background: ${themeColors.selectionBg};` : ""} font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;`}
             >
-              {index + 1}
-            </span>
+              <span
+                style={`color: ${themeColors.lineNumberColor}; margin-right: 1ch; min-width: ${lineNumberWidth}; display: inline-block; text-align: right; flex-shrink: 0;`}
+              >
+                {index + 1}
+              </span>
+              <span>{this.highlightLog(log)}</span>
+            </div>,
           );
-
-          const content = <span>{this.highlightLog(log)}</span>;
-
-          lineDiv.appendChild(lineNum);
-          lineDiv.appendChild(content);
-
-          this.logContainer?.appendChild(lineDiv);
         });
       }
 
@@ -600,31 +624,30 @@ export class LogViewerCore {
       navigator.clipboard
         .writeText(text)
         .then(() => {
-          alert("Logs copied to clipboard");
+          alert(_("Logs copied to clipboard"));
         })
         .catch((err: any) => {
           console.error("Failed to copy logs:", err);
-          alert("Failed to copy logs");
+          alert(_("Failed to copy logs"));
         });
     } else {
       const textarea = (
-        <textarea
-          value={text}
-          style="position: fixed; opacity: 0; display: none;"
-        ></textarea>
+        <textarea style="position: fixed; opacity: 0; display: none;">
+          {text}
+        </textarea>
       ) as HTMLTextAreaElement;
       document.body.appendChild(textarea);
       textarea.select();
       try {
         const success = document.execCommand("copy");
         if (success) {
-          alert("Logs copied to clipboard");
+          alert(_("Logs copied to clipboard"));
         } else {
           throw new Error("execCommand failed");
         }
       } catch (err) {
         console.error("Failed to copy logs:", err);
-        alert("Failed to copy logs - please select and copy manually");
+        alert(_("Failed to copy logs - please select and copy manually"));
       } finally {
         document.body.removeChild(textarea);
       }
@@ -632,7 +655,7 @@ export class LogViewerCore {
   }
 
   private clearLogs(): void {
-    if (confirm("Are you sure you want to clear the logs?")) {
+    if (confirm(_("Are you sure you want to clear the logs?"))) {
       this.props
         .clearer(this.props.name)
         .then(() => {
@@ -643,7 +666,7 @@ export class LogViewerCore {
         })
         .catch((err: any) => {
           console.error("Failed to clear logs:", err);
-          alert("Failed to clear logs");
+          alert(_("Failed to clear logs"));
         });
     }
   }

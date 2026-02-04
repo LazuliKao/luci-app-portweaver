@@ -234,9 +234,7 @@ export default function (
           .getFrpInfo(nodeName)
           .then((res) => {
             const oldStatus = nodeStatuses[sec[".name"]]?.status;
-            // Normalize backend response (support both 'frp_status' and 'status')
-            const rawStatus =
-              (res as any).frp_status ?? res.status ?? "unavailable";
+            const rawStatus = res.status ?? "unavailable";
             const newStatus: FrpState = [
               "connected",
               "connecting",

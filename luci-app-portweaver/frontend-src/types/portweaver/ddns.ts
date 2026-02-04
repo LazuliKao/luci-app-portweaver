@@ -10,9 +10,3 @@ export interface DdnsStatus {
   last_ip: string;
   message: string;
 }
-
-export interface DdnsInfo {
-  status: string;
-  last_error: string;
-  logs: string[];
-}

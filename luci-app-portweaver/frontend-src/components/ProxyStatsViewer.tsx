@@ -1,5 +1,5 @@
 import type { RpcClient } from "../utils/rpc-client";
-import type { FrpProxy } from "../types/portweaver/frp-status";
+import type { FrpProxy } from "../types/portweaver/frp";
 import { getThemeColors } from "../utils/theme-utils";
 
 interface ProxyStatsViewerProps {
@@ -52,7 +52,7 @@ export class ProxyStatsViewer {
 
     this.loadingEl = (
       <div style={`font-size: 14px; color: ${colors.textColor};`}>
-        Loading stats...
+        {_("Loading stats...")}
       </div>
     );
     container.appendChild(this.loadingEl);
@@ -121,7 +121,7 @@ export class ProxyStatsViewer {
           const colors = this.getStatsColors();
           this.statsEl.appendChild(
             <div style={`font-size: 14px; color: ${colors.textColor};`}>
-              No proxies configured
+              {_("No proxies configured")}
             </div>,
           );
           return;
@@ -132,7 +132,7 @@ export class ProxyStatsViewer {
           (p: FrpProxy) => p.err && p.err.length > 0,
         );
         const statusColor = hasError ? colors.errorColor : colors.successColor;
-        const statusText = hasError ? "error" : "running";
+        const statusText = hasError ? _("error") : _("running");
 
         const statusBadge = (
           <div style="margin-bottom: 8px;">
@@ -165,16 +165,15 @@ export class ProxyStatsViewer {
               <div
                 style={`display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ${colors.rowBorderColor};`}
               >
-                {" "}
                 <span
                   style={`min-width: 35px; color: ${colors.mutedTextColor};`}
                 >
                   {proxy.type.toUpperCase()}
-                </span>{" "}
+                </span>
                 <span style={`min-width: 45px; color: ${colors.textColor};`}>
                   {`:${proxy.cfg?.remotePort || proxy.remote_addr || "N/A"}`}
                 </span>
-                <span style={`color: ${colors.successColor};`}>↓0 B</span>{" "}
+                <span style={`color: ${colors.successColor};`}>↓0 B</span>
                 <span style={`color: ${colors.errorColor};`}>↑0 B</span>
               </div>
             ))}
@@ -197,7 +196,9 @@ export class ProxyStatsViewer {
       }
       if (this.errorEl) {
         this.errorEl.style.display = "block";
-        this.errorEl.textContent = `Error: ${error instanceof Error ? error.message : "Unknown error"}`;
+        this.errorEl.textContent = _("Error: %s").format(
+          error instanceof Error ? error.message : _("Unknown error"),
+        );
       }
     }
   }

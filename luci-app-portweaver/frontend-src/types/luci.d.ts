@@ -54,15 +54,19 @@ declare namespace LuCI {
     hideModal(): void;
   }
 
+  type ParamsForArgs<Args extends any[]> = Args extends []
+    ? never
+    : { length: Args["length"] } & readonly string[];
+
+  type InferReturn<R> = unknown extends R ? undefined : R;
+  type RpcFn<A extends readonly any[], R> = (...args: A) => Promise<R>;
   interface RPC {
-    declare(options: {
+    declare<R = unknown, Args extends any[] = []>(options: {
       object: string;
       method: string;
-      params?: string[];
-      expect?: any;
-    }): (...args: any[]) => Promise<any>;
+      params?: ParamsForArgs<Args>;
+    }): RpcFn<Args, InferReturn<R>>;
   }
-
   interface UCI {
     load(config: string): Promise<void>;
     get(config: string, section: string, option?: string): any;

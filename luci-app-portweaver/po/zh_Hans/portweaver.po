@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: portweaver\n"
-"POT-Creation-Date: 2026-01-29 00:00+0000\n"
-"PO-Revision-Date: 2026-01-29 00:00+0000\n"
+"POT-Creation-Date: 2026-02-04 00:00+0000\n"
+"PO-Revision-Date: 2026-02-04 00:00+0000\n"
 "Last-Translator: PortWeaver Translator Tools <lazulikao233@outlook.com>\n"
 "Language-Team: Chinese <lazulikao233@outlook.com>\n"
 "Language: zh_CN\n"
@@ -49,9 +49,6 @@ msgstr "IP 版本"
 msgid "Are you sure you want to clear all logs?"
 msgstr "您确定要清除所有日志吗？"
 
-msgid "Are you sure you want to restart PortWeaver service?"
-msgstr "您确定要重启 PortWeaver 服务吗？"
-
 msgid "Authentication Token"
 msgstr "认证令牌"
 
@@ -92,9 +89,6 @@ msgstr "正在连接"
 msgid "Could not determine project index"
 msgstr "无法确定项目索引"
 
-msgid "DDNS"
-msgstr "DDNS"
-
 msgid "DNS ID / API Key"
 msgstr "DNS ID / API 密钥"
 
@@ -134,14 +128,8 @@ msgstr "启用 IPv6"
 msgid "Enable Logging"
 msgstr "启用日志记录"
 
-msgid "Enable PortWeaver"
-msgstr "启用 PortWeaver"
-
 msgid "Enable Statistics"
 msgstr "启用统计功能"
-
-msgid "Enable logging output to /tmp/portweaver.log"
-msgstr "启用日志输出到 /tmp/portweaver.log"
 
 msgid ""
 "Enable to configure multiple port mappings or port ranges. Disable for "
@@ -227,9 +215,6 @@ msgstr "IPv4 获取方法"
 msgid "IPv4 Network Interface"
 msgstr "IPv4 网络接口"
 
-msgid "IPv4 URL"
-msgstr "IPv4 URL"
-
 msgid "IPv4 and IPv6"
 msgstr "IPv4 和 IPv6"
 
@@ -305,9 +290,6 @@ msgstr "日志已成功清除"
 msgid "Multi-Port"
 msgstr "多端口"
 
-msgid "N/A"
-msgstr "N/A"
-
 msgid "Network Interface"
 msgstr "网络接口"
 
@@ -364,9 +346,6 @@ msgstr "端口范围必须具有相同的数量。"
 
 msgid "Port:"
 msgstr "端口："
-
-msgid "PortWeaver"
-msgstr "PortWeaver"
 
 msgid "Ports: "
 msgstr "端口："
@@ -481,9 +460,6 @@ msgstr "入站流量"
 msgid "Traffic Out"
 msgstr "出站流量"
 
-msgid "URL"
-msgstr "URL"
-
 msgid "Unavailable"
 msgstr "不可用"
 
@@ -526,9 +502,6 @@ msgstr "Webhook 内容"
 msgid "Webhook Headers"
 msgstr "Webhook 头部"
 
-msgid "Webhook URL"
-msgstr "Webhook URL"
-
 msgid "[8080][node1:9888]:80/tcp or 8080:80/tcp"
 msgstr "[8080][node1:9888]:80/tcp 或 8080:80/tcp"
 
@@ -567,3 +540,120 @@ msgstr "分钟"
 
 msgid "projects running"
 msgstr "运行中项目"
+
+msgid "Are you sure you want to clear the logs?"
+msgstr "您确定要清空日志吗？"
+
+msgid "CLEAR"
+msgstr "清除"
+
+msgid "COPY"
+msgstr "复制"
+
+msgid "COPY SELECTED"
+msgstr "复制选中的内容"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "DDNS Logs - %s"
+msgstr "DDNS 日志 - %s"
+
+msgid "Download Logs"
+msgstr "下载日志"
+
+msgid "EXPORT"
+msgstr "导出"
+
+msgid "FOLLOW: OFF"
+msgstr "追踪：关闭"
+
+msgid "FOLLOW: ON"
+msgstr "追踪：开启"
+
+msgid "FRP Logs - %s"
+msgstr "FRP 日志 - %s"
+
+msgid "Failed to copy logs"
+msgstr "复制日志失败"
+
+msgid "Failed to copy logs - please select and copy manually"
+msgstr "复制日志失败，请手动选择并复制"
+
+msgid "Failed to fetch logs"
+msgstr "获取日志失败"
+
+msgid "Logs copied to clipboard"
+msgstr "日志已复制到剪贴板"
+
+msgid "No lines selected"
+msgstr "未选择任何行"
+
+msgid "No logs available"
+msgstr "没有可用的日志"
+
+msgid "No logs match your search"
+msgstr "没有日志与您的搜索匹配"
+
+msgid "PAUSE"
+msgstr "暂停"
+
+msgid "PAUSED"
+msgstr "已暂停"
+
+msgid "Proxies: %d"
+msgstr "代理：%d"
+
+msgid "Proxy Stats"
+msgstr "代理统计"
+
+msgid "REFRESH"
+msgstr "刷新"
+
+msgid "Restart Service"
+msgstr "重启服务"
+
+msgid "Search logs..."
+msgstr "搜索日志..."
+
+msgid "Status:"
+msgstr "状态："
+
+msgid "WRAP: OFF"
+msgstr "环绕：关闭"
+
+msgid "WRAP: ON"
+msgstr "环绕：开启"
+
+msgid "unavailable"
+msgstr "不可用"
+
+msgid "Error: %s"
+msgstr "错误：%s"
+
+msgid "Loading stats..."
+msgstr "正在加载统计数据..."
+
+msgid "No proxies configured"
+msgstr "未配置任何代理"
+
+msgid "Unknown error"
+msgstr "未知错误"
+
+msgid "error"
+msgstr "错误"
+
+msgid "running"
+msgstr "运行中"
+
+msgid "Are you sure you want to restart PortWeaver service?"
+msgstr "您确定要重启 PortWeaver 服务吗？"
+
+msgid "Enable PortWeaver"
+msgstr "启用 PortWeaver"
+
+msgid "Enable logging output to /tmp/portweaver.log"
+msgstr "启用日志输出到 /tmp/portweaver.log"
+
+msgid "PortWeaver"
+msgstr "端口工具箱"
