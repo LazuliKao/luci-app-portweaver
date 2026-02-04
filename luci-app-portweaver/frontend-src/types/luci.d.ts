@@ -114,19 +114,11 @@ type ParseFormat<
     : ParseFormat<Rest, Acc>
   : Acc;
 
-class Formatter<S extends string> {
-  constructor(private template: S) {}
-
-  format(...args: ParseFormat<S>): string {
-    // runtime implementation stubs
-    let i = 0;
-    return this.template.replace(/%[dsf]/g, () => String(args[i++]));
-  }
+declare class Formatter<S extends string> {
+  format(...args: ParseFormat<S>): string;
 }
 // i18n translate function
-function _<S extends string>(s: S): Formatter<S> & string {
-  return new Formatter(s);
-}
+declare function _<S extends string>(s: S): Formatter<S> & string;
 // declare function _(
 //   text: string,
 //   ...args: any[]

@@ -453,7 +453,7 @@ export default function (
   o.description = _("One header per line (Header: Value)");
   o.depends({ webhook_url: /^.+$/ });
 
-async function pollDdnsStatus() {
+  async function pollDdnsStatus() {
     try {
       const result = await rpcClient.getDdnsStatus();
 

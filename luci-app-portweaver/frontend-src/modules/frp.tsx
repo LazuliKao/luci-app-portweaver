@@ -225,7 +225,7 @@ export default function (
     return container;
   };
 
-async function pollFrpStatus() {
+  async function pollFrpStatus() {
     try {
       const sections = await L.uci.sections("portweaver", "frp_node");
       const promises = sections.map((sec: any) => {

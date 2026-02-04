@@ -350,10 +350,8 @@ export class LogViewerCore {
       >
         {this.props.showHeader ? this.header : null}
         {this.searchBar}
-        <div>
-          {this.applyScrollbarStyles()}
-          {this.logContainer}
-        </div>
+        {this.applyScrollbarStyles()}
+        {this.logContainer}
         {this.footer}
       </div>
     );
@@ -610,7 +608,10 @@ export class LogViewerCore {
         });
     } else {
       const textarea = (
-        <textarea value={text} style="position: fixed; opacity: 0; display: none;"></textarea>
+        <textarea
+          value={text}
+          style="position: fixed; opacity: 0; display: none;"
+        ></textarea>
       ) as HTMLTextAreaElement;
       document.body.appendChild(textarea);
       textarea.select();

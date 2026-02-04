@@ -701,7 +701,7 @@ class LogViewerCore {
         const content = /*#__PURE__*/ createJsxElement("div", {
             class: "log-viewer-core",
             style: "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
-        }, this.props.showHeader ? this.header : null, this.searchBar, /*#__PURE__*/ createJsxElement("div", null, this.applyScrollbarStyles(), this.logContainer), this.footer);
+        }, this.props.showHeader ? this.header : null, this.searchBar, this.applyScrollbarStyles(), this.logContainer, this.footer);
         return content;
     }
     getSearchBar() {
