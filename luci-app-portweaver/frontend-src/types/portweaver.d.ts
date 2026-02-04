@@ -40,9 +40,6 @@ export interface FrpStatus {
   client_count?: number;
 }
 
-/** Response containing all proxies for a client */
-export type FrpClientStats = import("../client/frp-status").FrpProxyStats;
-
 /** A single event in the activity log */
 export interface ActivityEvent {
   /** Unix timestamp in milliseconds */
@@ -65,24 +62,6 @@ export interface PortMapping {
   targetPort: string;
   frpNodes: string[];
   protocol: "tcp" | "udp" | "both";
-}
-
-/** DDNS status for a single configuration */
-export interface DdnsStatus {
-  section: string;
-  name: string;
-  provider: string;
-  status: "success" | "updating" | "error" | "disabled" | "unknown";
-  last_update?: string;
-  last_ip?: string;
-  message?: string;
-}
-
-/** DDNS detailed information including logs */
-export interface DdnsInfo {
-  status: string;
-  last_error: string;
-  logs: string[];
 }
 
 /** Response from get_ddns_info UBUS endpoint */

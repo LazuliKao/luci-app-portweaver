@@ -215,7 +215,6 @@ export default function (
     // Create stats viewer for the client (now shows all proxies)
     const statsViewer = new ProxyStatsViewer({
       clientId: nodeName,
-      clientName: nodeName,
       rpcClient: rpcClient,
     });
     const statsEl = statsViewer.render();

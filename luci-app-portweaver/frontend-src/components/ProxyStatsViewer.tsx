@@ -1,17 +1,15 @@
 import type { RpcClient } from "../utils/rpc-client";
-import type { FrpProxy } from "../types/portweaver";
+import type { FrpProxy } from "../types/portweaver/frp-status";
 import { getThemeColors } from "../utils/theme-utils";
 
 interface ProxyStatsViewerProps {
   clientId: string;
-  clientName: string;
   rpcClient: RpcClient;
   refreshInterval?: number;
 }
 
 export class ProxyStatsViewer {
   private clientId: string;
-  private clientName: string;
   private rpcClient: RpcClient;
   private statsEl: HTMLElement | null = null;
   private errorEl: HTMLElement | null = null;
@@ -26,7 +24,6 @@ export class ProxyStatsViewer {
 
   constructor(props: ProxyStatsViewerProps) {
     this.clientId = props.clientId;
-    this.clientName = props.clientName;
     this.rpcClient = props.rpcClient;
     this.refreshRate = props.refreshInterval ?? 5000;
   }
@@ -47,20 +44,16 @@ export class ProxyStatsViewer {
 
   render(): HTMLElement {
     const colors = this.getStatsColors();
-    const container = document.createElement("div");
-    container.style.cssText = `padding: 12px; border: 1px solid ${colors.borderColor}; border-radius: 4px; background-color: ${colors.bgColor};`;
+    const container = <div style={ `padding: 12px; border: 1px solid ${colors.borderColor}; border-radius: 4px; background-color: ${colors.bgColor};`}>
+    </div>
 
-    this.loadingEl = document.createElement("div");
-    this.loadingEl.textContent = "Loading stats...";
-    this.loadingEl.style.cssText = `font-size: 14px; color: ${colors.textColor};`;
+    this.loadingEl = <div style={`font-size: 14px; color: ${colors.textColor};`}>Loading stats...</div>
     container.appendChild(this.loadingEl);
 
-    this.errorEl = document.createElement("div");
-    this.errorEl.style.cssText = `color: ${colors.errorColor}; font-size: 14px; display: none;`;
+    this.errorEl = <div style={`color: ${colors.errorColor}; font-size: 14px; display: none;`}></div>
     container.appendChild(this.errorEl);
 
-    this.statsEl = document.createElement("div");
-    this.statsEl.style.cssText = `display: none; color: ${colors.textColor};`;
+    this.statsEl = <div style={`display: none; color: ${colors.textColor};`}></div>
     container.appendChild(this.statsEl);
 
     this.fetchStats();
@@ -90,7 +83,6 @@ export class ProxyStatsViewer {
     try {
       const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
       const currentStats = JSON.stringify(stats);
-      console.log(stats);
 
       if (currentStats === this.lastStats) {
         return;

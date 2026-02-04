@@ -125,9 +125,11 @@ export class LogViewerCore {
 
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${this.props.name}-logs.txt`;
+    const a = (
+      <a href={url} download={`${this.props.name}-logs.txt`} >
+        Download Logs
+      </a>
+    );
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -348,7 +350,10 @@ export class LogViewerCore {
       >
         {this.props.showHeader ? this.header : null}
         {this.searchBar}
-        {this.logContainer}
+        <div>
+          {this.applyScrollbarStyles()}
+          {this.logContainer}
+        </div>
         {this.footer}
       </div>
     );
@@ -369,7 +374,6 @@ export class LogViewerCore {
   }
 
   init(): void {
-    this.applyScrollbarStyles();
     this.updateDisplay();
     this.startPolling();
   }
@@ -425,18 +429,9 @@ export class LogViewerCore {
       });
   }
 
-  private applyScrollbarStyles(): void {
+  private applyScrollbarStyles(): HTMLStyleElement | undefined {
     const themeColors = getThemeColors();
     if (!this.logContainer) return;
-
-    const styleId = "logviewer-scrollbar-styles";
-    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
-
-    if (!styleEl) {
-      styleEl = document.createElement("style");
-      styleEl.id = styleId;
-      document.head.appendChild(styleEl);
-    }
 
     const scrollbarTrack = themeColors.isDark
       ? "rgba(255, 255, 255, 0.08)"
@@ -451,7 +446,9 @@ export class LogViewerCore {
       ? "rgba(255, 255, 255, 0.7)"
       : "rgba(0, 0, 0, 0.8)";
 
-    styleEl.textContent = `
+    return (
+      <style>
+        {`
       .log-container::-webkit-scrollbar {
         width: 10px;
         height: 10px;
@@ -478,7 +475,9 @@ export class LogViewerCore {
         scrollbar-width: auto;
         scrollbar-color: ${scrollbarThumb} ${scrollbarTrack};
       }
-    `;
+    `}
+      </style>
+    ) as HTMLStyleElement;
   }
 
   private updateDisplay(): void {

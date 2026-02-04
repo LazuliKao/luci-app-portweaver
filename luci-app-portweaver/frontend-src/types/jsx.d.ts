@@ -44,6 +44,7 @@ declare global {
       small: JSXElement<HTMLElement>;
       code: JSXElement<HTMLElement>;
       p: JSXElement<HTMLParagraphElement>;
+      a: JSXElement<HTMLAnchorElement>;
     }
   }
 }

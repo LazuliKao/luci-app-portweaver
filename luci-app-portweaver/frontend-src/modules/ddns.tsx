@@ -1,5 +1,5 @@
 import { LogViewerDialog } from "../components/LogViewerDialog";
-import type { DdnsStatus } from "../types/portweaver";
+import type { DdnsStatus } from "../types/portweaver/ddns";
 import { rpcClient } from "../utils/rpc-client";
 
 const form = L.form;
@@ -144,7 +144,9 @@ export default function (
   o = ss.option(form.DummyValue, "_status", _("Status"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
-    const status = ddnsStatuses[section_id] || {
+    const name = uci.get("portweaver", section_id, "name") as string;
+
+    const status = ddnsStatuses[name] || {
       status: "unknown",
       name: "",
       provider: "",
@@ -199,11 +201,13 @@ export default function (
       container.appendChild(ipInfo);
     }
 
-    if (status.last_update) {
+    if (status.last_update > 0) {
+      const date = new Date(status.last_update * 1000);
+      const formattedTime = date.toLocaleString();
       const updateInfo = (
         <small style="color:#666;">
           {_("Updated: ")}
-          {status.last_update}
+          {formattedTime}
         </small>
       ) as HTMLElement;
       container.appendChild(updateInfo);
@@ -220,7 +224,7 @@ export default function (
       container.appendChild(errorMsg);
     }
 
-    statusElements[section_id] = container;
+    statusElements[name] = container;
     return container;
   };
 
@@ -452,11 +456,12 @@ export default function (
   L.Poll.add(async () => {
     try {
       const result = await rpcClient.getDdnsStatus();
-      const statuses = result?.statuses || [];
+
+      const statuses = result?.ddns_status || [];
 
       for (const status of statuses) {
-        const oldStatus = ddnsStatuses[status.section];
-        ddnsStatuses[status.section] = status;
+        const oldStatus = ddnsStatuses[status.name];
+        ddnsStatuses[status.name] = status;
 
         if (
           !oldStatus ||
@@ -464,7 +469,7 @@ export default function (
           oldStatus.last_ip !== status.last_ip ||
           oldStatus.last_update !== status.last_update
         ) {
-          const container = statusElements[status.section];
+          const container = statusElements[status.name];
           if (container) {
             const statusColors: Record<string, string> = {
               success: "#4CAF50",
@@ -517,11 +522,13 @@ export default function (
               container.appendChild(ipInfo);
             }
 
-            if (status.last_update) {
+            if (status.last_update > 0) {
+              const date = new Date(status.last_update * 1000);
+              const formattedTime = date.toLocaleString();
               const updateInfo = (
                 <small style="color:#666;">
                   {_("Updated: ")}
-                  {status.last_update}
+                  {formattedTime}
                 </small>
               ) as HTMLElement;
               container.appendChild(updateInfo);

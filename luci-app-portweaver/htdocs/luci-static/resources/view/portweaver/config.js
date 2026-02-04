@@ -589,9 +589,10 @@ class LogViewerCore {
             type: "text/plain"
         });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "".concat(this.props.name, "-logs.txt");
+        const a = /*#__PURE__*/ createJsxElement("a", {
+            href: url,
+            download: "".concat(this.props.name, "-logs.txt")
+        }, "Download Logs");
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -700,7 +701,7 @@ class LogViewerCore {
         const content = /*#__PURE__*/ createJsxElement("div", {
             class: "log-viewer-core",
             style: "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
-        }, this.props.showHeader ? this.header : null, this.searchBar, this.logContainer, this.footer);
+        }, this.props.showHeader ? this.header : null, this.searchBar, /*#__PURE__*/ createJsxElement("div", null, this.applyScrollbarStyles(), this.logContainer), this.footer);
         return content;
     }
     getSearchBar() {
@@ -713,7 +714,6 @@ class LogViewerCore {
         return this.footer;
     }
     init() {
-        this.applyScrollbarStyles();
         this.updateDisplay();
         this.startPolling();
     }
@@ -760,18 +760,11 @@ class LogViewerCore {
     applyScrollbarStyles() {
         const themeColors = getThemeColors();
         if (!this.logContainer) return;
-        const styleId = "logviewer-scrollbar-styles";
-        let styleEl = document.getElementById(styleId);
-        if (!styleEl) {
-            styleEl = document.createElement("style");
-            styleEl.id = styleId;
-            document.head.appendChild(styleEl);
-        }
         const scrollbarTrack = themeColors.isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)";
         const scrollbarThumb = themeColors.isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(0, 0, 0, 0.4)";
         const scrollbarThumbHover = themeColors.isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.6)";
         const scrollbarThumbActive = themeColors.isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.8)";
-        styleEl.textContent = "\n      .log-container::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .log-container::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .log-container::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .log-container::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .log-container {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    ");
+        return /*#__PURE__*/ createJsxElement("style", null, "\n      .log-container::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .log-container::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .log-container::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .log-container::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .log-container {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    "));
     }
     updateDisplay() {
         const themeColors = getThemeColors();
@@ -1010,17 +1003,20 @@ class ProxyStatsViewer {
     }
     render() {
         const colors = this.getStatsColors();
-        const container = document.createElement("div");
-        container.style.cssText = "padding: 12px; border: 1px solid ".concat(colors.borderColor, "; border-radius: 4px; background-color: ").concat(colors.bgColor, ";");
-        this.loadingEl = document.createElement("div");
-        this.loadingEl.textContent = "Loading stats...";
-        this.loadingEl.style.cssText = "font-size: 14px; color: ".concat(colors.textColor, ";");
+        const container = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 12px; border: 1px solid ".concat(colors.borderColor, "; border-radius: 4px; background-color: ").concat(colors.bgColor, ";")
+        });
+        this.loadingEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "font-size: 14px; color: ".concat(colors.textColor, ";")
+        }, "Loading stats...");
         container.appendChild(this.loadingEl);
-        this.errorEl = document.createElement("div");
-        this.errorEl.style.cssText = "color: ".concat(colors.errorColor, "; font-size: 14px; display: none;");
+        this.errorEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "color: ".concat(colors.errorColor, "; font-size: 14px; display: none;")
+        });
         container.appendChild(this.errorEl);
-        this.statsEl = document.createElement("div");
-        this.statsEl.style.cssText = "display: none; color: ".concat(colors.textColor, ";");
+        this.statsEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "display: none; color: ".concat(colors.textColor, ";")
+        });
         container.appendChild(this.statsEl);
         this.fetchStats();
         this.refreshInterval = window.setInterval(()=>this.fetchStats(), this.refreshRate);
@@ -1040,7 +1036,6 @@ class ProxyStatsViewer {
         try {
             const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
             const currentStats = JSON.stringify(stats);
-            console.log(stats);
             if (currentStats === this.lastStats) return;
             this.lastStats = currentStats;
             this.retryCount = 0;
@@ -1128,7 +1123,6 @@ class ProxyStatsViewer {
     constructor(props){
         var _props_refreshInterval;
         _define_property(this, "clientId", void 0);
-        _define_property(this, "clientName", void 0);
         _define_property(this, "rpcClient", void 0);
         _define_property(this, "statsEl", null);
         _define_property(this, "errorEl", null);
@@ -1141,7 +1135,6 @@ class ProxyStatsViewer {
         _define_property(this, "retryCount", 0);
         _define_property(this, "maxRetries", 3);
         this.clientId = props.clientId;
-        this.clientName = props.clientName;
         this.rpcClient = props.rpcClient;
         this.refreshRate = (_props_refreshInterval = props.refreshInterval) !== null && _props_refreshInterval !== void 0 ? _props_refreshInterval : 5000;
     }
@@ -1299,7 +1292,6 @@ const actionButtons = {};
         // Create stats viewer for the client (now shows all proxies)
         const statsViewer = new ProxyStatsViewer({
             clientId: nodeName,
-            clientName: nodeName,
             rpcClient: rpcClient
         });
         const statsEl = statsViewer.render();
@@ -2857,7 +2849,8 @@ const ddns_statusElements = {};
     o = ss.option(ddns_form.DummyValue, "_status", _("Status"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
-        const status = ddnsStatuses[section_id] || {
+        const name = ddns_uci.get("portweaver", section_id, "name");
+        const status = ddnsStatuses[name] || {
             status: "unknown",
             name: "",
             provider: "",
@@ -2898,10 +2891,12 @@ const ddns_statusElements = {};
             }, _("IP: "), /*#__PURE__*/ createJsxElement("code", null, status.last_ip));
             container.appendChild(ipInfo);
         }
-        if (status.last_update) {
+        if (status.last_update > 0) {
+            const date = new Date(status.last_update * 1000);
+            const formattedTime = date.toLocaleString();
             const updateInfo = /*#__PURE__*/ createJsxElement("small", {
                 style: "color:#666;"
-            }, _("Updated: "), status.last_update);
+            }, _("Updated: "), formattedTime);
             container.appendChild(updateInfo);
         }
         if (status.message && status.status === "error") {
@@ -2911,7 +2906,7 @@ const ddns_statusElements = {};
             }, status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message);
             container.appendChild(errorMsg);
         }
-        ddns_statusElements[section_id] = container;
+        ddns_statusElements[name] = container;
         return container;
     };
     o = ss.option(ddns_form.DummyValue, "_provider", _("Provider"));
@@ -3112,12 +3107,12 @@ const ddns_statusElements = {};
     L.Poll.add(async ()=>{
         try {
             const result = await rpcClient.getDdnsStatus();
-            const statuses = (result === null || result === void 0 ? void 0 : result.statuses) || [];
+            const statuses = (result === null || result === void 0 ? void 0 : result.ddns_status) || [];
             for (const status of statuses){
-                const oldStatus = ddnsStatuses[status.section];
-                ddnsStatuses[status.section] = status;
+                const oldStatus = ddnsStatuses[status.name];
+                ddnsStatuses[status.name] = status;
                 if (!oldStatus || oldStatus.status !== status.status || oldStatus.last_ip !== status.last_ip || oldStatus.last_update !== status.last_update) {
-                    const container = ddns_statusElements[status.section];
+                    const container = ddns_statusElements[status.name];
                     if (container) {
                         const statusColors = {
                             success: "#4CAF50",
@@ -3153,10 +3148,12 @@ const ddns_statusElements = {};
                             }, _("IP: "), /*#__PURE__*/ createJsxElement("code", null, status.last_ip));
                             container.appendChild(ipInfo);
                         }
-                        if (status.last_update) {
+                        if (status.last_update > 0) {
+                            const date = new Date(status.last_update * 1000);
+                            const formattedTime = date.toLocaleString();
                             const updateInfo = /*#__PURE__*/ createJsxElement("small", {
                                 style: "color:#666;"
-                            }, _("Updated: "), status.last_update);
+                            }, _("Updated: "), formattedTime);
                             container.appendChild(updateInfo);
                         }
                         if (status.message && status.status === "error") {
