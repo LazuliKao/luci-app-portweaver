@@ -338,7 +338,7 @@ class Client {
         }, "\u26A0 ".concat(errorMessage)));
         else {
             const elements = [];
-            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: ") + (status.active_ports || 0)));
+            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: %s").format(status.active_ports || 0)));
             if (status.bytes_in || 0 || status.bytes_out || 0) {
                 if (elements.length > 0) elements.push(/*#__PURE__*/ createJsxElement("br", null));
                 elements.push(/*#__PURE__*/ createJsxElement("span", null, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
@@ -1878,7 +1878,7 @@ class PortMappingEditor extends L.form.Value {
                 class: "portmapping-preview",
                 "data-index": index,
                 style: "margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
-            }, _("Preview: "), this.buildString(mapping));
+            }, _("Preview: %s").format(this.buildString(mapping)));
             const updatePreview = ()=>{
                 const listen = listenInput.value.trim();
                 const target = targetInput.value.trim();
@@ -1891,7 +1891,7 @@ class PortMappingEditor extends L.form.Value {
                     protocol: protocol
                 };
                 const preview_str = this.buildString(temp_mapping);
-                previewDiv.textContent = _("Preview: ") + preview_str;
+                previewDiv.textContent = _("Preview: %s").format(preview_str);
                 textModeInput.value = preview_str;
             };
             // 使用复用的 FRP 节点选择器组件
@@ -2671,7 +2671,7 @@ const header_form = L.form;
         try {
             var _results_;
             await rpcClient.setEnabled(idx, !!newEnabled);
-            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Runtime state updated to: ") + (newEnabled ? _("enabled") : _("disabled"))), "info");
+            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Runtime state updated to: %s").format(newEnabled ? _("enabled") : _("disabled"))), "info");
             const results = await Promise.all([
                 rpcClient.getStatus(),
                 rpcClient.listProjects()
@@ -2680,7 +2680,7 @@ const header_form = L.form;
             client.projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
             location.reload();
         } catch (err) {
-            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Failed to toggle runtime state: ") + ((err === null || err === void 0 ? void 0 : err.message) || String(err))), "error");
+            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Failed to toggle runtime state: %s").format((err === null || err === void 0 ? void 0 : err.message) || String(err))), "error");
         }
     };
     window.portweaverToggle = runtimeToggle;
@@ -2893,39 +2893,39 @@ const GET_TYPES = [
 const TTL_OPTIONS = [
     {
         value: "60",
-        label: "1 ".concat(_("minute"))
+        label: _("%d minute").format(1)
     },
     {
         value: "300",
-        label: "5 ".concat(_("minutes"))
+        label: _("%d minutes").format(5)
     },
     {
         value: "600",
-        label: "10 ".concat(_("minutes"))
+        label: _("%d minutes").format(10)
     },
     {
         value: "1800",
-        label: "30 ".concat(_("minutes"))
+        label: _("%d minutes").format(30)
     },
     {
         value: "3600",
-        label: "1 ".concat(_("hour"))
+        label: _("%d hour").format(1)
     },
     {
         value: "7200",
-        label: "2 ".concat(_("hours"))
+        label: _("%d hours").format(2)
     },
     {
         value: "14400",
-        label: "4 ".concat(_("hours"))
+        label: _("%d hours").format(4)
     },
     {
         value: "28800",
-        label: "8 ".concat(_("hours"))
+        label: _("%d hours").format(8)
     },
     {
         value: "86400",
-        label: "1 ".concat(_("day"))
+        label: _("%d day").format(1)
     }
 ];
 const ddnsStatuses = {};
@@ -2980,7 +2980,7 @@ const ddns_statusElements = {};
         if (status.last_ip) {
             const ipInfo = /*#__PURE__*/ createJsxElement("small", {
                 style: "color:#666;"
-            }, _("IP: "), /*#__PURE__*/ createJsxElement("code", null, status.last_ip));
+            }, _("IP: %s").format(status.last_ip));
             container.appendChild(ipInfo);
         }
         if (status.last_update > 0) {
@@ -2988,7 +2988,7 @@ const ddns_statusElements = {};
             const formattedTime = date.toLocaleString();
             const updateInfo = /*#__PURE__*/ createJsxElement("small", {
                 style: "color:#666;"
-            }, _("Updated: "), formattedTime);
+            }, _("Updated: %s").format(formattedTime));
             container.appendChild(updateInfo);
         }
         if (status.message && status.status === "error") {
@@ -3237,7 +3237,7 @@ const ddns_statusElements = {};
                         if (status.last_ip) {
                             const ipInfo = /*#__PURE__*/ createJsxElement("small", {
                                 style: "color:#666;"
-                            }, _("IP: "), /*#__PURE__*/ createJsxElement("code", null, status.last_ip));
+                            }, _("IP: %s").format(status.last_ip));
                             container.appendChild(ipInfo);
                         }
                         if (status.last_update > 0) {
@@ -3245,7 +3245,7 @@ const ddns_statusElements = {};
                             const formattedTime = date.toLocaleString();
                             const updateInfo = /*#__PURE__*/ createJsxElement("small", {
                                 style: "color:#666;"
-                            }, _("Updated: "), formattedTime);
+                            }, _("Updated: %s").format(formattedTime));
                             container.appendChild(updateInfo);
                         }
                         if (status.message && status.status === "error") {

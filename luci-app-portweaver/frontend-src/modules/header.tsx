@@ -51,8 +51,9 @@ export default function (
       L.ui.addNotification(
         null,
         <p>
-          {_("Runtime state updated to: ") +
-            (newEnabled ? _("enabled") : _("disabled"))}
+          {_("Runtime state updated to: %s").format(
+            newEnabled ? _("enabled") : _("disabled"),
+          )}
         </p>,
         "info",
       );
@@ -67,8 +68,9 @@ export default function (
       L.ui.addNotification(
         null,
         <p>
-          {_("Failed to toggle runtime state: ") +
-            ((err as { message: string })?.message || String(err))}
+          {_("Failed to toggle runtime state: %s").format(
+            (err as { message: string })?.message || String(err),
+          )}
         </p>,
         "error",
       );

@@ -104,15 +104,15 @@ const GET_TYPES = [
 ];
 
 const TTL_OPTIONS = [
-  { value: "60", label: `1 ${_("minute")}` },
-  { value: "300", label: `5 ${_("minutes")}` },
-  { value: "600", label: `10 ${_("minutes")}` },
-  { value: "1800", label: `30 ${_("minutes")}` },
-  { value: "3600", label: `1 ${_("hour")}` },
-  { value: "7200", label: `2 ${_("hours")}` },
-  { value: "14400", label: `4 ${_("hours")}` },
-  { value: "28800", label: `8 ${_("hours")}` },
-  { value: "86400", label: `1 ${_("day")}` },
+  { value: "60", label: _("%d minute").format(1) },
+  { value: "300", label: _("%d minutes").format(5) },
+  { value: "600", label: _("%d minutes").format(10) },
+  { value: "1800", label: _("%d minutes").format(30) },
+  { value: "3600", label: _("%d hour").format(1) },
+  { value: "7200", label: _("%d hours").format(2) },
+  { value: "14400", label: _("%d hours").format(4) },
+  { value: "28800", label: _("%d hours").format(8) },
+  { value: "86400", label: _("%d day").format(1) },
 ];
 
 const ddnsStatuses: Record<string, DdnsStatus> = {};
@@ -193,10 +193,7 @@ export default function (
 
     if (status.last_ip) {
       const ipInfo = (
-        <small style="color:#666;">
-          {_("IP: ")}
-          <code>{status.last_ip}</code>
-        </small>
+        <small style="color:#666;">{_("IP: %s").format(status.last_ip)}</small>
       ) as HTMLElement;
       container.appendChild(ipInfo);
     }
@@ -206,8 +203,7 @@ export default function (
       const formattedTime = date.toLocaleString();
       const updateInfo = (
         <small style="color:#666;">
-          {_("Updated: ")}
-          {formattedTime}
+          {_("Updated: %s").format(formattedTime)}
         </small>
       ) as HTMLElement;
       container.appendChild(updateInfo);
@@ -515,8 +511,7 @@ export default function (
             if (status.last_ip) {
               const ipInfo = (
                 <small style="color:#666;">
-                  {_("IP: ")}
-                  <code>{status.last_ip}</code>
+                  {_("IP: %s").format(status.last_ip)}
                 </small>
               ) as HTMLElement;
               container.appendChild(ipInfo);
@@ -527,8 +522,7 @@ export default function (
               const formattedTime = date.toLocaleString();
               const updateInfo = (
                 <small style="color:#666;">
-                  {_("Updated: ")}
-                  {formattedTime}
+                  {_("Updated: %s").format(formattedTime)}
                 </small>
               ) as HTMLElement;
               container.appendChild(updateInfo);

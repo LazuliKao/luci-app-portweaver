@@ -216,7 +216,9 @@ export class Client {
     } else {
       const elements: any[] = [];
       if ((status.active_ports || 0) > 0) {
-        elements.push(<span>{_("Ports: ") + (status.active_ports || 0)}</span>);
+        elements.push(
+          <span>{_("Ports: %s").format(status.active_ports || 0)}</span>,
+        );
       }
       if (status.bytes_in || 0 || status.bytes_out || 0) {
         if (elements.length > 0) elements.push(<br />);

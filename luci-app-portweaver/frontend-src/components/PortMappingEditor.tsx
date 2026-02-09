@@ -213,8 +213,7 @@ class PortMappingEditor extends L.form.Value {
           data-index={index}
           style="margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
         >
-          {_("Preview: ")}
-          {this.buildString(mapping)}
+          {_("Preview: %s").format(this.buildString(mapping))}
         </div>
       ) as HTMLElement;
 
@@ -230,7 +229,7 @@ class PortMappingEditor extends L.form.Value {
           protocol: protocol,
         };
         const preview_str = this.buildString(temp_mapping);
-        previewDiv.textContent = _("Preview: ") + preview_str;
+        previewDiv.textContent = _("Preview: %s").format(preview_str);
         textModeInput.value = preview_str;
       };
 

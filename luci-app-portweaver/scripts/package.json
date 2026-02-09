@@ -7,6 +7,7 @@
 	"scripts": {
 		"start": "tsx extract-translations",
 		"translate": "tsx generate-po",
+		"build": "pnpm run start && pnpm run translate",
 		"check": "pnpm biome check --write ./",
 		"lint": "biome check .",
 		"format": "biome format --write .",
