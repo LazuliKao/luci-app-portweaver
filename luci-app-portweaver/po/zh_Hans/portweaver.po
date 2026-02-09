@@ -700,3 +700,36 @@ msgstr "运行中"
 
 msgid "unavailable"
 msgstr "不可用"
+
+msgid "%d day"
+msgstr " %d 天 "
+
+msgid "%d hour"
+msgstr " %d 小时 "
+
+msgid "%d hours"
+msgstr " %d 小时 "
+
+msgid "%d minute"
+msgstr " %d 分钟 "
+
+msgid "%d minutes"
+msgstr " %d 分钟 "
+
+msgid "Failed to toggle runtime state: %s"
+msgstr " 切换运行时状态失败：%s "
+
+msgid "IP: %s"
+msgstr " IP 地址：%s "
+
+msgid "Ports: %s"
+msgstr " 端口：%s "
+
+msgid "Preview: %s"
+msgstr " 预览：%s "
+
+msgid "Runtime state updated to: %s"
+msgstr " 运行时状态已更新为：%s "
+
+msgid "Updated: %s"
+msgstr " 已更新：%s "
