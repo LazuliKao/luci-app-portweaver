@@ -310,8 +310,7 @@ export default function (
     "enable_stats",
     _("Enable Statistics"),
     _(
-      "Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. " +
-        "NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward.",
+      "Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. \nNOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward.",
     ),
   );
   o.modalonly = true;
@@ -329,8 +328,7 @@ export default function (
     "preserve_source_ip",
     _("Preserve Source IP"),
     _(
-      "Only add redirect rules without NAT rules, preserving the source IP address. " +
-        "Only effective when 'Add Firewall Forward' is enabled.",
+      "Add NAT rules, preserving the source IP address. \nNote: Only effective when 'Add Firewall Forward' is enabled.",
     ),
   );
   o.modalonly = true;

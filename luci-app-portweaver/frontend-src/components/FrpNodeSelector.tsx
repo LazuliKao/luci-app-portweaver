@@ -75,7 +75,7 @@ export function createFrpNodeSelector(options: {
             is_checked && !is_enabled ? "" : "none"
           };`}
         >
-          {"\u26A0"} {_("Warning: Selected FRP node is disabled.")}
+          {"\u26A0"} {_("Warning: FRP node '%s' is disabled.").format(node_name)}
         </span>
       ) as HTMLElement;
 
@@ -132,16 +132,18 @@ export function createFrpNodeSelector(options: {
       port_input.addEventListener("change", updateHandler);
 
       const row = (
-        <tr>
-          <td style="padding: 4px 8px; border: none;">
-            {checkbox}
-            <span style="cursor: pointer; font-weight: normal; margin: 0;">
-              {node_name}
-            </span>
-            {warning}
-          </td>
-          {port_input_area}
-        </tr>
+        <div>
+          <tr>
+            <td style="padding: 4px 8px; border: none;">
+              {checkbox}
+              <span style="cursor: pointer; font-weight: normal; margin: 0;">
+                {node_name}
+              </span>
+            </td>
+            {port_input_area}
+          </tr>
+          {warning}
+        </div>
       );
 
       table.appendChild(row);

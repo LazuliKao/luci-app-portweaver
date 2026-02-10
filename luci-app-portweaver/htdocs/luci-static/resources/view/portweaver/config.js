@@ -1543,7 +1543,7 @@ const actionButtons = {};
             const is_enabled = frp_section.enabled !== "0";
             const warning = /*#__PURE__*/ createJsxElement("span", {
                 style: "color: #e6a23c; margin-left: 8px; font-size: 0.9em; display: ".concat(is_checked && !is_enabled ? "" : "none", ";")
-            }, "\u26A0", " ", _("Warning: Selected FRP node is disabled."));
+            }, "\u26A0", " ", _("Warning: FRP node '%s' is disabled.").format(node_name));
             const checkbox = /*#__PURE__*/ createJsxElement("input", {
                 type: "checkbox",
                 class: checkboxClass,
@@ -1583,11 +1583,11 @@ const actionButtons = {};
                 updateHandler();
             });
             port_input.addEventListener("change", updateHandler);
-            const row = /*#__PURE__*/ createJsxElement("tr", null, /*#__PURE__*/ createJsxElement("td", {
+            const row = /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("tr", null, /*#__PURE__*/ createJsxElement("td", {
                 style: "padding: 4px 8px; border: none;"
             }, checkbox, /*#__PURE__*/ createJsxElement("span", {
                 style: "cursor: pointer; font-weight: normal; margin: 0;"
-            }, node_name), warning), port_input_area);
+            }, node_name)), port_input_area), warning);
             table.appendChild(row);
         }
         container.appendChild(table);
@@ -2424,7 +2424,7 @@ const uci = L.uci;
     o.modalonly = true;
     o.default = "1";
     o.depends("enable_app_forward", "1");
-    o = ss.option(config_form.Flag, "enable_stats", _("Enable Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. NOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward."));
+    o = ss.option(config_form.Flag, "enable_stats", _("Enable Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic counters. \nNOTE: Mutually exclusive with firewall forwarding - enabling stats will disable add_firewall_forward."));
     o.modalonly = true;
     o.default = "0";
     o.depends("enable_app_forward", "1");
@@ -2438,7 +2438,7 @@ const uci = L.uci;
         enable_app_forward: "1",
         enable_stats: "0"
     });
-    o = ss.option(config_form.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Only add redirect rules without NAT rules, preserving the source IP address. Only effective when 'Add Firewall Forward' is enabled."));
+    o = ss.option(config_form.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Add NAT rules, preserving the source IP address. \nNote: Only effective when 'Add Firewall Forward' is enabled."));
     o.modalonly = true;
     o.default = "0";
     o.depends("add_firewall_forward", "1");

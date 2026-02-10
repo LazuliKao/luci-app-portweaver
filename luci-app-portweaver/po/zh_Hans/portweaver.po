@@ -744,3 +744,33 @@ msgstr "保留源 IP"
 
 msgid "Warning: Selected FRP node is disabled."
 msgstr "警告：所选的 FRP 节点已禁用。"
+
+msgid ""
+"Add NAT rules, preserving the source IP address. Only effective when 'Add "
+"Firewall Forward' is enabled."
+msgstr "添加 NAT 规则，保留源 IP 地址。仅在启用“添加防火墙转发”时有效。"
+
+msgid "FRP Tunnels1"
+msgstr "FRP 隧道"
+
+msgid "Ports: %d"
+msgstr "端口：%d"
+
+msgid "Warning: FRP node '%s' is disabled."
+msgstr "警告：FRP 节点“%s”已禁用。"
+
+msgid ""
+"Add NAT rules, preserving the source IP address. \n"
+"Note: Only effective when 'Add Firewall Forward' is enabled."
+msgstr ""
+"添加 NAT 规则，保留源 IP 地址。\n"
+"注意：仅在启用“添加防火墙转发”时有效。"
+
+msgid ""
+"Collect traffic statistics (bytes_in/bytes_out) using zero-cost atomic "
+"counters. \n"
+"NOTE: Mutually exclusive with firewall forwarding - enabling stats will "
+"disable add_firewall_forward."
+msgstr ""
+"使用零成本原子计数器收集流量统计信息（入站字节数/出站字节数）。\n"
+"注意：与防火墙转发互斥；启用统计功能将禁用“添加防火墙转发”。"
