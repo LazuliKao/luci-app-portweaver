@@ -324,4 +324,17 @@ export default function (
   o.default = "1";
   o.depends({ enable_app_forward: "0" });
   o.depends({ enable_app_forward: "1", enable_stats: "0" });
+
+  o = ss.option(
+    form.Flag,
+    "preserve_source_ip",
+    _("Preserve Source IP"),
+    _(
+      "Only add redirect rules without NAT rules, preserving the source IP address. " +
+        "Only effective when 'Add Firewall Forward' is enabled.",
+    ),
+  );
+  o.modalonly = true;
+  o.default = "0";
+  o.depends("add_firewall_forward", "1");
 }
