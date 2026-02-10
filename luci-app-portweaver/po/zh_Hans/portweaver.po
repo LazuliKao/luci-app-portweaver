@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: portweaver\n"
-"POT-Creation-Date: 2026-02-09 00:00+0000\n"
-"PO-Revision-Date: 2026-02-09 00:00+0000\n"
+"POT-Creation-Date: 2026-02-10 00:00+0000\n"
+"PO-Revision-Date: 2026-02-10 00:00+0000\n"
 "Last-Translator: PortWeaver Translator Tools <lazulikao233@outlook.com>\n"
 "Language-Team: Chinese <lazulikao233@outlook.com>\n"
 "Language: zh_CN\n"
@@ -733,3 +733,14 @@ msgstr " 运行时状态已更新为：%s "
 
 msgid "Updated: %s"
 msgstr " 已更新：%s "
+
+msgid ""
+"Only add redirect rules without NAT rules, preserving the source IP "
+"address. Only effective when 'Add Firewall Forward' is enabled."
+msgstr "仅添加重定向规则，不添加 NAT 规则，以保留源 IP 地址。仅当启用“添加防火墙转发”时有效。"
+
+msgid "Preserve Source IP"
+msgstr "保留源 IP"
+
+msgid "Warning: Selected FRP node is disabled."
+msgstr "警告：所选的 FRP 节点已禁用。"

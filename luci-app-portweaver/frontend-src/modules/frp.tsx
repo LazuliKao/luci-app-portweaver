@@ -67,6 +67,11 @@ export default function (
     section_id ||
     _("Unnamed node");
 
+  o = ss.option(form.Flag, "enabled", _("Enable"));
+  o.modalonly = true;
+  o.default = "1";
+  o.rmempty = false;
+
   o = ss.option(form.Value, "name", _("Node Name"));
   o.modalonly = true;
   o.rmempty = false;
@@ -80,11 +85,9 @@ export default function (
         "Node name must contain only alphanumeric characters, underscore, or hyphen",
       );
 
-    // Check for duplicate names
     const sections = L.uci.sections("portweaver", "frp_node");
     const trimmedValue = String(value).trim();
     for (const sec of sections) {
-      // Skip the current section being edited
       if (sec[".name"] === section_id) continue;
 
       const existingName = sec.name as string;
@@ -129,6 +132,11 @@ export default function (
     statusElements[section_id] = container;
     return container;
   };
+
+  o = ss.option(form.Flag, "enabled", _("Enabled"));
+  o.modalonly = false;
+  o.default = "1";
+  o.editable = true;
 
   o = ss.option(form.Value, "server", _("FRP Server Address"));
   o.modalonly = true;

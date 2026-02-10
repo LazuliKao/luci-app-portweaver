@@ -224,6 +224,11 @@ export default function (
     return container;
   };
 
+  o = ss.option(form.Flag, "enabled", _("Enabled"));
+  o.modalonly = false;
+  o.default = "1";
+  o.editable = true;
+
   o = ss.option(form.DummyValue, "_provider", _("Provider"));
   o.modalonly = false;
   o.textvalue = (section_id: string) => {
@@ -267,6 +272,11 @@ export default function (
 
     return viewLogsBtn;
   };
+
+  o = ss.option(form.Flag, "enabled", _("Enable"));
+  o.modalonly = true;
+  o.default = "1";
+  o.rmempty = false;
 
   o = ss.option(form.Value, "name", _("Configuration Name"));
   o.modalonly = true;

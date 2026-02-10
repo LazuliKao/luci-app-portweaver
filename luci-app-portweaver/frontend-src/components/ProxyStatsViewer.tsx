@@ -130,7 +130,7 @@ export class ProxyStatsViewer {
 
         const colors = this.getStatsColors();
         const hasError = proxies.some(
-          (p: FrpProxy) => p.err && p.err.length > 0,
+          (p: FrpProxy) => (p.err && p.err.length > 0) || p.status === "error",
         );
         const statusColor = hasError ? colors.errorColor : colors.successColor;
         const statusText = hasError ? _("error") : _("running");

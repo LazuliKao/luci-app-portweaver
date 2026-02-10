@@ -166,6 +166,7 @@ function translateStatus(str) {
     if (str === "stopped") return _("Stopped");
     if (str === "degraded") return _("Degraded");
     if (str === "failed") return _("Failed");
+    if (str === "error") return _("Error");
     if (str === "unknown") return _("Unknown");
     return str;
 }
@@ -338,7 +339,7 @@ class Client {
         }, "\u26A0 ".concat(errorMessage)));
         else {
             const elements = [];
-            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: %s").format(status.active_ports || 0)));
+            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: %d").format(status.active_ports || 0)));
             if (status.bytes_in || 0 || status.bytes_out || 0) {
                 if (elements.length > 0) elements.push(/*#__PURE__*/ createJsxElement("br", null));
                 elements.push(/*#__PURE__*/ createJsxElement("span", null, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
@@ -1131,7 +1132,7 @@ class ProxyStatsViewer {
                     return;
                 }
                 const colors = this.getStatsColors();
-                const hasError = proxies.some((p)=>p.err && p.err.length > 0);
+                const hasError = proxies.some((p)=>p.err && p.err.length > 0 || p.status === "error");
                 const statusColor = hasError ? colors.errorColor : colors.successColor;
                 const statusText = hasError ? _("error") : _("running");
                 const statusBadge = /*#__PURE__*/ createJsxElement("div", {
@@ -1248,6 +1249,10 @@ const actionButtons = {};
     ss.sortable = true;
     ss.cloneable = true;
     ss.sectiontitle = (section_id)=>L.uci.get("portweaver", section_id, "name") || section_id || _("Unnamed node");
+    o = ss.option(frp_form.Flag, "enabled", _("Enable"));
+    o.modalonly = true;
+    o.default = "1";
+    o.rmempty = false;
     o = ss.option(frp_form.Value, "name", _("Node Name"));
     o.modalonly = true;
     o.rmempty = false;
@@ -1256,11 +1261,9 @@ const actionButtons = {};
     o.validate = (section_id, value)=>{
         if (!value || String(value).trim() === "") return _("Node name is required");
         if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _("Node name must contain only alphanumeric characters, underscore, or hyphen");
-        // Check for duplicate names
         const sections = L.uci.sections("portweaver", "frp_node");
         const trimmedValue = String(value).trim();
         for (const sec of sections){
-            // Skip the current section being edited
             if (sec[".name"] === section_id) continue;
             const existingName = sec.name;
             if (existingName && existingName.trim() === trimmedValue) return _("Node name already exists. Please choose a different name.");
@@ -1294,6 +1297,10 @@ const actionButtons = {};
         frp_statusElements[section_id] = container;
         return container;
     };
+    o = ss.option(frp_form.Flag, "enabled", _("Enabled"));
+    o.modalonly = false;
+    o.default = "1";
+    o.editable = true;
     o = ss.option(frp_form.Value, "server", _("FRP Server Address"));
     o.modalonly = true;
     o.rmempty = false;
@@ -1533,6 +1540,10 @@ const actionButtons = {};
             if (!node_name) continue;
             const is_checked = Object.hasOwn(node_map, node_name);
             const port_value = node_map[node_name] || "";
+            const is_enabled = frp_section.enabled !== "0";
+            const warning = /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #e6a23c; margin-left: 8px; font-size: 0.9em; display: ".concat(is_checked && !is_enabled ? "" : "none", ";")
+            }, "\u26A0", " ", _("Warning: Selected FRP node is disabled."));
             const checkbox = /*#__PURE__*/ createJsxElement("input", {
                 type: "checkbox",
                 class: checkboxClass,
@@ -1568,6 +1579,7 @@ const actionButtons = {};
                 port_input.disabled = !element.checked;
                 port_input_area.style.display = element.checked ? "" : "none";
                 if (!element.checked) port_input.value = "";
+                if (!is_enabled) warning.style.display = element.checked ? "" : "none";
                 updateHandler();
             });
             port_input.addEventListener("change", updateHandler);
@@ -1575,7 +1587,7 @@ const actionButtons = {};
                 style: "padding: 4px 8px; border: none;"
             }, checkbox, /*#__PURE__*/ createJsxElement("span", {
                 style: "cursor: pointer; font-weight: normal; margin: 0;"
-            }, node_name)), port_input_area);
+            }, node_name), warning), port_input_area);
             table.appendChild(row);
         }
         container.appendChild(table);
@@ -2427,6 +2439,10 @@ const uci = L.uci;
         enable_app_forward: "1",
         enable_stats: "0"
     });
+    o = ss.option(config_form.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Only add redirect rules without NAT rules, preserving the source IP address. Only effective when 'Add Firewall Forward' is enabled."));
+    o.modalonly = true;
+    o.default = "0";
+    o.depends("add_firewall_forward", "1");
 }
 
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
@@ -3001,6 +3017,10 @@ const ddns_statusElements = {};
         ddns_statusElements[name] = container;
         return container;
     };
+    o = ss.option(ddns_form.Flag, "enabled", _("Enabled"));
+    o.modalonly = false;
+    o.default = "1";
+    o.editable = true;
     o = ss.option(ddns_form.DummyValue, "_provider", _("Provider"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
@@ -3038,6 +3058,10 @@ const ddns_statusElements = {};
         };
         return viewLogsBtn;
     };
+    o = ss.option(ddns_form.Flag, "enabled", _("Enable"));
+    o.modalonly = true;
+    o.default = "1";
+    o.rmempty = false;
     o = ss.option(ddns_form.Value, "name", _("Configuration Name"));
     o.modalonly = true;
     o.rmempty = false;

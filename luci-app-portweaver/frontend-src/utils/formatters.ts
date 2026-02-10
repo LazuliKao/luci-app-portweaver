@@ -45,6 +45,7 @@ export function translateStatus(str: string | undefined) {
   if (str === "stopped") return _("Stopped");
   if (str === "degraded") return _("Degraded");
   if (str === "failed") return _("Failed");
+  if (str === "error") return _("Error");
   if (str === "unknown") return _("Unknown");
   return str;
 }

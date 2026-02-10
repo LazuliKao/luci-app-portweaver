@@ -12,7 +12,8 @@ export interface FrpProxy {
     | "start error"
     | "running"
     | "check failed"
-    | "closed";
+    | "closed"
+    | "error";
   err: string;
   cfg: FrpConfig;
   remote_addr: string;

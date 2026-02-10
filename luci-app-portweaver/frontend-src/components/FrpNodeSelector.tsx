@@ -67,6 +67,17 @@ export function createFrpNodeSelector(options: {
 
       const is_checked = Object.hasOwn(node_map, node_name);
       const port_value = node_map[node_name] || "";
+      const is_enabled = frp_section.enabled !== "0";
+
+      const warning = (
+        <span
+          style={`color: #e6a23c; margin-left: 8px; font-size: 0.9em; display: ${
+            is_checked && !is_enabled ? "" : "none"
+          };`}
+        >
+          {"\u26A0"} {_("Warning: Selected FRP node is disabled.")}
+        </span>
+      ) as HTMLElement;
 
       const checkbox = (
         <input
@@ -112,6 +123,9 @@ export function createFrpNodeSelector(options: {
         port_input.disabled = !element.checked;
         port_input_area.style.display = element.checked ? "" : "none";
         if (!element.checked) port_input.value = "";
+        if (!is_enabled) {
+          warning.style.display = element.checked ? "" : "none";
+        }
         updateHandler();
       });
 
@@ -124,6 +138,7 @@ export function createFrpNodeSelector(options: {
             <span style="cursor: pointer; font-weight: normal; margin: 0;">
               {node_name}
             </span>
+            {warning}
           </td>
           {port_input_area}
         </tr>
