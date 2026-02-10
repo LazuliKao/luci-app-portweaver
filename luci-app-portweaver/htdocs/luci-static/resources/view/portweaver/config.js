@@ -2382,11 +2382,10 @@ const uci = L.uci;
     o.default = "tcp";
     o.depends("use_port_mappings", "0");
     // FRP node selector component factory
-    o = ss.option(components_FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
+    o = ss.option(components_FrpNodeSelector, "frp_nodes", _("FRP Tunnels1"));
     o.modalonly = true;
     o.rmempty = true;
     o.depends("use_port_mappings", "0");
-    o.depends("enable_app_forward", "1");
     // Port Mapping Editor component factory
     o = ss.option(components_PortMappingEditor, "port_mapping", _("Port Mappings"));
     o.modalonly = true;
