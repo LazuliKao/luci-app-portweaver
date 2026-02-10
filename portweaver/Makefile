@@ -65,6 +65,7 @@ define Build/Compile
 			-Duci=true \
 			-Dubus=true \
 			-Dfrpc=true \
+			-Dddns=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	else \
@@ -76,6 +77,7 @@ define Build/Compile
 			-Duci=true \
 			-Dubus=true \
 			-Dfrpc=true \
+			-Dddns=true \
 			--prefix $(PKG_INSTALL_DIR) \
 			--release=small; \
 	fi
