@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: portweaver\n"
-"POT-Creation-Date: 2026-02-10 00:00+0000\n"
-"PO-Revision-Date: 2026-02-10 00:00+0000\n"
+"POT-Creation-Date: 2026-02-13 00:00+0000\n"
+"PO-Revision-Date: 2026-02-13 00:00+0000\n"
 "Last-Translator: PortWeaver Translator Tools <lazulikao233@outlook.com>\n"
 "Language-Team: Chinese <lazulikao233@outlook.com>\n"
 "Language: zh_CN\n"
@@ -774,3 +774,39 @@ msgid ""
 msgstr ""
 "使用零成本原子计数器收集流量统计信息（入站字节数/出站字节数）。\n"
 "注意：与防火墙转发互斥；启用统计功能将禁用“添加防火墙转发”。"
+
+msgid "Alert"
+msgstr "警报"
+
+msgid "Bind Port"
+msgstr "绑定端口"
+
+msgid "Bind port is required"
+msgstr "需要指定绑定端口"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Confirm"
+msgstr "确认"
+
+msgid "Dashboard Password"
+msgstr "仪表盘密码"
+
+msgid "Dashboard Port"
+msgstr "仪表盘端口"
+
+msgid "Dashboard User"
+msgstr "仪表盘用户名"
+
+msgid "Dialog"
+msgstr "对话框"
+
+msgid "FRP Server"
+msgstr "FRP 服务器"
+
+msgid "FRPS Logs - %s"
+msgstr "FRPS 日志 - %s"
+
+msgid "Unnamed FRPS node"
+msgstr "未命名的 FRPS 节点"

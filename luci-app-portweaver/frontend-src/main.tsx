@@ -82,18 +82,18 @@ export class main extends L.view {
     s.tab("settings", _("Global Settings"));
     s.tab("projects", _("Port Forwarding"));
     s.tab("ddns", _("DDNS"));
-    s.tab("logs", _("System Logs"));
-    s.tab("frp", _("FRP Tunnels"));
+    s.tab("frpc", _("FRP Tunnels"));
     s.tab("frps", _("FRP Server"));
+    s.tab("logs", _("System Logs"));
 
     const client = new Client([data[2], data[3], data[4], data[5], data[6]]);
 
     header(m, s, client, "settings");
     config(m, s, client, "projects");
     ddns(m, s, "ddns");
-    logs(m, s, "logs");
-    frpc(m, s, "frp");
+    frpc(m, s, "frpc");
     frps(m, s, "frps");
+    logs(m, s, "logs");
 
     return m.render();
   }
