@@ -1,4 +1,5 @@
 import { LogViewerCore } from "../components/LogViewerCore";
+import { confirm } from "../modules/dialog";
 
 const form = L.form;
 const fs = L.fs;
@@ -54,7 +55,7 @@ export default function (
   };
 
   const clearer = async (): Promise<void> => {
-    if (!confirm(_("Are you sure you want to clear all logs?"))) {
+    if (!(await confirm(_("Are you sure you want to clear all logs?")))) {
       throw new Error("User cancelled");
     }
 
@@ -68,7 +69,11 @@ export default function (
   };
 
   const restartService = async () => {
-    if (!confirm(_("Are you sure you want to restart PortWeaver service?"))) {
+    if (
+      !(await confirm(
+        _("Are you sure you want to restart PortWeaver service?"),
+      ))
+    ) {
       return;
     }
 

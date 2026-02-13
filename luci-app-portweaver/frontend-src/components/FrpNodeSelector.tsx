@@ -75,7 +75,8 @@ export function createFrpNodeSelector(options: {
             is_checked && !is_enabled ? "" : "none"
           };`}
         >
-          {"\u26A0"} {_("Warning: FRP node '%s' is disabled.").format(node_name)}
+          {"\u26A0"}{" "}
+          {_("Warning: FRP node '%s' is disabled.").format(node_name)}
         </span>
       ) as HTMLElement;
 

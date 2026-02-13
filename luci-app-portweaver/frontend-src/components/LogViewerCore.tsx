@@ -1,4 +1,5 @@
 import { getThemeColors } from "../utils/theme-utils";
+import { alert, confirm } from "../modules/dialog";
 
 export interface LogInfo {
   status: string;
@@ -306,11 +307,11 @@ export class LogViewerCore {
       <button
         type="button"
         class="cbi-button cbi-button-positive"
-        onclick={() => {
+        onclick={async () => {
           if (this.selectedLines.size > 0) {
-            this.copyToClipboard();
+            await this.copyToClipboard();
           } else {
-            alert(_("No lines selected"));
+            await alert(_("No lines selected"));
           }
         }}
       >
@@ -332,7 +333,7 @@ export class LogViewerCore {
       <button
         type="button"
         class="cbi-button"
-        onclick={() => this.clearLogs()}
+        onclick={async () => await this.clearLogs()}
         style="background: #dc3545; color: white;"
       >
         {_("CLEAR")}
@@ -596,7 +597,7 @@ export class LogViewerCore {
     }
   }
 
-  private copyToClipboard(): void {
+  private async copyToClipboard(): Promise<void> {
     let text = "";
     if (this.selectedLines.size > 0) {
       // Copy selected lines from filteredLogs (what user sees)
@@ -623,12 +624,12 @@ export class LogViewerCore {
     if (useModernClipboard) {
       navigator.clipboard
         .writeText(text)
-        .then(() => {
-          alert(_("Logs copied to clipboard"));
+        .then(async () => {
+          await alert(_("Logs copied to clipboard"));
         })
-        .catch((err: any) => {
+        .catch(async (err: any) => {
           console.error("Failed to copy logs:", err);
-          alert(_("Failed to copy logs"));
+          await alert(_("Failed to copy logs"));
         });
     } else {
       const textarea = (
@@ -641,21 +642,21 @@ export class LogViewerCore {
       try {
         const success = document.execCommand("copy");
         if (success) {
-          alert(_("Logs copied to clipboard"));
+          await alert(_("Logs copied to clipboard"));
         } else {
           throw new Error("execCommand failed");
         }
       } catch (err) {
         console.error("Failed to copy logs:", err);
-        alert(_("Failed to copy logs - please select and copy manually"));
+        await alert(_("Failed to copy logs - please select and copy manually"));
       } finally {
         document.body.removeChild(textarea);
       }
     }
   }
 
-  private clearLogs(): void {
-    if (confirm(_("Are you sure you want to clear the logs?"))) {
+  private async clearLogs(): Promise<void> {
+    if (await confirm(_("Are you sure you want to clear the logs?"))) {
       this.props
         .clearer(this.props.name)
         .then(() => {
@@ -664,9 +665,9 @@ export class LogViewerCore {
           this.selectedLines.clear();
           this.updateDisplay();
         })
-        .catch((err: any) => {
+        .catch(async (err: any) => {
           console.error("Failed to clear logs:", err);
-          alert(_("Failed to clear logs"));
+          await alert(_("Failed to clear logs"));
         });
     }
   }
