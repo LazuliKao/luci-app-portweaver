@@ -55,10 +55,6 @@ export default function (
   };
 
   const clearer = async (): Promise<void> => {
-    if (!(await confirm(_("Are you sure you want to clear all logs?")))) {
-      throw new Error("User cancelled");
-    }
-
     try {
       await fs.write(LOG_FILE, "");
       ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");

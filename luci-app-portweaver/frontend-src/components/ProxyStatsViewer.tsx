@@ -95,7 +95,7 @@ export class ProxyStatsViewer {
     if (this.isPaused) return;
 
     try {
-      const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
+      const stats = await this.rpcClient.getFrpcProxyStats(this.clientId);
       const currentStats = JSON.stringify(stats);
 
       if (currentStats === this.lastStats) {

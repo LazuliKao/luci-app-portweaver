@@ -8,7 +8,7 @@
 			},
 			"uci": ["portweaver"],
 			"ubus": {
-				"portweaver": ["get_status", "list_projects", "get_frp_status", "get_frp_info", "get_ddns_status", "get_ddns_info", "get_events", "get_frp_proxy_stats", "get_ddns_global_status"]
+				"portweaver": ["get_status", "list_projects", "get_frpc_status", "get_frpc_info", "get_ddns_status", "get_ddns_info", "get_events", "get_frpc_proxy_stats", "get_ddns_global_status", "get_frps_status", "get_frps_info", "get_frps_proxy_stats"]
 			}
 		},
 		"write": {
@@ -17,7 +17,7 @@
 			},
 			"uci": ["portweaver"],
 			"ubus": {
-				"portweaver": ["set_enabled", "clear_frp_logs", "clear_ddns_logs"]
+				"portweaver": ["set_enabled", "clear_frpc_logs", "clear_ddns_logs", "clear_frps_logs"]
 			}
 		}
 	}

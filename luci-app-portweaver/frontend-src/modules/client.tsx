@@ -46,7 +46,7 @@ export class Client {
         const results = await Promise.all([
           rpcClient.getStatus(),
           rpcClient.listProjects(),
-          rpcClient.getFrpStatus(),
+          rpcClient.getFrpcStatus(),
           rpcClient.getEvents(),
           rpcClient.getDdnsGlobalStatus(),
         ]);

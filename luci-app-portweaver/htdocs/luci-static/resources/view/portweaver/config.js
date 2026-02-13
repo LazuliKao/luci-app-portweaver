@@ -189,27 +189,27 @@ function createRpcClient(rpc) {
             "enabled"
         ]
     });
-    const getFrpStatus = rpc.declare({
+    const getFrpcStatus = rpc.declare({
         object: "portweaver",
-        method: "get_frp_status"
+        method: "get_frpc_status"
     });
-    const getFrpInfo = rpc.declare({
+    const getFrpcInfo = rpc.declare({
         object: "portweaver",
-        method: "get_frp_info",
+        method: "get_frpc_info",
         params: [
             "id"
         ]
     });
-    const clearFrpLogs = rpc.declare({
+    const clearFrpcLogs = rpc.declare({
         object: "portweaver",
-        method: "clear_frp_logs",
+        method: "clear_frpc_logs",
         params: [
             "id"
         ]
     });
-    const getFrpProxyStats = rpc.declare({
+    const getFrpcProxyStats = rpc.declare({
         object: "portweaver",
-        method: "get_frp_proxy_stats",
+        method: "get_frpc_proxy_stats",
         params: [
             "id"
         ]
@@ -240,19 +240,43 @@ function createRpcClient(rpc) {
             "name"
         ]
     });
+    const getFrpsInfo = rpc.declare({
+        object: "portweaver",
+        method: "get_frps_info",
+        params: [
+            "id"
+        ]
+    });
+    const clearFrpsLogs = rpc.declare({
+        object: "portweaver",
+        method: "clear_frps_logs",
+        params: [
+            "id"
+        ]
+    });
+    const getFrpsProxyStats = rpc.declare({
+        object: "portweaver",
+        method: "get_frps_proxy_stats",
+        params: [
+            "id"
+        ]
+    });
     return {
         getStatus,
         listProjects,
         setEnabled,
-        getFrpStatus,
-        getFrpInfo,
-        getFrpProxyStats,
-        clearFrpLogs,
+        getFrpcStatus,
+        getFrpcInfo,
+        getFrpcProxyStats,
+        clearFrpcLogs,
         getEvents,
         getDdnsStatus,
         getDdnsInfo,
         getDdnsGlobalStatus,
-        clearDdnsLogs
+        clearDdnsLogs,
+        getFrpsInfo,
+        clearFrpsLogs,
+        getFrpsProxyStats
     };
 }
 const rpcClient = createRpcClient(L.rpc);
@@ -472,7 +496,7 @@ class Client {
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
-                    rpcClient.getFrpStatus(),
+                    rpcClient.getFrpcStatus(),
                     rpcClient.getEvents(),
                     rpcClient.getDdnsGlobalStatus()
                 ]);
@@ -536,7 +560,151 @@ class Client {
     }
 }
 
+;// CONCATENATED MODULE: ./components/Dialog.tsx
+
+
+class Dialog {
+    render() {
+        if (this.overlay) return this.overlay;
+        this.titleEl = /*#__PURE__*/ createJsxElement("h2", {
+            style: "margin: 0; font-size: 1.25rem; font-weight: 600;"
+        }, _("Dialog"));
+        this.contentEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "overflow-y: auto; max-height: 70vh;"
+        });
+        this.confirmBtn = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-positive",
+            onclick: ()=>this.close(true)
+        });
+        this.cancelBtn = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-neutral",
+            onclick: ()=>this.close(false)
+        });
+        this.footerEl = /*#__PURE__*/ createJsxElement("div", {
+            style: "display: flex; justify-content: flex-end; gap: 0.5rem;"
+        }, this.cancelBtn, this.confirmBtn);
+        this.container = /*#__PURE__*/ createJsxElement("div", {
+            role: "dialog",
+            "aria-modal": "true",
+            style: "display: flex; flex-direction: column; max-width: 90%; min-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px; animation: fadeIn 0.2s ease-out;"
+        }, this.titleEl, this.contentEl, this.footerEl);
+        this.overlay = /*#__PURE__*/ createJsxElement("div", {
+            style: "position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);"
+        }, this.container);
+        return this.overlay;
+    }
+    updateTheme() {
+        if (!this.container || !this.titleEl || !this.contentEl || !this.footerEl) return;
+        const theme = getThemeColors();
+        const isDark = theme.isDark;
+        const bg = isDark ? "#2d2d2d" : "#ffffff";
+        const text = isDark ? "#e0e0e0" : "#333333";
+        const border = isDark ? "#404040" : "#e0e0e0";
+        const footerBg = isDark ? "#252525" : "#f8f9fa";
+        this.container.style.backgroundColor = bg;
+        this.container.style.color = text;
+        this.titleEl.style.borderBottom = "1px solid ".concat(border);
+        this.titleEl.style.padding = "1rem 1.5rem";
+        this.contentEl.style.padding = "1.5rem";
+        this.footerEl.style.backgroundColor = footerBg;
+        this.footerEl.style.borderTop = "1px solid ".concat(border);
+        this.footerEl.style.padding = "1rem 1.5rem";
+        this.footerEl.style.borderBottomLeftRadius = "4px";
+        this.footerEl.style.borderBottomRightRadius = "4px";
+    }
+    open(options) {
+        if (!this.overlay) this.render();
+        this.updateTheme();
+        if (this.titleEl) {
+            if (options.title === undefined) {
+                this.titleEl.textContent = options.type === "alert" ? _("Alert") : _("Confirm");
+                this.titleEl.style.display = "";
+            } else if (options.title === null) this.titleEl.style.display = "none";
+            else {
+                this.titleEl.textContent = options.title;
+                this.titleEl.style.display = "";
+            }
+        }
+        if (this.contentEl) {
+            this.contentEl.innerHTML = "";
+            const msg = options.message;
+            if (Array.isArray(msg)) msg.forEach((m)=>{
+                var _this_contentEl, _this_contentEl1;
+                if (typeof m === "string") (_this_contentEl = this.contentEl) === null || _this_contentEl === void 0 ? void 0 : _this_contentEl.appendChild(document.createTextNode(m));
+                else (_this_contentEl1 = this.contentEl) === null || _this_contentEl1 === void 0 ? void 0 : _this_contentEl1.appendChild(m);
+            });
+            else if (typeof msg === "string") this.contentEl.textContent = msg;
+            else this.contentEl.appendChild(msg);
+        }
+        if (this.confirmBtn) this.confirmBtn.textContent = options.confirmText || _("OK");
+        if (this.cancelBtn) {
+            this.cancelBtn.textContent = options.cancelText || _("Cancel");
+            this.cancelBtn.style.display = options.type === "alert" ? "none" : "";
+        }
+        if (this.overlay) this.overlay.style.display = "flex";
+        setTimeout(()=>{
+            if (this.confirmBtn) this.confirmBtn.focus();
+        }, 50);
+        document.addEventListener("keydown", this.handleKeydown);
+        return new Promise((resolve)=>{
+            this.resolve = resolve;
+        });
+    }
+    close(result) {
+        if (this.overlay) this.overlay.style.display = "none";
+        document.removeEventListener("keydown", this.handleKeydown);
+        if (this.resolve) {
+            this.resolve(result);
+            this.resolve = null;
+        }
+    }
+    constructor(){
+        _define_property(this, "overlay", null);
+        _define_property(this, "container", null);
+        _define_property(this, "titleEl", null);
+        _define_property(this, "contentEl", null);
+        _define_property(this, "footerEl", null);
+        _define_property(this, "confirmBtn", null);
+        _define_property(this, "cancelBtn", null);
+        _define_property(this, "resolve", null);
+        _define_property(this, "handleKeydown", (e)=>{
+            if (e.key === "Escape") this.close(false);
+        });
+    }
+}
+
+;// CONCATENATED MODULE: ./modules/dialog.tsx
+
+const dialog = new Dialog();
+let isMounted = false;
+function ensureMounted() {
+    if (isMounted) return;
+    if (document.body) {
+        document.body.appendChild(dialog.render());
+        isMounted = true;
+    }
+}
+function dialog_alert(message, title) {
+    ensureMounted();
+    return dialog.open({
+        type: "alert",
+        message,
+        title
+    });
+}
+function dialog_confirm(message, title) {
+    ensureMounted();
+    return dialog.open({
+        type: "confirm",
+        message,
+        title
+    });
+}
+
 ;// CONCATENATED MODULE: ./components/LogViewerCore.tsx
+
 
 
 
@@ -695,9 +863,9 @@ class LogViewerCore {
         const copySelectedButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
             class: "cbi-button cbi-button-positive",
-            onclick: ()=>{
-                if (this.selectedLines.size > 0) this.copyToClipboard();
-                else alert(_("No lines selected"));
+            onclick: async ()=>{
+                if (this.selectedLines.size > 0) await this.copyToClipboard();
+                else await dialog_alert(_("No lines selected"));
             }
         }, _("COPY SELECTED"));
         const exportButton = /*#__PURE__*/ createJsxElement("button", {
@@ -708,7 +876,7 @@ class LogViewerCore {
         const clearButton = /*#__PURE__*/ createJsxElement("button", {
             type: "button",
             class: "cbi-button",
-            onclick: ()=>this.clearLogs(),
+            onclick: async ()=>await this.clearLogs(),
             style: "background: #dc3545; color: white;"
         }, _("CLEAR"));
         this.searchBar = /*#__PURE__*/ createJsxElement("div", {
@@ -846,7 +1014,7 @@ class LogViewerCore {
             if (this.isFollowing && wasAtBottom) this.logContainer.scrollTop = this.logContainer.scrollHeight;
         }
     }
-    copyToClipboard() {
+    async copyToClipboard() {
         let text = "";
         if (this.selectedLines.size > 0) {
             // Copy selected lines from filteredLogs (what user sees)
@@ -863,11 +1031,11 @@ class LogViewerCore {
         } catch (_e) {
             useModernClipboard = false;
         }
-        if (useModernClipboard) navigator.clipboard.writeText(text).then(()=>{
-            alert(_("Logs copied to clipboard"));
-        }).catch((err)=>{
+        if (useModernClipboard) navigator.clipboard.writeText(text).then(async ()=>{
+            await dialog_alert(_("Logs copied to clipboard"));
+        }).catch(async (err)=>{
             console.error("Failed to copy logs:", err);
-            alert(_("Failed to copy logs"));
+            await dialog_alert(_("Failed to copy logs"));
         });
         else {
             const textarea = /*#__PURE__*/ createJsxElement("textarea", {
@@ -877,25 +1045,25 @@ class LogViewerCore {
             textarea.select();
             try {
                 const success = document.execCommand("copy");
-                if (success) alert(_("Logs copied to clipboard"));
+                if (success) await dialog_alert(_("Logs copied to clipboard"));
                 else throw new Error("execCommand failed");
             } catch (err) {
                 console.error("Failed to copy logs:", err);
-                alert(_("Failed to copy logs - please select and copy manually"));
+                await dialog_alert(_("Failed to copy logs - please select and copy manually"));
             } finally{
                 document.body.removeChild(textarea);
             }
         }
     }
-    clearLogs() {
-        if (confirm(_("Are you sure you want to clear the logs?"))) this.props.clearer(this.props.name).then(()=>{
+    async clearLogs() {
+        if (await dialog_confirm(_("Are you sure you want to clear the logs?"))) this.props.clearer(this.props.name).then(()=>{
             this.logs = [];
             this.filteredLogs = [];
             this.selectedLines.clear();
             this.updateDisplay();
-        }).catch((err)=>{
+        }).catch(async (err)=>{
             console.error("Failed to clear logs:", err);
-            alert(_("Failed to clear logs"));
+            await dialog_alert(_("Failed to clear logs"));
         });
     }
     constructor(props){
@@ -1113,7 +1281,7 @@ class ProxyStatsViewer {
     async fetchStats() {
         if (this.isPaused) return;
         try {
-            const stats = await this.rpcClient.getFrpProxyStats(this.clientId);
+            const stats = await this.rpcClient.getFrpcProxyStats(this.clientId);
             const currentStats = JSON.stringify(stats);
             if (currentStats === this.lastStats) return;
             this.lastStats = currentStats;
@@ -1209,12 +1377,12 @@ class ProxyStatsViewer {
     }
 }
 
-;// CONCATENATED MODULE: ./modules/frp.tsx
+;// CONCATENATED MODULE: ./modules/frpc.tsx
 
 
 
 
-const frp_form = L.form;
+const frpc_form = L.form;
 function getStatusColors() {
     const { isDark } = getThemeColors();
     // Dark mode adjustments for better visibility
@@ -1238,22 +1406,22 @@ const STATUS_LABELS = {
     unavailable: _("Unavailable")
 };
 const nodeStatuses = {};
-const frp_statusElements = {};
+const frpc_statusElements = {};
 const actionButtons = {};
-/* export default */ function frp(_m, s, tab_id) {
+/* export default */ function frpc(_m, s, tab_id) {
     let o;
-    o = s.taboption(tab_id, frp_form.SectionValue, "_frp_nodes", frp_form.GridSection, "frp_node");
+    o = s.taboption(tab_id, frpc_form.SectionValue, "_frpc_nodes", frpc_form.GridSection, "frpc_node");
     const ss = o.subsection;
     ss.anonymous = true;
     ss.addremove = true;
     ss.sortable = true;
     ss.cloneable = true;
     ss.sectiontitle = (section_id)=>L.uci.get("portweaver", section_id, "name") || section_id || _("Unnamed node");
-    o = ss.option(frp_form.Flag, "enabled", _("Enable"));
+    o = ss.option(frpc_form.Flag, "enabled", _("Enable"));
     o.modalonly = true;
     o.default = "1";
     o.rmempty = false;
-    o = ss.option(frp_form.Value, "name", _("Node Name"));
+    o = ss.option(frpc_form.Value, "name", _("Node Name"));
     o.modalonly = true;
     o.rmempty = false;
     o.datatype = "string";
@@ -1261,7 +1429,7 @@ const actionButtons = {};
     o.validate = (section_id, value)=>{
         if (!value || String(value).trim() === "") return _("Node name is required");
         if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _("Node name must contain only alphanumeric characters, underscore, or hyphen");
-        const sections = L.uci.sections("portweaver", "frp_node");
+        const sections = L.uci.sections("portweaver", "frpc_node");
         const trimmedValue = String(value).trim();
         for (const sec of sections){
             if (sec[".name"] === section_id) continue;
@@ -1270,7 +1438,7 @@ const actionButtons = {};
         }
         return true;
     };
-    o = ss.option(frp_form.DummyValue, "status", _("Status"));
+    o = ss.option(frpc_form.DummyValue, "status", _("Status"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const info = nodeStatuses[section_id] || {
@@ -1294,14 +1462,14 @@ const actionButtons = {};
         });
         container.appendChild(indicator);
         container.appendChild(textSpan);
-        frp_statusElements[section_id] = container;
+        frpc_statusElements[section_id] = container;
         return container;
     };
-    o = ss.option(frp_form.Flag, "enabled", _("Enabled"));
+    o = ss.option(frpc_form.Flag, "enabled", _("Enabled"));
     o.modalonly = false;
     o.default = "1";
     o.editable = true;
-    o = ss.option(frp_form.Value, "server", _("FRP Server Address"));
+    o = ss.option(frpc_form.Value, "server", _("FRP Server Address"));
     o.modalonly = true;
     o.rmempty = false;
     o.datatype = "host";
@@ -1310,7 +1478,7 @@ const actionButtons = {};
         if (!value || String(value).trim() === "") return _("Server address is required");
         return true;
     };
-    o = ss.option(frp_form.Value, "port", _("FRP Server Port"));
+    o = ss.option(frpc_form.Value, "port", _("FRP Server Port"));
     o.modalonly = true;
     o.rmempty = false;
     o.datatype = "port";
@@ -1321,12 +1489,12 @@ const actionButtons = {};
         if (Number.isNaN(port) || port < 1 || port > 65535) return _("Port must be between 1 and 65535");
         return true;
     };
-    o = ss.option(frp_form.Value, "token", _("Authentication Token"));
+    o = ss.option(frpc_form.Value, "token", _("Authentication Token"));
     o.modalonly = true;
     o.password = true;
     o.rmempty = true;
     o.placeholder = "optional token for authentication";
-    o = ss.option(frp_form.ListValue, "log_level", _("Log Level"));
+    o = ss.option(frpc_form.ListValue, "log_level", _("Log Level"));
     o.modalonly = true;
     o.rmempty = true;
     o.default = "info";
@@ -1335,15 +1503,15 @@ const actionButtons = {};
     o.value("info", "Info");
     o.value("warn", "Warning");
     o.value("error", "Error");
-    o = ss.option(frp_form.Flag, "use_encryption", _("Enable Encryption"));
+    o = ss.option(frpc_form.Flag, "use_encryption", _("Enable Encryption"));
     o.modalonly = true;
     o.rmempty = false;
     o.default = "1";
-    o = ss.option(frp_form.Flag, "use_compression", _("Enable Compression"));
+    o = ss.option(frpc_form.Flag, "use_compression", _("Enable Compression"));
     o.modalonly = true;
     o.rmempty = false;
     o.default = "1";
-    o = ss.option(frp_form.DummyValue, "actions", _("Actions"));
+    o = ss.option(frpc_form.DummyValue, "actions", _("Actions"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         var _nodeStatuses_section_id;
@@ -1356,8 +1524,8 @@ const actionButtons = {};
                 const logViewer = new LogViewerDialog({
                     name: nodeName,
                     title: _("FRP Logs - %s").format(nodeName),
-                    fetcher: async ()=>await rpcClient.getFrpInfo(String(nodeName)),
-                    clearer: rpcClient.clearFrpLogs.bind(rpcClient)
+                    fetcher: async ()=>await rpcClient.getFrpcInfo(String(nodeName)),
+                    clearer: rpcClient.clearFrpcLogs.bind(rpcClient)
                 });
                 logViewer.open();
             },
@@ -1366,7 +1534,7 @@ const actionButtons = {};
         actionButtons[section_id] = btn;
         return btn;
     };
-    o = ss.option(frp_form.DummyValue, "proxy_stats", _("Proxy Stats"));
+    o = ss.option(frpc_form.DummyValue, "proxy_stats", _("Proxy Stats"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const nodeName = L.uci.get("portweaver", section_id, "name");
@@ -1385,10 +1553,10 @@ const actionButtons = {};
     };
     async function pollFrpStatus() {
         try {
-            const sections = await L.uci.sections("portweaver", "frp_node");
+            const sections = await L.uci.sections("portweaver", "frpc_node");
             const promises = sections.map((sec)=>{
                 const nodeName = sec.name;
-                return rpcClient.getFrpInfo(nodeName).then((res)=>{
+                return rpcClient.getFrpcInfo(nodeName).then((res)=>{
                     var _res_status;
                     var _nodeStatuses_sec_name;
                     const oldStatus = (_nodeStatuses_sec_name = nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
@@ -1405,7 +1573,7 @@ const actionButtons = {};
                         last_error: res.last_error || ""
                     };
                     if (oldStatus !== newStatus) {
-                        const container = frp_statusElements[sec[".name"]];
+                        const container = frpc_statusElements[sec[".name"]];
                         if (container && container.childNodes.length >= 2) {
                             const indicator = container.childNodes[0];
                             const textSpan = container.childNodes[1];
@@ -1428,7 +1596,7 @@ const actionButtons = {};
                         status: "error",
                         last_error: "Failed to fetch status"
                     };
-                    const container = frp_statusElements[sec[".name"]];
+                    const container = frpc_statusElements[sec[".name"]];
                     if (container && container.childNodes.length >= 2) {
                         const indicator = container.childNodes[0];
                         const textSpan = container.childNodes[1];
@@ -1446,6 +1614,230 @@ const actionButtons = {};
     }
     pollFrpStatus();
     L.Poll.add(pollFrpStatus, 5);
+}
+
+;// CONCATENATED MODULE: ./modules/frps.tsx
+
+
+
+const frps_form = L.form;
+function frps_getStatusColors() {
+    const { isDark } = getThemeColors();
+    // Dark mode adjustments for better visibility
+    const connectedColor = isDark ? "#4CAF50" : "#4CAF50"; // Green works well in both
+    const connectingColor = isDark ? "#FFD700" : "#FFC107"; // Brighter gold for dark mode
+    const errorColor = isDark ? "#FF5252" : "#F44336"; // Brighter red for dark mode
+    const inactiveColor = isDark ? "#BDBDBD" : "#9E9E9E"; // Lighter gray for dark mode
+    return {
+        connected: connectedColor,
+        connecting: connectingColor,
+        error: errorColor,
+        stopped: inactiveColor,
+        unavailable: inactiveColor
+    };
+}
+const frps_STATUS_LABELS = {
+    connected: _("Connected"),
+    connecting: _("Connecting"),
+    error: _("Error"),
+    stopped: _("Stopped"),
+    unavailable: _("Unavailable")
+};
+const frps_nodeStatuses = {};
+const frps_statusElements = {};
+const frps_actionButtons = {};
+/* export default */ function frps(_m, s, tab_id) {
+    let o;
+    o = s.taboption(tab_id, frps_form.SectionValue, "_frps_nodes", frps_form.GridSection, "frps_node");
+    const ss = o.subsection;
+    ss.anonymous = true;
+    ss.addremove = true;
+    ss.sortable = true;
+    ss.cloneable = true;
+    ss.sectiontitle = (section_id)=>L.uci.get("portweaver", section_id, "name") || section_id || _("Unnamed FRPS node");
+    o = ss.option(frps_form.Flag, "enabled", _("Enable"));
+    o.modalonly = true;
+    o.default = "1";
+    o.rmempty = false;
+    o = ss.option(frps_form.Value, "name", _("Node Name"));
+    o.modalonly = true;
+    o.rmempty = false;
+    o.datatype = "string";
+    o.placeholder = "frps_node1";
+    o.validate = (section_id, value)=>{
+        if (!value || String(value).trim() === "") return _("Node name is required");
+        if (!/^[a-zA-Z0-9_-]+$/.test(String(value).trim())) return _("Node name must contain only alphanumeric characters, underscore, or hyphen");
+        const sections = L.uci.sections("portweaver", "frps_node");
+        const trimmedValue = String(value).trim();
+        for (const sec of sections){
+            if (sec[".name"] === section_id) continue;
+            const existingName = sec.name;
+            if (existingName && existingName.trim() === trimmedValue) return _("Node name already exists. Please choose a different name.");
+        }
+        return true;
+    };
+    o = ss.option(frps_form.DummyValue, "status", _("Status"));
+    o.modalonly = false;
+    o.textvalue = (section_id)=>{
+        const info = frps_nodeStatuses[section_id] || {
+            status: "unavailable"
+        };
+        const colors = frps_getStatusColors();
+        const statusColor = colors[info.status] || colors.unavailable;
+        const statusText = {
+            connected: _("Connected"),
+            connecting: _("Connecting"),
+            error: _("Error"),
+            stopped: _("Stopped"),
+            unavailable: _("Unavailable")
+        }[info.status] || info.status;
+        const indicator = /*#__PURE__*/ createJsxElement("span", {
+            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
+        });
+        const textSpan = /*#__PURE__*/ createJsxElement("span", null, statusText);
+        const container = /*#__PURE__*/ createJsxElement("span", {
+            style: "display:flex; align-items:center;"
+        });
+        container.appendChild(indicator);
+        container.appendChild(textSpan);
+        frps_statusElements[section_id] = container;
+        return container;
+    };
+    o = ss.option(frps_form.Flag, "enabled", _("Enabled"));
+    o.modalonly = false;
+    o.default = "1";
+    o.editable = true;
+    o = ss.option(frps_form.Value, "bind_port", _("Bind Port"));
+    o.modalonly = true;
+    o.rmempty = false;
+    o.datatype = "port";
+    o.placeholder = "7000";
+    o.validate = (_section_id, value)=>{
+        if (!value || String(value).trim() === "") return _("Bind port is required");
+        const port = parseInt(value, 10);
+        if (Number.isNaN(port) || port < 1 || port > 65535) return _("Port must be between 1 and 65535");
+        return true;
+    };
+    o = ss.option(frps_form.Value, "token", _("Authentication Token"));
+    o.modalonly = true;
+    o.password = true;
+    o.rmempty = true;
+    o.placeholder = "optional token for authentication";
+    o = ss.option(frps_form.ListValue, "log_level", _("Log Level"));
+    o.modalonly = true;
+    o.rmempty = true;
+    o.default = "info";
+    o.value("trace", "Trace");
+    o.value("debug", "Debug");
+    o.value("info", "Info");
+    o.value("warn", "Warning");
+    o.value("error", "Error");
+    o = ss.option(frps_form.Value, "dashboard_port", _("Dashboard Port"));
+    o.modalonly = true;
+    o.rmempty = true;
+    o.datatype = "port";
+    o.placeholder = "7500";
+    o.validate = (_section_id, value)=>{
+        if (!value || String(value).trim() === "") return true;
+        const port = parseInt(value, 10);
+        if (Number.isNaN(port) || port < 1 || port > 65535) return _("Port must be between 1 and 65535");
+        return true;
+    };
+    o = ss.option(frps_form.Value, "dashboard_user", _("Dashboard User"));
+    o.modalonly = true;
+    o.rmempty = true;
+    o.placeholder = "admin";
+    o.depends("dashboard_port", "");
+    o = ss.option(frps_form.Value, "dashboard_pwd", _("Dashboard Password"));
+    o.modalonly = true;
+    o.password = true;
+    o.rmempty = true;
+    o.placeholder = "admin";
+    o.depends("dashboard_port", "");
+    o = ss.option(frps_form.DummyValue, "actions", _("Actions"));
+    o.modalonly = false;
+    o.textvalue = (section_id)=>{
+        var _nodeStatuses_section_id;
+        const isRunning = (((_nodeStatuses_section_id = frps_nodeStatuses[section_id]) === null || _nodeStatuses_section_id === void 0 ? void 0 : _nodeStatuses_section_id.status) || "stopped") !== "stopped";
+        const btn = /*#__PURE__*/ createJsxElement("button", {
+            type: "button",
+            class: "cbi-button cbi-button-action",
+            onclick: ()=>{
+                const nodeName = L.uci.get("portweaver", section_id, "name");
+                const logViewer = new LogViewerDialog({
+                    name: nodeName,
+                    title: _("FRPS Logs - %s").format(nodeName),
+                    clearer: rpcClient.clearFrpsLogs.bind(rpcClient)
+                });
+                logViewer.open();
+            },
+            disabled: !isRunning
+        }, _("View Logs"));
+        frps_actionButtons[section_id] = btn;
+        return btn;
+    };
+    async function pollFrpsStatus() {
+        try {
+            const sections = await L.uci.sections("portweaver", "frps_node");
+            const promises = sections.map((sec)=>{
+                const nodeName = sec.name;
+                return rpcClient.getFrpsInfo(nodeName).then((res)=>{
+                    var _res_status;
+                    var _nodeStatuses_sec_name;
+                    const oldStatus = (_nodeStatuses_sec_name = frps_nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
+                    const rawStatus = (_res_status = res.status) !== null && _res_status !== void 0 ? _res_status : "unavailable";
+                    const newStatus = [
+                        "connected",
+                        "connecting",
+                        "error",
+                        "stopped",
+                        "unavailable"
+                    ].includes(rawStatus) ? rawStatus : "unavailable";
+                    frps_nodeStatuses[sec[".name"]] = {
+                        status: newStatus,
+                        last_error: res.last_error || ""
+                    };
+                    if (oldStatus !== newStatus) {
+                        const container = frps_statusElements[sec[".name"]];
+                        if (container && container.childNodes.length >= 2) {
+                            const indicator = container.childNodes[0];
+                            const textSpan = container.childNodes[1];
+                            // Get fresh theme colors at update time
+                            const colors = frps_getStatusColors();
+                            const statusColor = colors[newStatus] || colors.unavailable;
+                            indicator.style.backgroundColor = statusColor;
+                            const statusText = frps_STATUS_LABELS[newStatus] || newStatus;
+                            textSpan.textContent = statusText;
+                        }
+                        const actionBtn = frps_actionButtons[sec[".name"]];
+                        if (actionBtn) {
+                            const isRunning = newStatus !== "stopped";
+                            actionBtn.disabled = !isRunning;
+                        }
+                    }
+                }).catch(()=>{
+                    frps_nodeStatuses[sec[".name"]] = {
+                        status: "error",
+                        last_error: "Failed to fetch status"
+                    };
+                    const container = frps_statusElements[sec[".name"]];
+                    if (container && container.childNodes.length >= 2) {
+                        const indicator = container.childNodes[0];
+                        const textSpan = container.childNodes[1];
+                        indicator.style.backgroundColor = "#F44336";
+                        textSpan.textContent = _("Error");
+                    }
+                    const actionBtn = frps_actionButtons[sec[".name"]];
+                    if (actionBtn) actionBtn.disabled = true;
+                });
+            });
+            await Promise.all(promises);
+        } catch (e) {
+            console.error("Polling for FRPS status failed:", e);
+        }
+    }
+    pollFrpsStatus();
+    L.Poll.add(pollFrpsStatus, 5);
 }
 
 ;// CONCATENATED MODULE: ./components/ValidatedInput.tsx
@@ -1500,7 +1892,7 @@ const actionButtons = {};
  * @returns 返回容器元素和选中节点的 getter 函数
  */ function createFrpNodeSelector(options) {
     const { selectedNodes, onChange, checkboxClass = "frp-node-checkbox", portInputClass = "frp-node-port", containerStyle } = options;
-    const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
+    const frp_sections = L.uci.sections("portweaver", "frpc_node") || [];
     const node_map = {};
     // 解析已选择的节点
     for (const item of selectedNodes){
@@ -1693,7 +2085,7 @@ class FrpNodeSelector extends L.form.Value {
         return container;
     }
     cfgvalue(section_id) {
-        const value = L.uci.get("portweaver", section_id, "frp_nodes");
+        const value = L.uci.get("portweaver", section_id, "frpc_nodes");
         if (Array.isArray(value)) return value;
         if (typeof value === "string") return String(value).split(/\s+/).filter(Boolean);
         return [];
@@ -1717,8 +2109,8 @@ class FrpNodeSelector extends L.form.Value {
         return [];
     }
     write(section_id, formvalue) {
-        if (formvalue && formvalue.length > 0) return L.uci.set("portweaver", section_id, "frp_nodes", formvalue);
-        else return L.uci.unset("portweaver", section_id, "frp_nodes");
+        if (formvalue && formvalue.length > 0) return L.uci.set("portweaver", section_id, "frpc_nodes", formvalue);
+        else return L.uci.unset("portweaver", section_id, "frpc_nodes");
     }
     isValid(_section_id) {
         // 复用 createFrpNodeSelector 中的验证逻辑
@@ -2382,7 +2774,7 @@ const uci = L.uci;
     o.default = "tcp";
     o.depends("use_port_mappings", "0");
     // FRP node selector component factory
-    o = ss.option(components_FrpNodeSelector, "frp_nodes", _("FRP Tunnels1"));
+    o = ss.option(components_FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
     o.modalonly = true;
     o.rmempty = true;
     o.depends("use_port_mappings", "0");
@@ -2703,6 +3095,7 @@ const header_form = L.form;
 
 ;// CONCATENATED MODULE: ./modules/logs.tsx
 
+
 const logs_form = L.form;
 const fs = L.fs;
 const ui = L.ui;
@@ -2739,7 +3132,6 @@ let logViewerCore = null;
         }
     };
     const clearer = async ()=>{
-        if (!confirm(_("Are you sure you want to clear all logs?"))) throw new Error("User cancelled");
         try {
             await fs.write(LOG_FILE, "");
             ui.addNotification(null, E("p", _("Logs cleared successfully")), "info");
@@ -2749,7 +3141,7 @@ let logViewerCore = null;
         }
     };
     const restartService = async ()=>{
-        if (!confirm(_("Are you sure you want to restart PortWeaver service?"))) return;
+        if (!await dialog_confirm(_("Are you sure you want to restart PortWeaver service?"))) return;
         try {
             await fs.exec("/etc/init.d/portweaver", [
                 "restart"
@@ -3298,6 +3690,7 @@ const ddns_statusElements = {};
 
 
 
+
 const main_form = L.form;
 const main_uci = L.uci;
 class main extends L.view {
@@ -3317,10 +3710,10 @@ class main extends L.view {
                     projects: []
                 };
             }),
-            rpcClient.getFrpStatus().then((res)=>res || {
+            rpcClient.getFrpcStatus().then((res)=>res || {
                     frp_enabled: false
                 }).catch((err)=>{
-                console.warn("ubus get_frp_status failed:", err);
+                console.warn("ubus get_frpc_status failed:", err);
                 return {
                     frp_enabled: false
                 };
@@ -3351,6 +3744,7 @@ class main extends L.view {
         s.tab("ddns", _("DDNS"));
         s.tab("logs", _("System Logs"));
         s.tab("frp", _("FRP Tunnels"));
+        s.tab("frps", _("FRP Server"));
         const client = new Client([
             data[2],
             data[3],
@@ -3362,7 +3756,8 @@ class main extends L.view {
         config(m, s, client, "projects");
         ddns(m, s, "ddns");
         logs(m, s, "logs");
-        frp(m, s, "frp");
+        frpc(m, s, "frp");
+        frps(m, s, "frps");
         return m.render();
     }
 }

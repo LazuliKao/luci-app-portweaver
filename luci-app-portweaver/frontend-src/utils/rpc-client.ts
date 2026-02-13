@@ -7,7 +7,8 @@ import type {
 } from "../types/portweaver";
 import type { InfoResponse } from "./../types/portweaver/index";
 import type { DdnsStatusResponse } from "../types/portweaver/ddns";
-import type { FrpProxyStats } from "../types/portweaver/frp";
+import type { FrpcProxyStats } from "../types/portweaver/frpc";
+import type { FrpsProxyStats } from "../types/portweaver/frps";
 
 export function createRpcClient(rpc: typeof L.rpc) {
   const getStatus = rpc.declare<PortWeaverStatus>({
@@ -26,25 +27,25 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["id", "enabled"],
   });
 
-  const getFrpStatus = rpc.declare<FrpStatus>({
+  const getFrpcStatus = rpc.declare<FrpStatus>({
     object: "portweaver",
-    method: "get_frp_status",
+    method: "get_frpc_status",
   });
-  const getFrpInfo = rpc.declare<InfoResponse, [id: string]>({
+  const getFrpcInfo = rpc.declare<InfoResponse, [id: string]>({
     object: "portweaver",
-    method: "get_frp_info",
+    method: "get_frpc_info",
     params: ["id"],
   });
 
-  const clearFrpLogs = rpc.declare<void, [id: string]>({
+  const clearFrpcLogs = rpc.declare<void, [id: string]>({
     object: "portweaver",
-    method: "clear_frp_logs",
+    method: "clear_frpc_logs",
     params: ["id"],
   });
 
-  const getFrpProxyStats = rpc.declare<FrpProxyStats, [id: string]>({
+  const getFrpcProxyStats = rpc.declare<FrpcProxyStats, [id: string]>({
     object: "portweaver",
-    method: "get_frp_proxy_stats",
+    method: "get_frpc_proxy_stats",
     params: ["id"],
   });
 
@@ -75,19 +76,40 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["name"],
   });
 
+  const getFrpsInfo = rpc.declare<InfoResponse, [id: string]>({
+    object: "portweaver",
+    method: "get_frps_info",
+    params: ["id"],
+  });
+
+  const clearFrpsLogs = rpc.declare<void, [id: string]>({
+    object: "portweaver",
+    method: "clear_frps_logs",
+    params: ["id"],
+  });
+
+  const getFrpsProxyStats = rpc.declare<FrpsProxyStats[], [id: string]>({
+    object: "portweaver",
+    method: "get_frps_proxy_stats",
+    params: ["id"],
+  });
+
   return {
     getStatus,
     listProjects,
     setEnabled,
-    getFrpStatus,
-    getFrpInfo,
-    getFrpProxyStats,
-    clearFrpLogs,
+    getFrpcStatus,
+    getFrpcInfo,
+    getFrpcProxyStats,
+    clearFrpcLogs,
     getEvents,
     getDdnsStatus,
     getDdnsInfo,
     getDdnsGlobalStatus,
     clearDdnsLogs,
+    getFrpsInfo,
+    clearFrpsLogs,
+    getFrpsProxyStats,
   };
 }
 

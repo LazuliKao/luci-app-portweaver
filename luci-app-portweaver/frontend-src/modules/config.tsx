@@ -254,7 +254,7 @@ export default function (
   o.depends("use_port_mappings", "0");
 
   // FRP node selector component factory
-  o = ss.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels1"));
+  o = ss.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
   o.modalonly = true;
   o.rmempty = true;
   o.depends("use_port_mappings", "0");

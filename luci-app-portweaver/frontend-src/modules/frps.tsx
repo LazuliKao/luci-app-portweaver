@@ -1,17 +1,16 @@
 import { LogViewerDialog } from "../components/LogViewerDialog";
-import { ProxyStatsViewer } from "../components/ProxyStatsViewer";
 import { rpcClient } from "../utils/rpc-client";
 import { getThemeColors } from "../utils/theme-utils";
 const form = L.form;
 
-type FrpState =
+type FrpsState =
   | "connected"
   | "connecting"
   | "error"
   | "stopped"
   | "unavailable";
 
-function getStatusColors(): Record<FrpState, string> {
+function getStatusColors(): Record<FrpsState, string> {
   const { isDark } = getThemeColors();
   // Dark mode adjustments for better visibility
   const connectedColor = isDark ? "#4CAF50" : "#4CAF50"; // Green works well in both
@@ -28,7 +27,7 @@ function getStatusColors(): Record<FrpState, string> {
   };
 }
 
-const STATUS_LABELS: Record<FrpState, string> = {
+const STATUS_LABELS: Record<FrpsState, string> = {
   connected: _("Connected"),
   connecting: _("Connecting"),
   error: _("Error"),
@@ -36,7 +35,7 @@ const STATUS_LABELS: Record<FrpState, string> = {
   unavailable: _("Unavailable"),
 };
 
-const nodeStatuses: Record<string, { status: FrpState; last_error: string }> =
+const nodeStatuses: Record<string, { status: FrpsState; last_error: string }> =
   {};
 const statusElements: Record<string, HTMLElement> = {};
 const actionButtons: Record<string, HTMLButtonElement> = {};
@@ -51,9 +50,9 @@ export default function (
   o = s.taboption(
     tab_id,
     form.SectionValue,
-    "_frp_nodes",
+    "_frps_nodes",
     form.GridSection,
-    "frp_node",
+    "frps_node",
   );
 
   const ss = o.subsection;
@@ -65,7 +64,7 @@ export default function (
   ss.sectiontitle = (section_id: string) =>
     L.uci.get("portweaver", section_id, "name") ||
     section_id ||
-    _("Unnamed node");
+    _("Unnamed FRPS node");
 
   o = ss.option(form.Flag, "enabled", _("Enable"));
   o.modalonly = true;
@@ -76,7 +75,7 @@ export default function (
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "string";
-  o.placeholder = "node1";
+  o.placeholder = "frps_node1";
   o.validate = (section_id: string, value: string) => {
     if (!value || String(value).trim() === "")
       return _("Node name is required");
@@ -85,7 +84,7 @@ export default function (
         "Node name must contain only alphanumeric characters, underscore, or hyphen",
       );
 
-    const sections = L.uci.sections("portweaver", "frp_node");
+    const sections = L.uci.sections("portweaver", "frps_node");
     const trimmedValue = String(value).trim();
     for (const sec of sections) {
       if (sec[".name"] === section_id) continue;
@@ -138,25 +137,14 @@ export default function (
   o.default = "1";
   o.editable = true;
 
-  o = ss.option(form.Value, "server", _("FRP Server Address"));
-  o.modalonly = true;
-  o.rmempty = false;
-  o.datatype = "host";
-  o.placeholder = "1.2.3.4";
-  o.validate = (_section_id: string, value: string) => {
-    if (!value || String(value).trim() === "")
-      return _("Server address is required");
-    return true;
-  };
-
-  o = ss.option(form.Value, "port", _("FRP Server Port"));
+  o = ss.option(form.Value, "bind_port", _("Bind Port"));
   o.modalonly = true;
   o.rmempty = false;
   o.datatype = "port";
   o.placeholder = "7000";
   o.validate = (_section_id: string, value: string) => {
     if (!value || String(value).trim() === "")
-      return _("Server port is required");
+      return _("Bind port is required");
     const port = parseInt(value, 10);
     if (Number.isNaN(port) || port < 1 || port > 65535)
       return _("Port must be between 1 and 65535");
@@ -179,15 +167,31 @@ export default function (
   o.value("warn", "Warning");
   o.value("error", "Error");
 
-  o = ss.option(form.Flag, "use_encryption", _("Enable Encryption"));
+  o = ss.option(form.Value, "dashboard_port", _("Dashboard Port"));
   o.modalonly = true;
-  o.rmempty = false;
-  o.default = "1";
+  o.rmempty = true;
+  o.datatype = "port";
+  o.placeholder = "7500";
+  o.validate = (_section_id: string, value: string) => {
+    if (!value || String(value).trim() === "") return true;
+    const port = parseInt(value, 10);
+    if (Number.isNaN(port) || port < 1 || port > 65535)
+      return _("Port must be between 1 and 65535");
+    return true;
+  };
 
-  o = ss.option(form.Flag, "use_compression", _("Enable Compression"));
+  o = ss.option(form.Value, "dashboard_user", _("Dashboard User"));
   o.modalonly = true;
-  o.rmempty = false;
-  o.default = "1";
+  o.rmempty = true;
+  o.placeholder = "admin";
+  o.depends("dashboard_port", "");
+
+  o = ss.option(form.Value, "dashboard_pwd", _("Dashboard Password"));
+  o.modalonly = true;
+  o.password = true;
+  o.rmempty = true;
+  o.placeholder = "admin";
+  o.depends("dashboard_port", "");
 
   o = ss.option(form.DummyValue, "actions", _("Actions"));
   o.modalonly = false;
@@ -207,9 +211,8 @@ export default function (
           ) as string;
           const logViewer = new LogViewerDialog({
             name: nodeName,
-            title: _("FRP Logs - %s").format(nodeName),
-            fetcher: async () => await rpcClient.getFrpInfo(String(nodeName)),
-            clearer: rpcClient.clearFrpLogs.bind(rpcClient),
+            title: _("FRPS Logs - %s").format(nodeName),
+            clearer: rpcClient.clearFrpsLogs.bind(rpcClient),
           });
           logViewer.open();
         }}
@@ -223,45 +226,25 @@ export default function (
     return btn;
   };
 
-  o = ss.option(form.DummyValue, "proxy_stats", _("Proxy Stats"));
-  o.modalonly = false;
-  o.textvalue = (section_id: string) => {
-    const nodeName = L.uci.get("portweaver", section_id, "name") as string;
-    const container = (
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
-    );
-
-    // Create stats viewer for the client (now shows all proxies)
-    const statsViewer = new ProxyStatsViewer({
-      clientId: nodeName,
-      rpcClient: rpcClient,
-    });
-    const statsEl = statsViewer.render();
-    statsEl.style.cssText = `flex: 1; min-width: 300px; ${statsEl.style.cssText}`;
-    container.appendChild(statsEl);
-
-    return container;
-  };
-
-  async function pollFrpStatus() {
+  async function pollFrpsStatus() {
     try {
-      const sections = await L.uci.sections("portweaver", "frp_node");
+      const sections = await L.uci.sections("portweaver", "frps_node");
       const promises = sections.map((sec: any) => {
         const nodeName = sec.name as string;
         return rpcClient
-          .getFrpInfo(nodeName)
+          .getFrpsInfo(nodeName)
           .then((res) => {
             const oldStatus = nodeStatuses[sec[".name"]]?.status;
             const rawStatus = res.status ?? "unavailable";
-            const newStatus: FrpState = [
+            const newStatus: FrpsState = [
               "connected",
               "connecting",
               "error",
               "stopped",
               "unavailable",
             ].includes(rawStatus)
-              ? (rawStatus as FrpState)
-              : ("unavailable" as FrpState);
+              ? (rawStatus as FrpsState)
+              : ("unavailable" as FrpsState);
 
             nodeStatuses[sec[".name"]] = {
               status: newStatus,
@@ -277,7 +260,6 @@ export default function (
                 // Get fresh theme colors at update time
                 const colors = getStatusColors();
                 const statusColor = colors[newStatus] || colors.unavailable;
-                indicator.style.backgroundColor = statusColor;
                 indicator.style.backgroundColor = statusColor;
 
                 const statusText = STATUS_LABELS[newStatus] || newStatus;
@@ -313,10 +295,10 @@ export default function (
       });
       await Promise.all(promises);
     } catch (e) {
-      console.error("Polling for FRP status failed:", e);
+      console.error("Polling for FRPS status failed:", e);
     }
   }
 
-  pollFrpStatus();
-  L.Poll.add(pollFrpStatus, 5);
+  pollFrpsStatus();
+  L.Poll.add(pollFrpsStatus, 5);
 }

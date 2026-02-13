@@ -20,7 +20,7 @@ export function createFrpNodeSelector(options: {
     containerStyle,
   } = options;
 
-  const frp_sections = L.uci.sections("portweaver", "frp_node") || [];
+  const frp_sections = L.uci.sections("portweaver", "frpc_node") || [];
   const node_map: Record<string, string> = {};
 
   // 解析已选择的节点
@@ -290,7 +290,7 @@ class FrpNodeSelector extends L.form.Value {
     return container;
   }
   cfgvalue(section_id: string) {
-    const value = L.uci.get("portweaver", section_id, "frp_nodes");
+    const value = L.uci.get("portweaver", section_id, "frpc_nodes");
     if (Array.isArray(value)) return value;
     if (typeof value === "string")
       return String(value).split(/\s+/).filter(Boolean);
@@ -316,9 +316,9 @@ class FrpNodeSelector extends L.form.Value {
   }
   write(section_id: string, formvalue: string[] | string) {
     if (formvalue && formvalue.length > 0) {
-      return L.uci.set("portweaver", section_id, "frp_nodes", formvalue);
+      return L.uci.set("portweaver", section_id, "frpc_nodes", formvalue);
     } else {
-      return L.uci.unset("portweaver", section_id, "frp_nodes");
+      return L.uci.unset("portweaver", section_id, "frpc_nodes");
     }
   }
 
