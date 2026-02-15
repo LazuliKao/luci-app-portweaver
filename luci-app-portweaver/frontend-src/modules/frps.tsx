@@ -184,14 +184,14 @@ export default function (
   o.modalonly = true;
   o.rmempty = true;
   o.placeholder = "admin";
-  o.depends("dashboard_port", "");
+  o.depends("dashboard_port", /\S+/);
 
   o = ss.option(form.Value, "dashboard_pwd", _("Dashboard Password"));
   o.modalonly = true;
   o.password = true;
   o.rmempty = true;
   o.placeholder = "admin";
-  o.depends("dashboard_port", "");
+  o.depends("dashboard_port", /\S+/);
 
   o = ss.option(form.DummyValue, "actions", _("Actions"));
   o.modalonly = false;

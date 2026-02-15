@@ -2,6 +2,8 @@ import type {
   PortWeaverStatus,
   ProjectStatus,
   FrpStatus,
+  FrpcStatus,
+  FrpsStatus,
   ActivityEvent,
   ForwarderStats,
   DdnsGlobalStatus,
@@ -92,18 +94,28 @@ export class Client {
             this.globalStatus.total_bytes_out || 0,
           );
 
-        if (this.statusPanel?.frpEnabledEl) {
-          this.statusPanel.frpEnabledEl.textContent = this.frpStatus.frp_enabled
-            ? _("Enabled")
-            : _("Disabled");
-          (this.statusPanel.frpEnabledEl.style as any).color = this.frpStatus
-            .frp_enabled
-            ? "#28a745"
-            : "#6c757d";
-        }
-        if (this.statusPanel?.frpVersionEl && this.frpStatus.frp_version) {
-          this.statusPanel.frpVersionEl.textContent =
-            this.frpStatus.frp_version;
+        if (this.statusPanel) {
+          this.updateFrpCard(
+            this.frpStatus.frpc,
+            this.frpStatus.frp_version,
+            this.statusPanel.frpcEnabledEl,
+            this.statusPanel.frpcVersionEl,
+            this.statusPanel.frpcStatusEl,
+            this.statusPanel.frpcInfoEl,
+            this.statusPanel.frpcErrorEl,
+            "frpc",
+          );
+
+          this.updateFrpCard(
+            this.frpStatus.frps,
+            this.frpStatus.frp_version,
+            this.statusPanel.frpsEnabledEl,
+            this.statusPanel.frpsVersionEl,
+            this.statusPanel.frpsStatusEl,
+            this.statusPanel.frpsInfoEl,
+            this.statusPanel.frpsErrorEl,
+            "frps",
+          );
         }
 
         if (this.statusPanel?.ddnsEnabledEl) {
@@ -275,6 +287,97 @@ export class Client {
         {rows}
       </div>
     );
+  }
+
+  private updateFrpCard(
+    status: FrpcStatus | FrpsStatus | undefined,
+    globalVersion: string | undefined,
+    enabledEl?: HTMLElement,
+    versionEl?: HTMLElement,
+    statusEl?: HTMLElement,
+    infoEl?: HTMLElement,
+    errorEl?: HTMLElement,
+    type: "frpc" | "frps" = "frpc",
+  ): void {
+    const isEnabled = status?.enabled || false;
+
+    if (enabledEl) {
+      enabledEl.textContent = isEnabled ? _("Enabled") : _("Disabled");
+      (enabledEl.style as any).color = isEnabled ? "#28a745" : "#6c757d";
+    }
+
+    if (versionEl) {
+      versionEl.textContent = isEnabled && globalVersion ? globalVersion : "";
+    }
+
+    if (statusEl) {
+      if (isEnabled && status?.status) {
+        let statusText = status.status;
+        let color = "#6c757d";
+
+        switch (status.status) {
+          case "running":
+            statusText = _("Running");
+            color = "#28a745";
+            break;
+          case "stopped":
+            statusText = _("Stopped");
+            color = "#dc3545";
+            break;
+          case "error":
+            statusText = _("Error");
+            color = "#dc3545";
+            break;
+        }
+
+        statusEl.textContent = statusText;
+        (statusEl.style as any).color = color;
+        statusEl.style.display = "block";
+      } else {
+        statusEl.style.display = "none";
+      }
+    }
+
+    if (infoEl) {
+      if (isEnabled) {
+        const parts: string[] = [];
+        if (status?.client_count !== undefined) {
+          parts.push(`${status.client_count} ${_("clients")}`);
+        }
+        if (type === "frps") {
+          const frpsStatus = status as FrpsStatus;
+          if (frpsStatus.proxy_count !== undefined) {
+            parts.push(`${frpsStatus.proxy_count} ${_("proxies")}`);
+          }
+          if (frpsStatus.server_count !== undefined) {
+            parts.push(`${frpsStatus.server_count} ${_("servers")}`);
+          }
+        }
+        infoEl.textContent = parts.join(" | ");
+        infoEl.style.display = parts.length > 0 ? "block" : "none";
+      } else {
+        infoEl.style.display = "none";
+      }
+    }
+
+    if (errorEl) {
+      if (status?.last_error) {
+        const truncated =
+          status.last_error.length > 50
+            ? `${status.last_error.substring(0, 47)}...`
+            : status.last_error;
+        errorEl.title = status.last_error;
+        errorEl.innerHTML = "";
+        errorEl.appendChild(
+          <strong style="font-size: 0.95em; font-weight: 600; color: #dc3545;">
+            {truncated}
+          </strong>,
+        );
+        errorEl.style.display = "block";
+      } else {
+        errorEl.style.display = "none";
+      }
+    }
   }
 
   private updateProjectHealthIndicator(): void {

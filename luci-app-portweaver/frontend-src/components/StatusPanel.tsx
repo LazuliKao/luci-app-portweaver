@@ -15,9 +15,16 @@ export class StatusPanel {
   public trafficInEl?: HTMLElement;
   public trafficOutEl?: HTMLElement;
   public projectHealthEl?: HTMLElement;
-  public frpEnabledEl?: HTMLElement;
-  public frpVersionEl?: HTMLElement;
-  public frpErrorEl?: HTMLElement;
+  public frpcEnabledEl?: HTMLElement;
+  public frpcVersionEl?: HTMLElement;
+  public frpcStatusEl?: HTMLElement;
+  public frpcInfoEl?: HTMLElement;
+  public frpcErrorEl?: HTMLElement;
+  public frpsEnabledEl?: HTMLElement;
+  public frpsVersionEl?: HTMLElement;
+  public frpsStatusEl?: HTMLElement;
+  public frpsInfoEl?: HTMLElement;
+  public frpsErrorEl?: HTMLElement;
   public ddnsEnabledEl?: HTMLElement;
   public ddnsVersionEl?: HTMLElement;
   public activityLogContainer?: HTMLElement;
@@ -142,37 +149,130 @@ export class StatusPanel {
 
           {frpStatus &&
             (() => {
-              const frpEnabledEl = (
+              const frpc = frpStatus.frpc || { enabled: false };
+              const isEnabled = frpc.enabled;
+
+              const frpcEnabledEl = (
                 <strong
-                  style={`font-size: 1.1em; font-weight: 600; color: ${this.getFrpStatusColor(frpStatus)};`}
-                  id="frp-enabled-value"
+                  style={`font-size: 1.1em; font-weight: 600; color: ${
+                    isEnabled ? "#28a745" : "#6c757d"
+                  };`}
+                  id="frpc-enabled-value"
                 >
-                  {this.getFrpStatusText(frpStatus)}
+                  {isEnabled ? _("Enabled") : _("Disabled")}
                 </strong>
               );
-              this.frpEnabledEl = frpEnabledEl as HTMLElement;
+              this.frpcEnabledEl = frpcEnabledEl as HTMLElement;
 
-              const frpVersionEl = frpStatus.frp_version ? (
+              const frpcVersionEl = (
                 <div
                   style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-                  id="frp-version-value"
+                  id="frpc-version-value"
                 >
-                  {frpStatus.frp_version}
+                  {isEnabled && frpStatus.frp_version
+                    ? frpStatus.frp_version
+                    : ""}
                 </div>
-              ) : null;
-              if (frpVersionEl) this.frpVersionEl = frpVersionEl as HTMLElement;
+              );
+              this.frpcVersionEl = frpcVersionEl as HTMLElement;
+
+              const frpcStatusEl = (
+                <div
+                  style="font-size: 0.85em; margin-top: 0.2em;"
+                  id="frpc-status-value"
+                ></div>
+              );
+              this.frpcStatusEl = frpcStatusEl as HTMLElement;
+
+              const frpcInfoEl = (
+                <div
+                  style="font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
+                  id="frpc-info-value"
+                ></div>
+              );
+              this.frpcInfoEl = frpcInfoEl as HTMLElement;
+
+              const frpcErrorEl = (
+                <div
+                  style="cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;"
+                  id="frpc-error-value"
+                ></div>
+              );
+              this.frpcErrorEl = frpcErrorEl as HTMLElement;
 
               return this.card(
-                _("FRP Status"),
+                "FRPC",
                 <div>
-                  {frpEnabledEl}
-                  {frpVersionEl}
-                  {frpStatus.client_count !== undefined &&
-                    frpStatus.client_count > 0 && (
-                      <div style="font-size: 0.85em; color: #6c757d; margin-top: 0.2em;">
-                        {frpStatus.client_count} {_("client(s)")}
-                      </div>
-                    )}
+                  {frpcEnabledEl}
+                  {frpcVersionEl}
+                  {frpcStatusEl}
+                  {frpcInfoEl}
+                  {frpcErrorEl}
+                </div>,
+              );
+            })()}
+
+          {frpStatus &&
+            (() => {
+              const frps = frpStatus.frps || { enabled: false };
+              const isEnabled = frps.enabled;
+
+              const frpsEnabledEl = (
+                <strong
+                  style={`font-size: 1.1em; font-weight: 600; color: ${
+                    isEnabled ? "#28a745" : "#6c757d"
+                  };`}
+                  id="frps-enabled-value"
+                >
+                  {isEnabled ? _("Enabled") : _("Disabled")}
+                </strong>
+              );
+              this.frpsEnabledEl = frpsEnabledEl as HTMLElement;
+
+              const frpsVersionEl = (
+                <div
+                  style="font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
+                  id="frps-version-value"
+                >
+                  {isEnabled && frpStatus.frp_version
+                    ? frpStatus.frp_version
+                    : ""}
+                </div>
+              );
+              this.frpsVersionEl = frpsVersionEl as HTMLElement;
+
+              const frpsStatusEl = (
+                <div
+                  style="font-size: 0.85em; margin-top: 0.2em;"
+                  id="frps-status-value"
+                ></div>
+              );
+              this.frpsStatusEl = frpsStatusEl as HTMLElement;
+
+              const frpsInfoEl = (
+                <div
+                  style="font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
+                  id="frps-info-value"
+                ></div>
+              );
+              this.frpsInfoEl = frpsInfoEl as HTMLElement;
+
+              const frpsErrorEl = (
+                <div
+                  style="cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;"
+                  id="frps-error-value"
+                ></div>
+              );
+              this.frpsErrorEl = frpsErrorEl as HTMLElement;
+
+              return this.card(
+                "FRPS",
+                <div>
+                  {frpsEnabledEl}
+                  {frpsVersionEl}
+                  {frpsStatusEl}
+                  {frpsInfoEl}
+                  {frpsErrorEl}
                 </div>,
               );
             })()}
@@ -210,65 +310,12 @@ export class StatusPanel {
                 </div>,
               );
             })()}
-
-          {/* FRP Error Display */}
-          {frpStatus?.last_error &&
-            (() => {
-              const frpErrorEl = (
-                <div
-                  style="cursor: help;"
-                  title={frpStatus.last_error}
-                  id="frp-error-value"
-                >
-                  <strong style="font-size: 0.95em; font-weight: 600; color: #dc3545;">
-                    {this.truncateError(frpStatus.last_error, 50)}
-                  </strong>
-                </div>
-              );
-              this.frpErrorEl = frpErrorEl as HTMLElement;
-              return this.card(_("FRP Error"), frpErrorEl);
-            })()}
         </div>
 
         {/* Activity Log Section */}
         {events && events.length > 0 && this.renderActivityLog(events)}
       </div>
     );
-  }
-
-  private getFrpStatusColor(frpStatus: FrpStatus): string {
-    if (!frpStatus.frp_enabled) return "#6c757d";
-    switch (frpStatus.frp_status) {
-      case "connected":
-        return "#28a745";
-      case "connecting":
-        return "#ffc107";
-      case "error":
-        return "#dc3545";
-      case "stopped":
-        return "#6c757d";
-      default:
-        return frpStatus.frp_enabled ? "#28a745" : "#6c757d";
-    }
-  }
-
-  private getFrpStatusText(frpStatus: FrpStatus): string {
-    if (!frpStatus.frp_enabled) return _("Disabled");
-    if (frpStatus.frp_status) {
-      switch (frpStatus.frp_status) {
-        case "connected":
-          return _("Connected");
-        case "connecting":
-          return _("Connecting");
-        case "error":
-          return _("Error");
-        case "stopped":
-          return _("Stopped");
-        default:
-          return frpStatus.frp_status;
-      }
-    }
-    return _("Enabled");
   }
 
   private truncateError(error: string, maxLen: number): string {

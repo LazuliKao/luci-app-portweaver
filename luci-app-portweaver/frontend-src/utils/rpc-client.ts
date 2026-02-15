@@ -29,7 +29,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
 
   const getFrpcStatus = rpc.declare<FrpStatus>({
     object: "portweaver",
-    method: "get_frpc_status",
+    method: "get_frp_status",
   });
   const getFrpcInfo = rpc.declare<InfoResponse, [id: string]>({
     object: "portweaver",

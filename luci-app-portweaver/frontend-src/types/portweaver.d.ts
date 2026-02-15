@@ -29,15 +29,29 @@ export interface ProjectStatus {
   forwarders?: ForwarderStats[];
 }
 
+export interface FrpcStatus {
+  enabled: boolean;
+  version?: string;
+  status?: string;
+  last_error?: string;
+  client_count?: number;
+}
+
+export interface FrpsStatus {
+  enabled: boolean;
+  version?: string;
+  status?: string;
+  last_error?: string;
+  client_count?: number;
+  proxy_count?: number;
+  server_count?: number;
+}
+
 export interface FrpStatus {
   frp_enabled?: boolean;
   frp_version?: string;
-  /** Current FRP client status: connected, connecting, error, stopped */
-  frp_status?: string;
-  /** Last error message from FRP client */
-  last_error?: string;
-  /** Number of active FRP clients */
-  client_count?: number;
+  frpc?: FrpcStatus;
+  frps?: FrpsStatus;
 }
 
 /** A single event in the activity log */

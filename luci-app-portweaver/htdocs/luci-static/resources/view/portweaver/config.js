@@ -191,7 +191,7 @@ function createRpcClient(rpc) {
     });
     const getFrpcStatus = rpc.declare({
         object: "portweaver",
-        method: "get_frpc_status"
+        method: "get_frp_status"
     });
     const getFrpcInfo = rpc.declare({
         object: "portweaver",
@@ -396,6 +396,62 @@ class Client {
             style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(bgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
         }, rows);
     }
+    updateFrpCard(status, globalVersion, enabledEl, versionEl, statusEl, infoEl, errorEl) {
+        let type = arguments.length > 7 && arguments[7] !== void 0 ? arguments[7] : "frpc";
+        const isEnabled = (status === null || status === void 0 ? void 0 : status.enabled) || false;
+        if (enabledEl) {
+            enabledEl.textContent = isEnabled ? _("Enabled") : _("Disabled");
+            enabledEl.style.color = isEnabled ? "#28a745" : "#6c757d";
+        }
+        if (versionEl) versionEl.textContent = isEnabled && globalVersion ? globalVersion : "";
+        if (statusEl) {
+            if (isEnabled && (status === null || status === void 0 ? void 0 : status.status)) {
+                let statusText = status.status;
+                let color = "#6c757d";
+                switch(status.status){
+                    case "running":
+                        statusText = _("Running");
+                        color = "#28a745";
+                        break;
+                    case "stopped":
+                        statusText = _("Stopped");
+                        color = "#dc3545";
+                        break;
+                    case "error":
+                        statusText = _("Error");
+                        color = "#dc3545";
+                        break;
+                }
+                statusEl.textContent = statusText;
+                statusEl.style.color = color;
+                statusEl.style.display = "block";
+            } else statusEl.style.display = "none";
+        }
+        if (infoEl) {
+            if (isEnabled) {
+                const parts = [];
+                if ((status === null || status === void 0 ? void 0 : status.client_count) !== undefined) parts.push("".concat(status.client_count, " ").concat(_("clients")));
+                if (type === "frps") {
+                    const frpsStatus = status;
+                    if (frpsStatus.proxy_count !== undefined) parts.push("".concat(frpsStatus.proxy_count, " ").concat(_("proxies")));
+                    if (frpsStatus.server_count !== undefined) parts.push("".concat(frpsStatus.server_count, " ").concat(_("servers")));
+                }
+                infoEl.textContent = parts.join(" | ");
+                infoEl.style.display = parts.length > 0 ? "block" : "none";
+            } else infoEl.style.display = "none";
+        }
+        if (errorEl) {
+            if (status === null || status === void 0 ? void 0 : status.last_error) {
+                const truncated = status.last_error.length > 50 ? "".concat(status.last_error.substring(0, 47), "...") : status.last_error;
+                errorEl.title = status.last_error;
+                errorEl.innerHTML = "";
+                errorEl.appendChild(/*#__PURE__*/ createJsxElement("strong", {
+                    style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
+                }, truncated));
+                errorEl.style.display = "block";
+            } else errorEl.style.display = "none";
+        }
+    }
     updateProjectHealthIndicator() {
         var _this_projectStatuses, _this_statusPanel;
         const enabledProjects = ((_this_projectStatuses = this.projectStatuses) === null || _this_projectStatuses === void 0 ? void 0 : _this_projectStatuses.filter((p)=>p.enabled)) || [];
@@ -492,7 +548,7 @@ class Client {
         };
         L.Poll.add(async ()=>{
             try {
-                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7, _this_statusPanel8, _this_statusPanel9;
+                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7;
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
@@ -524,16 +580,15 @@ class Client {
                 if ((_this_statusPanel3 = this.statusPanel) === null || _this_statusPanel3 === void 0 ? void 0 : _this_statusPanel3.uptimeEl) this.statusPanel.uptimeEl.textContent = formatUptime(this.globalStatus.uptime || 0);
                 if ((_this_statusPanel4 = this.statusPanel) === null || _this_statusPanel4 === void 0 ? void 0 : _this_statusPanel4.trafficInEl) this.statusPanel.trafficInEl.textContent = formatBytes(this.globalStatus.total_bytes_in || 0);
                 if ((_this_statusPanel5 = this.statusPanel) === null || _this_statusPanel5 === void 0 ? void 0 : _this_statusPanel5.trafficOutEl) this.statusPanel.trafficOutEl.textContent = formatBytes(this.globalStatus.total_bytes_out || 0);
-                if ((_this_statusPanel6 = this.statusPanel) === null || _this_statusPanel6 === void 0 ? void 0 : _this_statusPanel6.frpEnabledEl) {
-                    this.statusPanel.frpEnabledEl.textContent = this.frpStatus.frp_enabled ? _("Enabled") : _("Disabled");
-                    this.statusPanel.frpEnabledEl.style.color = this.frpStatus.frp_enabled ? "#28a745" : "#6c757d";
+                if (this.statusPanel) {
+                    this.updateFrpCard(this.frpStatus.frpc, this.frpStatus.frp_version, this.statusPanel.frpcEnabledEl, this.statusPanel.frpcVersionEl, this.statusPanel.frpcStatusEl, this.statusPanel.frpcInfoEl, this.statusPanel.frpcErrorEl, "frpc");
+                    this.updateFrpCard(this.frpStatus.frps, this.frpStatus.frp_version, this.statusPanel.frpsEnabledEl, this.statusPanel.frpsVersionEl, this.statusPanel.frpsStatusEl, this.statusPanel.frpsInfoEl, this.statusPanel.frpsErrorEl, "frps");
                 }
-                if (((_this_statusPanel7 = this.statusPanel) === null || _this_statusPanel7 === void 0 ? void 0 : _this_statusPanel7.frpVersionEl) && this.frpStatus.frp_version) this.statusPanel.frpVersionEl.textContent = this.frpStatus.frp_version;
-                if ((_this_statusPanel8 = this.statusPanel) === null || _this_statusPanel8 === void 0 ? void 0 : _this_statusPanel8.ddnsEnabledEl) {
+                if ((_this_statusPanel6 = this.statusPanel) === null || _this_statusPanel6 === void 0 ? void 0 : _this_statusPanel6.ddnsEnabledEl) {
                     this.statusPanel.ddnsEnabledEl.textContent = this.ddnsGlobalStatus.ddns_enabled ? _("Enabled") : _("Disabled");
                     this.statusPanel.ddnsEnabledEl.style.color = this.ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d";
                 }
-                if (((_this_statusPanel9 = this.statusPanel) === null || _this_statusPanel9 === void 0 ? void 0 : _this_statusPanel9.ddnsVersionEl) && this.ddnsGlobalStatus.ddns_version) this.statusPanel.ddnsVersionEl.textContent = this.ddnsGlobalStatus.ddns_version;
+                if (((_this_statusPanel7 = this.statusPanel) === null || _this_statusPanel7 === void 0 ? void 0 : _this_statusPanel7.ddnsVersionEl) && this.ddnsGlobalStatus.ddns_version) this.statusPanel.ddnsVersionEl.textContent = this.ddnsGlobalStatus.ddns_version;
                 this.updateProjectHealthIndicator();
                 this.updateFrpErrorDisplay();
                 this.updateActivityLog();
@@ -1408,7 +1463,7 @@ const STATUS_LABELS = {
 const nodeStatuses = {};
 const frpc_statusElements = {};
 const actionButtons = {};
-/* export default */ function frpc(_m, s, tab_id) {
+/* export default */ function modules_frpc(_m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, frpc_form.SectionValue, "_frpc_nodes", frpc_form.GridSection, "frpc_node");
     const ss = o.subsection;
@@ -1646,7 +1701,7 @@ const frps_STATUS_LABELS = {
 const frps_nodeStatuses = {};
 const frps_statusElements = {};
 const frps_actionButtons = {};
-/* export default */ function frps(_m, s, tab_id) {
+/* export default */ function modules_frps(_m, s, tab_id) {
     let o;
     o = s.taboption(tab_id, frps_form.SectionValue, "_frps_nodes", frps_form.GridSection, "frps_node");
     const ss = o.subsection;
@@ -1747,13 +1802,13 @@ const frps_actionButtons = {};
     o.modalonly = true;
     o.rmempty = true;
     o.placeholder = "admin";
-    o.depends("dashboard_port", "");
+    o.depends("dashboard_port", /\S+/);
     o = ss.option(frps_form.Value, "dashboard_pwd", _("Dashboard Password"));
     o.modalonly = true;
     o.password = true;
     o.rmempty = true;
     o.placeholder = "admin";
-    o.depends("dashboard_port", "");
+    o.depends("dashboard_port", /\S+/);
     o = ss.option(frps_form.DummyValue, "actions", _("Actions"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
@@ -2901,19 +2956,67 @@ class StatusPanel {
         }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
         }, _("projects running")))), frpStatus && (()=>{
-            const frpEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600; color: ".concat(this.getFrpStatusColor(frpStatus), ";"),
-                id: "frp-enabled-value"
-            }, this.getFrpStatusText(frpStatus));
-            this.frpEnabledEl = frpEnabledEl;
-            const frpVersionEl = frpStatus.frp_version ? /*#__PURE__*/ createJsxElement("div", {
+            const frpc = frpStatus.frpc || {
+                enabled: false
+            };
+            const isEnabled = frpc.enabled;
+            const frpcEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600; color: ".concat(isEnabled ? "#28a745" : "#6c757d", ";"),
+                id: "frpc-enabled-value"
+            }, isEnabled ? _("Enabled") : _("Disabled"));
+            this.frpcEnabledEl = frpcEnabledEl;
+            const frpcVersionEl = /*#__PURE__*/ createJsxElement("div", {
                 style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
-                id: "frp-version-value"
-            }, frpStatus.frp_version) : null;
-            if (frpVersionEl) this.frpVersionEl = frpVersionEl;
-            return this.card(_("FRP Status"), /*#__PURE__*/ createJsxElement("div", null, frpEnabledEl, frpVersionEl, frpStatus.client_count !== undefined && frpStatus.client_count > 0 && /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;"
-            }, frpStatus.client_count, " ", _("client(s)"))));
+                id: "frpc-version-value"
+            }, isEnabled && frpStatus.frp_version ? frpStatus.frp_version : "");
+            this.frpcVersionEl = frpcVersionEl;
+            const frpcStatusEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; margin-top: 0.2em;",
+                id: "frpc-status-value"
+            });
+            this.frpcStatusEl = frpcStatusEl;
+            const frpcInfoEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
+                id: "frpc-info-value"
+            });
+            this.frpcInfoEl = frpcInfoEl;
+            const frpcErrorEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
+                id: "frpc-error-value"
+            });
+            this.frpcErrorEl = frpcErrorEl;
+            return this.card("FRPC", /*#__PURE__*/ createJsxElement("div", null, frpcEnabledEl, frpcVersionEl, frpcStatusEl, frpcInfoEl, frpcErrorEl));
+        })(), frpStatus && (()=>{
+            const frps = frpStatus.frps || {
+                enabled: false
+            };
+            const isEnabled = frps.enabled;
+            const frpsEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
+                style: "font-size: 1.1em; font-weight: 600; color: ".concat(isEnabled ? "#28a745" : "#6c757d", ";"),
+                id: "frps-enabled-value"
+            }, isEnabled ? _("Enabled") : _("Disabled"));
+            this.frpsEnabledEl = frpsEnabledEl;
+            const frpsVersionEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                id: "frps-version-value"
+            }, isEnabled && frpStatus.frp_version ? frpStatus.frp_version : "");
+            this.frpsVersionEl = frpsVersionEl;
+            const frpsStatusEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; margin-top: 0.2em;",
+                id: "frps-status-value"
+            });
+            this.frpsStatusEl = frpsStatusEl;
+            const frpsInfoEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
+                id: "frps-info-value"
+            });
+            this.frpsInfoEl = frpsInfoEl;
+            const frpsErrorEl = /*#__PURE__*/ createJsxElement("div", {
+                style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
+                id: "frps-error-value"
+            });
+            this.frpsErrorEl = frpsErrorEl;
+            return this.card("FRPS", /*#__PURE__*/ createJsxElement("div", null, frpsEnabledEl, frpsVersionEl, frpsStatusEl, frpsInfoEl, frpsErrorEl));
         })(), ddnsGlobalStatus && (()=>{
             const ddnsEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "font-size: 1.1em; font-weight: 600; color: ".concat(ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d", ";"),
@@ -2926,48 +3029,7 @@ class StatusPanel {
             }, ddnsGlobalStatus.ddns_version) : null;
             if (ddnsVersionEl) this.ddnsVersionEl = ddnsVersionEl;
             return this.card(_("DDNS-GO"), /*#__PURE__*/ createJsxElement("div", null, ddnsEnabledEl, ddnsVersionEl));
-        })(), (frpStatus === null || frpStatus === void 0 ? void 0 : frpStatus.last_error) && (()=>{
-            const frpErrorEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "cursor: help;",
-                title: frpStatus.last_error,
-                id: "frp-error-value"
-            }, /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
-            }, this.truncateError(frpStatus.last_error, 50)));
-            this.frpErrorEl = frpErrorEl;
-            return this.card(_("FRP Error"), frpErrorEl);
         })()), events && events.length > 0 && this.renderActivityLog(events));
-    }
-    getFrpStatusColor(frpStatus) {
-        if (!frpStatus.frp_enabled) return "#6c757d";
-        switch(frpStatus.frp_status){
-            case "connected":
-                return "#28a745";
-            case "connecting":
-                return "#ffc107";
-            case "error":
-                return "#dc3545";
-            case "stopped":
-                return "#6c757d";
-            default:
-                return frpStatus.frp_enabled ? "#28a745" : "#6c757d";
-        }
-    }
-    getFrpStatusText(frpStatus) {
-        if (!frpStatus.frp_enabled) return _("Disabled");
-        if (frpStatus.frp_status) switch(frpStatus.frp_status){
-            case "connected":
-                return _("Connected");
-            case "connecting":
-                return _("Connecting");
-            case "error":
-                return _("Error");
-            case "stopped":
-                return _("Stopped");
-            default:
-                return frpStatus.frp_status;
-        }
-        return _("Enabled");
     }
     truncateError(error, maxLen) {
         if (error.length <= maxLen) return error;
@@ -3042,9 +3104,16 @@ class StatusPanel {
         _define_property(this, "trafficInEl", void 0);
         _define_property(this, "trafficOutEl", void 0);
         _define_property(this, "projectHealthEl", void 0);
-        _define_property(this, "frpEnabledEl", void 0);
-        _define_property(this, "frpVersionEl", void 0);
-        _define_property(this, "frpErrorEl", void 0);
+        _define_property(this, "frpcEnabledEl", void 0);
+        _define_property(this, "frpcVersionEl", void 0);
+        _define_property(this, "frpcStatusEl", void 0);
+        _define_property(this, "frpcInfoEl", void 0);
+        _define_property(this, "frpcErrorEl", void 0);
+        _define_property(this, "frpsEnabledEl", void 0);
+        _define_property(this, "frpsVersionEl", void 0);
+        _define_property(this, "frpsStatusEl", void 0);
+        _define_property(this, "frpsInfoEl", void 0);
+        _define_property(this, "frpsErrorEl", void 0);
         _define_property(this, "ddnsEnabledEl", void 0);
         _define_property(this, "ddnsVersionEl", void 0);
         _define_property(this, "activityLogContainer", void 0);
@@ -3755,8 +3824,8 @@ class main extends L.view {
         modules_header(m, s, client, "settings");
         config(m, s, client, "projects");
         ddns(m, s, "ddns");
-        frpc(m, s, "frpc");
-        frps(m, s, "frps");
+        modules_frpc(m, s, "frpc");
+        modules_frps(m, s, "frps");
         logs(m, s, "logs");
         return m.render();
     }
