@@ -151,11 +151,46 @@ export default function (
     return true;
   };
 
-  o = ss.option(form.Value, "token", _("Authentication Token"));
+  o = ss.option(form.Value, "bind_addr", _("Bind Address"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.datatype = "host";
+  o.placeholder = "0.0.0.0";
+  o.default = "0.0.0.0";
+
+  o = ss.option(form.Value, "auth_token", _("Authentication Token"));
   o.modalonly = true;
   o.password = true;
   o.rmempty = true;
   o.placeholder = "optional token for authentication";
+
+  o = ss.option(form.Value, "allow_ports", _("Allow Ports"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.placeholder = "10000-20000 or 8080,8081,8082";
+  o.description = _(
+    "Port range or list of ports that clients can use. e.g., '10000-20000' or '8080,8081,8082'",
+  );
+
+  o = ss.option(form.Flag, "tcp_mux", _("TCP Mux"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.default = "1";
+  o.description = _("Enable TCP multiplexing for better performance");
+
+  o = ss.option(form.Value, "max_pool_count", _("Max Pool Count"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.datatype = "uinteger";
+  o.placeholder = "5";
+  o.description = _("Maximum connection pool size per proxy");
+
+  o = ss.option(form.Value, "max_ports_per_client", _("Max Ports Per Client"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.datatype = "uinteger";
+  o.placeholder = "0";
+  o.description = _("Maximum number of ports per client (0 = unlimited)");
 
   o = ss.option(form.ListValue, "log_level", _("Log Level"));
   o.modalonly = true;
@@ -166,6 +201,13 @@ export default function (
   o.value("info", "Info");
   o.value("warn", "Warning");
   o.value("error", "Error");
+
+  o = ss.option(form.Value, "dashboard_addr", _("Dashboard Address"));
+  o.modalonly = true;
+  o.rmempty = true;
+  o.datatype = "host";
+  o.placeholder = "0.0.0.0";
+  o.default = "0.0.0.0";
 
   o = ss.option(form.Value, "dashboard_port", _("Dashboard Port"));
   o.modalonly = true;
