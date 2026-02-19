@@ -27,7 +27,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["id", "enabled"],
   });
 
-  const getFrpcStatus = rpc.declare<FrpStatus>({
+  const getFrpStatus = rpc.declare<FrpStatus>({
     object: "portweaver",
     method: "get_frp_status",
   });
@@ -98,7 +98,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
     getStatus,
     listProjects,
     setEnabled,
-    getFrpcStatus,
+    getFrpStatus,
     getFrpcInfo,
     getFrpcProxyStats,
     clearFrpcLogs,

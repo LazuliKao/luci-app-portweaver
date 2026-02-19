@@ -39,7 +39,7 @@ export class main extends L.view {
           return { projects: [] } as { projects: ProjectStatus[] };
         }),
       rpcClient
-        .getFrpcStatus()
+        .getFrpStatus()
         .then((res: FrpStatus) => res || { frp_enabled: false })
         .catch((err: any) => {
           console.warn("ubus get_frpc_status failed:", err);

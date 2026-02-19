@@ -189,7 +189,7 @@ function createRpcClient(rpc) {
             "enabled"
         ]
     });
-    const getFrpcStatus = rpc.declare({
+    const getFrpStatus = rpc.declare({
         object: "portweaver",
         method: "get_frp_status"
     });
@@ -265,7 +265,7 @@ function createRpcClient(rpc) {
         getStatus,
         listProjects,
         setEnabled,
-        getFrpcStatus,
+        getFrpStatus,
         getFrpcInfo,
         getFrpcProxyStats,
         clearFrpcLogs,
@@ -552,7 +552,7 @@ class Client {
                 const results = await Promise.all([
                     rpcClient.getStatus(),
                     rpcClient.listProjects(),
-                    rpcClient.getFrpcStatus(),
+                    rpcClient.getFrpStatus(),
                     rpcClient.getEvents(),
                     rpcClient.getDdnsGlobalStatus()
                 ]);
@@ -1508,15 +1508,11 @@ const actionButtons = {};
             stopped: _("Stopped"),
             unavailable: _("Unavailable")
         }[info.status] || info.status;
-        const indicator = /*#__PURE__*/ createJsxElement("span", {
-            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
-        });
-        const textSpan = /*#__PURE__*/ createJsxElement("span", null, statusText);
         const container = /*#__PURE__*/ createJsxElement("span", {
             style: "display:flex; align-items:center;"
-        });
-        container.appendChild(indicator);
-        container.appendChild(textSpan);
+        }, /*#__PURE__*/ createJsxElement("span", {
+            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
+        }), /*#__PURE__*/ createJsxElement("span", null, statusText));
         frpc_statusElements[section_id] = container;
         return container;
     };
@@ -1579,8 +1575,8 @@ const actionButtons = {};
                 const logViewer = new LogViewerDialog({
                     name: nodeName,
                     title: _("FRP Logs - %s").format(nodeName),
-                    fetcher: async ()=>await rpcClient.getFrpcInfo(String(nodeName)),
-                    clearer: rpcClient.clearFrpcLogs.bind(rpcClient)
+                    fetcher: async ()=>await rpcClient.getFrpcInfo(nodeName),
+                    clearer: async ()=>await rpcClient.clearFrpcLogs(nodeName)
                 });
                 logViewer.open();
             },
@@ -1684,6 +1680,7 @@ function frps_getStatusColors() {
     const errorColor = isDark ? "#FF5252" : "#F44336"; // Brighter red for dark mode
     const inactiveColor = isDark ? "#BDBDBD" : "#9E9E9E"; // Lighter gray for dark mode
     return {
+        running: connectedColor,
         connected: connectedColor,
         connecting: connectingColor,
         error: errorColor,
@@ -1692,6 +1689,7 @@ function frps_getStatusColors() {
     };
 }
 const frps_STATUS_LABELS = {
+    running: _("Running"),
     connected: _("Connected"),
     connecting: _("Connecting"),
     error: _("Error"),
@@ -1740,21 +1738,18 @@ const frps_actionButtons = {};
         const colors = frps_getStatusColors();
         const statusColor = colors[info.status] || colors.unavailable;
         const statusText = {
+            running: _("Running"),
             connected: _("Connected"),
             connecting: _("Connecting"),
             error: _("Error"),
             stopped: _("Stopped"),
             unavailable: _("Unavailable")
         }[info.status] || info.status;
-        const indicator = /*#__PURE__*/ createJsxElement("span", {
-            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
-        });
-        const textSpan = /*#__PURE__*/ createJsxElement("span", null, statusText);
         const container = /*#__PURE__*/ createJsxElement("span", {
             style: "display:flex; align-items:center;"
-        });
-        container.appendChild(indicator);
-        container.appendChild(textSpan);
+        }, /*#__PURE__*/ createJsxElement("span", {
+            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
+        }), /*#__PURE__*/ createJsxElement("span", null, statusText));
         frps_statusElements[section_id] = container;
         return container;
     };
@@ -1856,7 +1851,8 @@ const frps_actionButtons = {};
                 const logViewer = new LogViewerDialog({
                     name: nodeName,
                     title: _("FRPS Logs - %s").format(nodeName),
-                    clearer: rpcClient.clearFrpsLogs.bind(rpcClient)
+                    fetcher: async ()=>await rpcClient.getFrpsInfo(nodeName),
+                    clearer: async ()=>await rpcClient.clearFrpsLogs(nodeName)
                 });
                 logViewer.open();
             },
@@ -1876,6 +1872,7 @@ const frps_actionButtons = {};
                     const oldStatus = (_nodeStatuses_sec_name = frps_nodeStatuses[sec[".name"]]) === null || _nodeStatuses_sec_name === void 0 ? void 0 : _nodeStatuses_sec_name.status;
                     const rawStatus = (_res_status = res.status) !== null && _res_status !== void 0 ? _res_status : "unavailable";
                     const newStatus = [
+                        "running",
                         "connected",
                         "connecting",
                         "error",
@@ -3813,7 +3810,7 @@ class main extends L.view {
                     projects: []
                 };
             }),
-            rpcClient.getFrpcStatus().then((res)=>res || {
+            rpcClient.getFrpStatus().then((res)=>res || {
                     frp_enabled: false
                 }).catch((err)=>{
                 console.warn("ubus get_frpc_status failed:", err);

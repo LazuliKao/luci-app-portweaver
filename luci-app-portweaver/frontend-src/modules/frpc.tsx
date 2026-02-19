@@ -115,19 +115,14 @@ export default function (
         unavailable: _("Unavailable"),
       }[info.status] || info.status;
 
-    const indicator = (
-      <span
-        style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${statusColor}; margin-right:8px;`}
-      ></span>
-    ) as HTMLElement;
-
-    const textSpan = (<span>{statusText}</span>) as HTMLElement;
-
     const container = (
-      <span style="display:flex; align-items:center;"></span>
+      <span style="display:flex; align-items:center;">
+        <span
+          style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${statusColor}; margin-right:8px;`}
+        ></span>
+        <span>{statusText}</span>
+      </span>
     ) as HTMLElement;
-    container.appendChild(indicator);
-    container.appendChild(textSpan);
 
     statusElements[section_id] = container;
     return container;
@@ -208,8 +203,8 @@ export default function (
           const logViewer = new LogViewerDialog({
             name: nodeName,
             title: _("FRP Logs - %s").format(nodeName),
-            fetcher: async () => await rpcClient.getFrpcInfo(String(nodeName)),
-            clearer: rpcClient.clearFrpcLogs.bind(rpcClient),
+            fetcher: async () => await rpcClient.getFrpcInfo(nodeName),
+            clearer: async () => await rpcClient.clearFrpcLogs(nodeName),
           });
           logViewer.open();
         }}

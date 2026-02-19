@@ -4,6 +4,7 @@ import { getThemeColors } from "../utils/theme-utils";
 const form = L.form;
 
 type FrpsState =
+  | "running"
   | "connected"
   | "connecting"
   | "error"
@@ -19,6 +20,7 @@ function getStatusColors(): Record<FrpsState, string> {
   const inactiveColor = isDark ? "#BDBDBD" : "#9E9E9E"; // Lighter gray for dark mode
 
   return {
+    running: connectedColor,
     connected: connectedColor,
     connecting: connectingColor,
     error: errorColor,
@@ -28,6 +30,7 @@ function getStatusColors(): Record<FrpsState, string> {
 }
 
 const STATUS_LABELS: Record<FrpsState, string> = {
+  running: _("Running"),
   connected: _("Connected"),
   connecting: _("Connecting"),
   error: _("Error"),
@@ -107,6 +110,7 @@ export default function (
 
     const statusText =
       {
+        running: _("Running"),
         connected: _("Connected"),
         connecting: _("Connecting"),
         error: _("Error"),
@@ -114,19 +118,14 @@ export default function (
         unavailable: _("Unavailable"),
       }[info.status] || info.status;
 
-    const indicator = (
-      <span
-        style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${statusColor}; margin-right:8px;`}
-      ></span>
-    ) as HTMLElement;
-
-    const textSpan = (<span>{statusText}</span>) as HTMLElement;
-
     const container = (
-      <span style="display:flex; align-items:center;"></span>
+      <span style="display:flex; align-items:center;">
+        <span
+          style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${statusColor}; margin-right:8px;`}
+        ></span>
+        <span>{statusText}</span>
+      </span>
     ) as HTMLElement;
-    container.appendChild(indicator);
-    container.appendChild(textSpan);
 
     statusElements[section_id] = container;
     return container;
@@ -254,7 +253,8 @@ export default function (
           const logViewer = new LogViewerDialog({
             name: nodeName,
             title: _("FRPS Logs - %s").format(nodeName),
-            clearer: rpcClient.clearFrpsLogs.bind(rpcClient),
+            fetcher: async () => await rpcClient.getFrpsInfo(nodeName),
+            clearer: async () => await rpcClient.clearFrpsLogs(nodeName),
           });
           logViewer.open();
         }}
@@ -273,12 +273,15 @@ export default function (
       const sections = await L.uci.sections("portweaver", "frps_node");
       const promises = sections.map((sec: any) => {
         const nodeName = sec.name as string;
+
         return rpcClient
           .getFrpsInfo(nodeName)
           .then((res) => {
             const oldStatus = nodeStatuses[sec[".name"]]?.status;
+
             const rawStatus = res.status ?? "unavailable";
             const newStatus: FrpsState = [
+              "running",
               "connected",
               "connecting",
               "error",
@@ -295,6 +298,7 @@ export default function (
 
             if (oldStatus !== newStatus) {
               const container = statusElements[sec[".name"]];
+
               if (container && container.childNodes.length >= 2) {
                 const indicator = container.childNodes[0] as HTMLElement;
                 const textSpan = container.childNodes[1] as HTMLElement;
