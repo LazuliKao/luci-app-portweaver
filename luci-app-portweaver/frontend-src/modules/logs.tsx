@@ -21,6 +21,22 @@ export default function (
   o.rmempty = false;
   o.description = _("Enable logging output to /tmp/portweaver.log");
 
+  o = s.taboption(tab_id, form.Value, "max_log_size", _("Max Log Size (KB)"));
+  o.datatype = "uinteger";
+  o.default = "1024";
+  o.rmempty = false;
+  o.description = _("Maximum size of log file before rotation (default: 1024 KB = 1MB)");
+  o.placeholder = "1024";
+  o.depends("log_enabled", "1");
+
+  o = s.taboption(tab_id, form.Value, "max_log_files", _("Max Log Backup Files"));
+  o.datatype = "uinteger";
+  o.default = "3";
+  o.rmempty = false;
+  o.description = _("Number of rotated log files to keep (default: 3)");
+  o.placeholder = "3";
+  o.depends("log_enabled", "1");
+
   o = s.taboption(tab_id, form.DummyValue, "_logs_viewer");
   o.rawhtml = true;
 
