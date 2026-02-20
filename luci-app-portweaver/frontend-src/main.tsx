@@ -1,13 +1,7 @@
 import "./utils/jsx-factory";
 
 import { Client } from "./modules/client";
-import type {
-  PortWeaverStatus,
-  ProjectStatus,
-  FrpStatus,
-  ActivityEvent,
-  DdnsGlobalStatus,
-} from "./types/portweaver";
+import type { FullStatusResponse } from "./types/portweaver";
 import frpc from "./modules/frpc";
 import frps from "./modules/frps";
 import config from "./modules/config";
@@ -25,45 +19,11 @@ export class main extends L.view {
       uci.load("portweaver"),
       uci.load("firewall"),
       rpcClient
-        .getStatus()
-        .then((res: PortWeaverStatus) => res || {})
+        .getFullStatus()
+        .then((res: FullStatusResponse) => res || {})
         .catch((err: any) => {
-          console.warn("ubus get_status failed:", err);
-          return {} as PortWeaverStatus;
-        }),
-      rpcClient
-        .listProjects()
-        .then((res: { projects: ProjectStatus[] }) => res || { projects: [] })
-        .catch((err: any) => {
-          console.warn("ubus list_projects failed:", err);
-          return { projects: [] } as { projects: ProjectStatus[] };
-        }),
-      rpcClient
-        .getFrpStatus()
-        .then((res: FrpStatus) => res || { frp_enabled: false })
-        .catch((err: any) => {
-          console.warn("ubus get_frpc_status failed:", err);
-          return { frp_enabled: false } as FrpStatus;
-        }),
-      rpcClient
-        .getEvents()
-        .then((res: { events: ActivityEvent[] }) => res?.events || [])
-        .catch((err: any) => {
-          console.warn("ubus get_events failed:", err);
-          return [] as ActivityEvent[];
-        }),
-      rpcClient
-        .getDdnsGlobalStatus()
-        .then(
-          (res: DdnsGlobalStatus) =>
-            res || { ddns_enabled: false, ddns_version: null },
-        )
-        .catch((err: any) => {
-          console.warn("ubus get_ddns_global_status failed:", err);
-          return {
-            ddns_enabled: false,
-            ddns_version: null,
-          } as DdnsGlobalStatus;
+          console.warn("ubus get_full_status failed:", err);
+          return {} as FullStatusResponse;
         }),
     ]);
   }
@@ -86,7 +46,8 @@ export class main extends L.view {
     s.tab("frps", _("FRP Server"));
     s.tab("logs", _("System Logs"));
 
-    const client = new Client([data[2], data[3], data[4], data[5], data[6]]);
+    const fullStatus: FullStatusResponse = data[2] as FullStatusResponse;
+    const client = new Client(fullStatus);
 
     header(m, s, client, "settings");
     config(m, s, client, "projects");

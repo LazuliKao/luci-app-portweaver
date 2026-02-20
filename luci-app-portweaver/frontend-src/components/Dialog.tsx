@@ -121,7 +121,7 @@ export class Dialog {
     }
 
     if (this.contentEl) {
-      this.contentEl.innerHTML = "";
+      this.contentEl.textContent = "";
       const msg = options.message;
       if (Array.isArray(msg)) {
         msg.forEach((m) => {

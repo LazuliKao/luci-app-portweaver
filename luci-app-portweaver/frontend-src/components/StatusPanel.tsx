@@ -5,7 +5,11 @@ import type {
   ActivityEvent,
   DdnsGlobalStatus,
 } from "../types/portweaver";
-import { formatBytes, formatUptime } from "../utils/formatters";
+import {
+  formatBytes,
+  formatUptime,
+  translateStatus,
+} from "../utils/formatters";
 
 export class StatusPanel {
   public statusValueEl?: HTMLElement;
@@ -28,6 +32,12 @@ export class StatusPanel {
   public ddnsEnabledEl?: HTMLElement;
   public ddnsVersionEl?: HTMLElement;
   public activityLogContainer?: HTMLElement;
+  public trafficRateInEl?: HTMLElement;
+  public trafficRateOutEl?: HTMLElement;
+  public projectListEl?: HTMLElement;
+  public frpcProxiesEl?: HTMLElement;
+  public frpsProxiesEl?: HTMLElement;
+  public ddnsHealthEl?: HTMLElement;
 
   render(
     status: PortWeaverStatus,
@@ -59,7 +69,7 @@ export class StatusPanel {
                 style={`color: ${statusColor}; font-size: 1.1em; font-weight: 600;`}
                 id="status-value"
               >
-                {status.status || "-"}
+                {translateStatus(status.status) || "-"}
               </strong>
             );
             this.statusValueEl = statusValueEl as HTMLElement;
@@ -310,6 +320,61 @@ export class StatusPanel {
                 </div>,
               );
             })()}
+
+          {/* Card A: Traffic Rate */}
+          {(() => {
+            const trafficRateInEl = (
+              <span>{_("calculating")}</span>
+            ) as HTMLElement;
+            const trafficRateOutEl = (
+              <span>{_("calculating")}</span>
+            ) as HTMLElement;
+            this.trafficRateInEl = trafficRateInEl;
+            this.trafficRateOutEl = trafficRateOutEl;
+            return this.card(
+              _("Traffic Rate"),
+              <div>
+                <div style="font-size: 0.85em;">↓ {trafficRateInEl}</div>
+                <div style="font-size: 0.85em;">↑ {trafficRateOutEl}</div>
+              </div>,
+            );
+          })()}
+
+          {/* Card C: Project List */}
+          {(() => {
+            const projectListEl = (
+              <span style="color: #6c757d;">{_("loading")}</span>
+            ) as HTMLElement;
+            this.projectListEl = projectListEl;
+            return this.card(_("Project List"), projectListEl);
+          })()}
+
+          {/* Card F: FRPC Proxies */}
+          {(() => {
+            const frpcProxiesEl = (
+              <span style="color: #6c757d;">{_("loading")}</span>
+            ) as HTMLElement;
+            this.frpcProxiesEl = frpcProxiesEl;
+            return this.card(_("FRPC Proxies"), frpcProxiesEl);
+          })()}
+
+          {/* Card H: FRPS Active Proxies */}
+          {(() => {
+            const frpsProxiesEl = (
+              <span style="color: #6c757d;">{_("loading")}</span>
+            ) as HTMLElement;
+            this.frpsProxiesEl = frpsProxiesEl;
+            return this.card(_("FRPS Active Proxies"), frpsProxiesEl);
+          })()}
+
+          {/* Card J: DDNS Entry Health */}
+          {(() => {
+            const ddnsHealthEl = (
+              <span style="color: #6c757d;">{_("loading")}</span>
+            ) as HTMLElement;
+            this.ddnsHealthEl = ddnsHealthEl;
+            return this.card(_("DDNS Entries"), ddnsHealthEl);
+          })()}
         </div>
 
         {/* Activity Log Section */}

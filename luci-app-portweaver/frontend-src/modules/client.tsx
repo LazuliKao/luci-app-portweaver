@@ -1,12 +1,16 @@
 import type {
-  PortWeaverStatus,
-  ProjectStatus,
-  FrpStatus,
+  ActivityEvent,
+  DdnsGlobalStatus,
+  ForwarderStats,
   FrpcStatus,
   FrpsStatus,
-  ActivityEvent,
-  ForwarderStats,
-  DdnsGlobalStatus,
+  FrpStatus,
+  FullStatusDdnsInstance,
+  FullStatusFrpcNode,
+  FullStatusFrpsNode,
+  FullStatusResponse,
+  PortWeaverStatus,
+  ProjectStatus,
 } from "../types/portweaver";
 import {
   formatBytes,
@@ -18,48 +22,41 @@ import { rpcClient } from "../utils/rpc-client";
 import { getThemeColors } from "../utils/theme-utils";
 import type { StatusPanel } from "../components/StatusPanel";
 export class Client {
-  globalStatus: PortWeaverStatus;
   projectStatuses: ProjectStatus[];
+  globalStatus: PortWeaverStatus;
   frpStatus: FrpStatus;
-  events: ActivityEvent[];
   ddnsGlobalStatus: DdnsGlobalStatus;
+  events: ActivityEvent[];
   // References to UI elements provided by StatusPanel and config
   statusPanel?: StatusPanel;
   projectContainers: Record<string, HTMLElement> = {};
-  constructor(
-    data: [
-      PortWeaverStatus,
-      { projects: ProjectStatus[] },
-      FrpStatus,
-      ActivityEvent[],
-      DdnsGlobalStatus,
-    ],
-  ) {
-    this.globalStatus = data[0] || {};
-    this.projectStatuses = data[1] ? data[1].projects || [] : [];
-    this.frpStatus = data[2] || { frp_enabled: false };
-    this.events = data[3] || [];
-    this.ddnsGlobalStatus = data[4] || {
-      ddns_enabled: false,
-      ddns_version: null,
-    };
+  private _lastPollTime = 0;
+  ddnsInstances: FullStatusDdnsInstance[] = [];
+  frpClientNodes: FullStatusFrpcNode[] = [];
+  frpServerNodes: FullStatusFrpsNode[] = [];
+  constructor(fullStatus: FullStatusResponse) {
+    this.projectStatuses = [];
+    this.globalStatus = {};
+    this.frpStatus = {};
+    this.ddnsGlobalStatus = { ddns_enabled: false, ddns_version: null };
+    this.events = [];
+
+    this.applyFullStatus(fullStatus);
     L.Poll.add(async () => {
       try {
-        const results = await Promise.all([
-          rpcClient.getStatus(),
+        const prevBytesIn = this.globalStatus.total_bytes_in || 0;
+        const prevBytesOut = this.globalStatus.total_bytes_out || 0;
+        const nowMs = Date.now();
+        const [latestStatus, listProjects] = await Promise.all([
+          rpcClient.getFullStatus(),
           rpcClient.listProjects(),
-          rpcClient.getFrpStatus(),
-          rpcClient.getEvents(),
-          rpcClient.getDdnsGlobalStatus(),
         ]);
-        this.globalStatus = results[0] || {};
-        this.projectStatuses = results[1]?.projects ? results[1].projects : [];
-        this.frpStatus = results[2] || { frp_enabled: false };
-        this.events = results[3]?.events || [];
-        this.ddnsGlobalStatus = results[4] || {
-          ddns_enabled: false,
-          ddns_version: null,
-        };
+        if (latestStatus) {
+          this.applyFullStatus(latestStatus);
+        }
+        if (listProjects?.projects) {
+          this.applyProjectList(listProjects.projects);
+        }
 
         const statusColors: Record<string, string> = {
           running: "green",
@@ -137,8 +134,163 @@ export class Client {
         }
 
         this.updateProjectHealthIndicator();
-        this.updateFrpErrorDisplay();
         this.updateActivityLog();
+
+        // Traffic rate
+        if (
+          this.statusPanel?.trafficRateInEl &&
+          this.statusPanel.trafficRateOutEl
+        ) {
+          if (this._lastPollTime > 0) {
+            const elapsed = (nowMs - this._lastPollTime) / 1000;
+            if (elapsed > 0) {
+              const rateIn =
+                Math.max(
+                  0,
+                  (this.globalStatus.total_bytes_in || 0) - prevBytesIn,
+                ) / elapsed;
+              const rateOut =
+                Math.max(
+                  0,
+                  (this.globalStatus.total_bytes_out || 0) - prevBytesOut,
+                ) / elapsed;
+              this.statusPanel.trafficRateInEl.textContent = `${formatBytes(rateIn)}/s`;
+              this.statusPanel.trafficRateOutEl.textContent = `${formatBytes(rateOut)}/s`;
+            }
+          }
+        }
+        this._lastPollTime = nowMs;
+
+        // Project list
+        if (this.statusPanel?.projectListEl) {
+          const projectSections = L.uci.sections("portweaver", "project") || [];
+          const projectListEl = this.statusPanel.projectListEl;
+          projectListEl.innerHTML = "";
+          if (projectSections.length === 0) {
+            projectListEl.appendChild(
+              (
+                <span style="color: #6c757d;">{_("No projects")}</span>
+              ) as HTMLElement,
+            );
+          } else {
+            for (let i = 0; i < projectSections.length; i++) {
+              const sec = projectSections[i];
+              const name = (sec.name as string) || sec[".name"] || `#${i + 1}`;
+              const ps = this.projectStatuses[i];
+              const color =
+                ps?.status === "running"
+                  ? "#28a745"
+                  : ps?.status === "stopped"
+                    ? "#dc3545"
+                    : "#6c757d";
+              projectListEl.appendChild(
+                (
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;">
+                    <span>{name}</span>
+                    <span style={`color: ${color};`}>
+                      {translateStatus(ps?.status || "unknown")}
+                    </span>
+                  </div>
+                ) as HTMLElement,
+              );
+            }
+          }
+        }
+
+        // FRPC proxies (per client node)
+        if (this.statusPanel?.frpcProxiesEl) {
+          const frpcProxiesEl = this.statusPanel.frpcProxiesEl;
+          frpcProxiesEl.innerHTML = "";
+          if (
+            !this.frpStatus.frpc?.enabled ||
+            this.frpClientNodes.length === 0
+          ) {
+            frpcProxiesEl.appendChild(
+              (
+                <span style="color: #6c757d;">{_("disabled")}</span>
+              ) as HTMLElement,
+            );
+          } else {
+            for (const node of this.frpClientNodes) {
+              const color = node.status === "connected" ? "#28a745" : "#dc3545";
+              frpcProxiesEl.appendChild(
+                (
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;">
+                    <span>{node.name}</span>
+                    <span style={`color: ${color};`}>
+                      {`${node.client_count} ${_("clients")}`}
+                    </span>
+                  </div>
+                ) as HTMLElement,
+              );
+            }
+          }
+        }
+
+        // FRPS active proxies (per server node)
+        if (this.statusPanel?.frpsProxiesEl) {
+          const frpsProxiesEl = this.statusPanel.frpsProxiesEl;
+          frpsProxiesEl.innerHTML = "";
+          if (
+            !this.frpStatus.frps?.enabled ||
+            this.frpServerNodes.length === 0
+          ) {
+            frpsProxiesEl.appendChild(
+              (
+                <span style="color: #6c757d;">{_("disabled")}</span>
+              ) as HTMLElement,
+            );
+          } else {
+            for (const node of this.frpServerNodes) {
+              frpsProxiesEl.appendChild(
+                (
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;">
+                    <span>{node.name}</span>
+                    <span style="color: #6c757d;">
+                      {`${node.proxy_count} proxies`}
+                    </span>
+                  </div>
+                ) as HTMLElement,
+              );
+            }
+          }
+        }
+
+        // DDNS entries
+        if (this.statusPanel?.ddnsHealthEl) {
+          const ddnsHealthEl = this.statusPanel.ddnsHealthEl;
+          ddnsHealthEl.innerHTML = "";
+          if (!this.ddnsGlobalStatus.ddns_enabled) {
+            ddnsHealthEl.appendChild(
+              (
+                <span style="color: #6c757d;">{_("disabled")}</span>
+              ) as HTMLElement,
+            );
+          } else if (this.ddnsInstances.length === 0) {
+            ddnsHealthEl.appendChild(
+              (
+                <span style="color: #6c757d;">{_("No entries")}</span>
+              ) as HTMLElement,
+            );
+          } else {
+            for (const inst of this.ddnsInstances) {
+              const color =
+                inst.status === "success"
+                  ? "#28a745"
+                  : inst.status === "error"
+                    ? "#dc3545"
+                    : "#6c757d";
+              ddnsHealthEl.appendChild(
+                (
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;">
+                    <span>{inst.name}</span>
+                    <span style={`color: ${color};`}>{inst.status}</span>
+                  </div>
+                ) as HTMLElement,
+              );
+            }
+          }
+        }
 
         (() => {
           const sections = L.uci.sections("portweaver", "project") || [];
@@ -165,6 +317,131 @@ export class Client {
         console.warn("Auto-refresh failed:", err);
       }
     }, 3);
+  }
+
+  private applyFullStatus(fullStatus?: FullStatusResponse): void {
+    if (!fullStatus) return;
+
+    this.globalStatus = {
+      status: fullStatus.status,
+      total_projects: fullStatus.total_projects,
+      active_ports: fullStatus.active_ports,
+      uptime: fullStatus.uptime,
+      total_bytes_in: fullStatus.total_bytes_in,
+      total_bytes_out: fullStatus.total_bytes_out,
+    };
+
+    this.projectStatuses = (fullStatus.projects || []).map((project) => ({
+      enabled: project.enabled,
+      status: project.status,
+      startup_status: project.startup_status,
+      error_code: project.error_code,
+      active_ports: project.active_ports,
+      bytes_in: project.bytes_in,
+      bytes_out: project.bytes_out,
+      forwarders: project.forwarders,
+    }));
+
+    this.frpStatus = this.buildFrpStatus(fullStatus);
+
+    this.ddnsGlobalStatus = {
+      ddns_enabled: !!fullStatus.ddns?.enabled,
+      ddns_version: fullStatus.ddns?.version ?? null,
+    };
+    this.ddnsInstances = fullStatus.ddns?.instances || [];
+    this.frpClientNodes = fullStatus.frp?.clients || [];
+    this.frpServerNodes = fullStatus.frp?.servers || [];
+
+    this.events = fullStatus.events || [];
+  }
+
+  private applyProjectList(projects: ProjectStatus[]): void {
+    if (!projects || projects.length === 0) return;
+
+    const merged = projects.map((project, index) => {
+      const existing = this.projectStatuses[index];
+      return {
+        enabled: project.enabled ?? existing?.enabled ?? false,
+        status: project.status ?? existing?.status ?? "unknown",
+        startup_status: project.startup_status ?? existing?.startup_status,
+        error_code: project.error_code ?? existing?.error_code,
+        active_ports: project.active_ports ?? existing?.active_ports,
+        bytes_in: project.bytes_in ?? existing?.bytes_in,
+        bytes_out: project.bytes_out ?? existing?.bytes_out,
+        forwarders: project.forwarders ?? existing?.forwarders,
+      } as ProjectStatus;
+    });
+
+    if (merged.length > 0) {
+      this.projectStatuses = merged;
+    }
+  }
+
+  private buildFrpStatus(fullStatus: FullStatusResponse): FrpStatus {
+    const frp = fullStatus.frp;
+    const frpEnabled = !!frp?.enabled;
+    const frpVersion = frp?.version;
+    const frpcNodes = frp?.clients || [];
+    const frpsNodes = frp?.servers || [];
+
+    const frpcClientCount = frpcNodes.reduce(
+      (total, node) => total + (node.client_count || 0),
+      0,
+    );
+    const frpsClientCount = frpsNodes.reduce(
+      (total, node) => total + (node.client_count || 0),
+      0,
+    );
+    const frpsProxyCount = frpsNodes.reduce(
+      (total, node) => total + (node.proxy_count || 0),
+      0,
+    );
+    const frpsServerCount = frpsNodes.reduce(
+      (total, node) => total + (node.server_count || 0),
+      0,
+    );
+
+    const frpcStatus: FrpcStatus = {
+      enabled: frpEnabled,
+      status: this.aggregateFrpStatus(frpcNodes.map((node) => node.status)),
+      last_error: this.pickFirstError(frpcNodes.map((node) => node.last_error)),
+      client_count: frpcClientCount,
+    };
+
+    const frpsStatus: FrpsStatus = {
+      enabled: frpEnabled,
+      status: this.aggregateFrpStatus(frpsNodes.map((node) => node.status)),
+      last_error: this.pickFirstError(frpsNodes.map((node) => node.last_error)),
+      client_count: frpsClientCount,
+      proxy_count: frpsProxyCount,
+      server_count: frpsServerCount,
+    };
+
+    return {
+      frp_enabled: frpEnabled,
+      frp_version: frpVersion,
+      frpc: frpcStatus,
+      frps: frpsStatus,
+    };
+  }
+
+  private aggregateFrpStatus(statuses: Array<string | undefined>): string {
+    const normalized = statuses.filter(Boolean) as string[];
+    if (normalized.some((status) => status === "error")) return "error";
+    if (
+      normalized.some(
+        (status) => status === "connected" || status === "running",
+      )
+    )
+      return "running";
+    if (normalized.some((status) => status === "connecting")) return "running";
+    return normalized.length > 0 ? "stopped" : "stopped";
+  }
+
+  private pickFirstError(
+    errors: Array<string | undefined>,
+  ): string | undefined {
+    return errors.find((error) => !!error) || undefined;
   }
 
   getProjectIndex(section_id: string): number {
@@ -406,23 +683,6 @@ export class Client {
             {_("projects running")}
           </div>
         </span>,
-      );
-    }
-  }
-
-  private updateFrpErrorDisplay(): void {
-    const errorElem = this.statusPanel?.frpErrorEl;
-    if (errorElem && this.frpStatus.last_error) {
-      const truncated =
-        this.frpStatus.last_error.length > 50
-          ? `${this.frpStatus.last_error.substring(0, 47)}...`
-          : this.frpStatus.last_error;
-      errorElem.title = this.frpStatus.last_error;
-      errorElem.innerHTML = "";
-      errorElem.appendChild(
-        <strong style="font-size: 0.95em; font-weight: 600; color: #dc3545;">
-          {truncated}
-        </strong>,
       );
     }
   }

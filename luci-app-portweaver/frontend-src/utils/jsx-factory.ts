@@ -1,12 +1,16 @@
 export const JSXFragment = Symbol.for("jsx.fragment");
 
-function filterChildren(children: any[]): any[] {
-  return children.filter((child) => {
-    if (child === null || child === undefined || typeof child === "boolean") {
-      return false;
+function normalizeChildren(input: any[], out: any[] = []): any[] {
+  for (const child of input) {
+    if (child == null || typeof child === "boolean") continue;
+
+    if (Array.isArray(child)) {
+      normalizeChildren(child, out);
+    } else {
+      out.push(child);
     }
-    return true;
-  });
+  }
+  return out;
 }
 
 export function createJsxElement(
@@ -14,7 +18,7 @@ export function createJsxElement(
   props: any,
   ...children: any[]
 ): Node {
-  const filteredChildren = filterChildren(children);
+  const filteredChildren = normalizeChildren(children);
 
   if (tag === JSXFragment) {
     const fragment = document.createDocumentFragment();

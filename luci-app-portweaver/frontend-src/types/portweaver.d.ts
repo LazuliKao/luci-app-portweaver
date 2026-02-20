@@ -66,11 +66,6 @@ export interface ActivityEvent {
   project_id: number;
 }
 
-/** Response from get_events API */
-export interface EventsResponse {
-  events: ActivityEvent[];
-}
-
 export interface PortMapping {
   listenPort: string;
   targetPort: string;
@@ -81,4 +76,74 @@ export interface PortMapping {
 export interface DdnsGlobalStatus {
   ddns_enabled: boolean;
   ddns_version: string | null;
+}
+
+// Sub-types for get_full_status
+export interface FullStatusProject {
+  id: string;
+  enabled: boolean;
+  status: string;
+  startup_status?: string;
+  active_ports: number;
+  bytes_in: number;
+  bytes_out: number;
+  last_changed?: number;
+  error_code?: number;
+  forwarders?: Array<{
+    protocol: string;
+    local_port: number;
+    bytes_in: number;
+    bytes_out: number;
+  }>;
+}
+
+export interface FullStatusFrpcNode {
+  name: string;
+  status: string;
+  client_count: number;
+  last_error: string;
+}
+
+export interface FullStatusFrpsNode {
+  name: string;
+  status: string;
+  client_count: number;
+  proxy_count: number;
+  server_count: number;
+  last_error: string;
+}
+
+export interface FullStatusFrp {
+  enabled: boolean;
+  version?: string;
+  clients: FullStatusFrpcNode[];
+  servers: FullStatusFrpsNode[];
+}
+
+export interface FullStatusDdnsInstance {
+  name: string;
+  provider: string;
+  status: string;
+  last_update: number;
+  last_ip: string;
+  message: string;
+}
+
+export interface FullStatusDdns {
+  enabled: boolean;
+  version?: string;
+  instances: FullStatusDdnsInstance[];
+}
+
+export interface FullStatusResponse {
+  status: string;
+  uptime: number;
+  total_projects: number;
+  active_ports: number;
+  total_bytes_in: number;
+  total_bytes_out: number;
+  projects: FullStatusProject[];
+  frp: FullStatusFrp;
+  ddns: FullStatusDdns;
+  events: ActivityEvent[];
 }

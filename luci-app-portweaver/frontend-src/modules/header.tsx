@@ -57,12 +57,27 @@ export default function (
         </p>,
         "info",
       );
-      const results = await Promise.all([
-        rpcClient.getStatus(),
-        rpcClient.listProjects(),
-      ]);
-      client.globalStatus = results[0] || {};
-      client.projectStatuses = results[1]?.projects ? results[1].projects : [];
+      const fullStatus = await rpcClient.getFullStatus();
+      if (fullStatus) {
+        client.globalStatus = {
+          status: fullStatus.status,
+          total_projects: fullStatus.total_projects,
+          active_ports: fullStatus.active_ports,
+          uptime: fullStatus.uptime,
+          total_bytes_in: fullStatus.total_bytes_in,
+          total_bytes_out: fullStatus.total_bytes_out,
+        };
+        client.projectStatuses = (fullStatus.projects || []).map((p) => ({
+          enabled: p.enabled,
+          status: p.status,
+          startup_status: p.startup_status,
+          error_code: p.error_code,
+          active_ports: p.active_ports,
+          bytes_in: p.bytes_in,
+          bytes_out: p.bytes_out,
+          forwarders: p.forwarders,
+        }));
+      }
       location.reload();
     } catch (err) {
       L.ui.addNotification(

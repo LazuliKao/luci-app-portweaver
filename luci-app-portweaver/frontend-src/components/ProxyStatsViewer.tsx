@@ -114,7 +114,7 @@ export class ProxyStatsViewer {
 
       if (this.statsEl) {
         this.statsEl.style.display = "block";
-        this.statsEl.innerHTML = "";
+        this.statsEl.textContent = "";
 
         const proxies = stats.proxies || [];
 

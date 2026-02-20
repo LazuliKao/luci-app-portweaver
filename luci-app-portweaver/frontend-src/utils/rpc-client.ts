@@ -1,36 +1,20 @@
-import type {
-  PortWeaverStatus,
-  ProjectStatus,
-  FrpStatus,
-  EventsResponse,
-  DdnsGlobalStatus,
-} from "../types/portweaver";
+import type { FullStatusResponse, ProjectStatus } from "../types/portweaver";
 import type { InfoResponse } from "./../types/portweaver/index";
 import type { DdnsStatusResponse } from "../types/portweaver/ddns";
 import type { FrpcProxyStats } from "../types/portweaver/frpc";
 import type { FrpsProxyStats } from "../types/portweaver/frps";
 
 export function createRpcClient(rpc: typeof L.rpc) {
-  const getStatus = rpc.declare<PortWeaverStatus>({
-    object: "portweaver",
-    method: "get_status",
-  });
-
   const listProjects = rpc.declare<{ projects: ProjectStatus[] }>({
     object: "portweaver",
     method: "list_projects",
   });
-
   const setEnabled = rpc.declare<void, [id: number, enabled: boolean]>({
     object: "portweaver",
     method: "set_enabled",
     params: ["id", "enabled"],
   });
 
-  const getFrpStatus = rpc.declare<FrpStatus>({
-    object: "portweaver",
-    method: "get_frp_status",
-  });
   const getFrpcInfo = rpc.declare<InfoResponse, [id: string]>({
     object: "portweaver",
     method: "get_frpc_info",
@@ -49,11 +33,6 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["id"],
   });
 
-  const getEvents = rpc.declare<EventsResponse>({
-    object: "portweaver",
-    method: "get_events",
-  });
-
   const getDdnsStatus = rpc.declare<DdnsStatusResponse>({
     object: "portweaver",
     method: "get_ddns_status",
@@ -63,11 +42,6 @@ export function createRpcClient(rpc: typeof L.rpc) {
     object: "portweaver",
     method: "get_ddns_info",
     params: ["name"],
-  });
-
-  const getDdnsGlobalStatus = rpc.declare<DdnsGlobalStatus>({
-    object: "portweaver",
-    method: "get_ddns_global_status",
   });
 
   const clearDdnsLogs = rpc.declare<void, [name: string]>({
@@ -94,22 +68,24 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["id"],
   });
 
+  const getFullStatus = rpc.declare<FullStatusResponse>({
+    object: "portweaver",
+    method: "get_full_status",
+  });
+
   return {
-    getStatus,
     listProjects,
     setEnabled,
-    getFrpStatus,
     getFrpcInfo,
     getFrpcProxyStats,
     clearFrpcLogs,
-    getEvents,
     getDdnsStatus,
     getDdnsInfo,
-    getDdnsGlobalStatus,
     clearDdnsLogs,
     getFrpsInfo,
     clearFrpsLogs,
     getFrpsProxyStats,
+    getFullStatus,
   };
 }
 

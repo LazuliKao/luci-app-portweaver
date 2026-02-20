@@ -75,17 +75,20 @@ function _object_spread_props(target, source) {
 
 
 const JSXFragment = Symbol.for("jsx.fragment");
-function filterChildren(children) {
-    return children.filter((child)=>{
-        if (child === null || child === undefined || typeof child === "boolean") return false;
-        return true;
-    });
+function normalizeChildren(input) {
+    let out = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : [];
+    for (const child of input){
+        if (child == null || typeof child === "boolean") continue;
+        if (Array.isArray(child)) normalizeChildren(child, out);
+        else out.push(child);
+    }
+    return out;
 }
 function jsx_factory_createJsxElement(tag, props) {
     for(var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++){
         children[_key - 2] = arguments[_key];
     }
-    const filteredChildren = filterChildren(children);
+    const filteredChildren = normalizeChildren(children);
     if (tag === JSXFragment) {
         const fragment = document.createDocumentFragment();
         fragment.append(...filteredChildren);
@@ -173,10 +176,6 @@ function translateStatus(str) {
 
 ;// CONCATENATED MODULE: ./utils/rpc-client.ts
 function createRpcClient(rpc) {
-    const getStatus = rpc.declare({
-        object: "portweaver",
-        method: "get_status"
-    });
     const listProjects = rpc.declare({
         object: "portweaver",
         method: "list_projects"
@@ -188,10 +187,6 @@ function createRpcClient(rpc) {
             "id",
             "enabled"
         ]
-    });
-    const getFrpStatus = rpc.declare({
-        object: "portweaver",
-        method: "get_frp_status"
     });
     const getFrpcInfo = rpc.declare({
         object: "portweaver",
@@ -214,10 +209,6 @@ function createRpcClient(rpc) {
             "id"
         ]
     });
-    const getEvents = rpc.declare({
-        object: "portweaver",
-        method: "get_events"
-    });
     const getDdnsStatus = rpc.declare({
         object: "portweaver",
         method: "get_ddns_status"
@@ -228,10 +219,6 @@ function createRpcClient(rpc) {
         params: [
             "name"
         ]
-    });
-    const getDdnsGlobalStatus = rpc.declare({
-        object: "portweaver",
-        method: "get_ddns_global_status"
     });
     const clearDdnsLogs = rpc.declare({
         object: "portweaver",
@@ -261,22 +248,23 @@ function createRpcClient(rpc) {
             "id"
         ]
     });
+    const getFullStatus = rpc.declare({
+        object: "portweaver",
+        method: "get_full_status"
+    });
     return {
-        getStatus,
         listProjects,
         setEnabled,
-        getFrpStatus,
         getFrpcInfo,
         getFrpcProxyStats,
         clearFrpcLogs,
-        getEvents,
         getDdnsStatus,
         getDdnsInfo,
-        getDdnsGlobalStatus,
         clearDdnsLogs,
         getFrpsInfo,
         clearFrpsLogs,
-        getFrpsProxyStats
+        getFrpsProxyStats,
+        getFullStatus
     };
 }
 const rpcClient = createRpcClient(L.rpc);
@@ -324,6 +312,97 @@ const rpcClient = createRpcClient(L.rpc);
 
 
 class Client {
+    applyFullStatus(fullStatus) {
+        var _ref;
+        var _fullStatus_ddns, _fullStatus_ddns1, _fullStatus_ddns2, _fullStatus_frp, _fullStatus_frp1;
+        if (!fullStatus) return;
+        this.globalStatus = {
+            status: fullStatus.status,
+            total_projects: fullStatus.total_projects,
+            active_ports: fullStatus.active_ports,
+            uptime: fullStatus.uptime,
+            total_bytes_in: fullStatus.total_bytes_in,
+            total_bytes_out: fullStatus.total_bytes_out
+        };
+        this.projectStatuses = (fullStatus.projects || []).map((project)=>({
+                enabled: project.enabled,
+                status: project.status,
+                startup_status: project.startup_status,
+                error_code: project.error_code,
+                active_ports: project.active_ports,
+                bytes_in: project.bytes_in,
+                bytes_out: project.bytes_out,
+                forwarders: project.forwarders
+            }));
+        this.frpStatus = this.buildFrpStatus(fullStatus);
+        this.ddnsGlobalStatus = {
+            ddns_enabled: !!((_fullStatus_ddns = fullStatus.ddns) === null || _fullStatus_ddns === void 0 ? void 0 : _fullStatus_ddns.enabled),
+            ddns_version: (_ref = (_fullStatus_ddns1 = fullStatus.ddns) === null || _fullStatus_ddns1 === void 0 ? void 0 : _fullStatus_ddns1.version) !== null && _ref !== void 0 ? _ref : null
+        };
+        this.ddnsInstances = ((_fullStatus_ddns2 = fullStatus.ddns) === null || _fullStatus_ddns2 === void 0 ? void 0 : _fullStatus_ddns2.instances) || [];
+        this.frpClientNodes = ((_fullStatus_frp = fullStatus.frp) === null || _fullStatus_frp === void 0 ? void 0 : _fullStatus_frp.clients) || [];
+        this.frpServerNodes = ((_fullStatus_frp1 = fullStatus.frp) === null || _fullStatus_frp1 === void 0 ? void 0 : _fullStatus_frp1.servers) || [];
+        this.events = fullStatus.events || [];
+    }
+    applyProjectList(projects) {
+        if (!projects || projects.length === 0) return;
+        const merged = projects.map((project, index)=>{
+            var _ref, _project_enabled, _ref1, _project_status, _project_startup_status, _project_error_code, _project_active_ports, _project_bytes_in, _project_bytes_out, _project_forwarders;
+            const existing = this.projectStatuses[index];
+            return {
+                enabled: (_ref = (_project_enabled = project.enabled) !== null && _project_enabled !== void 0 ? _project_enabled : existing === null || existing === void 0 ? void 0 : existing.enabled) !== null && _ref !== void 0 ? _ref : false,
+                status: (_ref1 = (_project_status = project.status) !== null && _project_status !== void 0 ? _project_status : existing === null || existing === void 0 ? void 0 : existing.status) !== null && _ref1 !== void 0 ? _ref1 : "unknown",
+                startup_status: (_project_startup_status = project.startup_status) !== null && _project_startup_status !== void 0 ? _project_startup_status : existing === null || existing === void 0 ? void 0 : existing.startup_status,
+                error_code: (_project_error_code = project.error_code) !== null && _project_error_code !== void 0 ? _project_error_code : existing === null || existing === void 0 ? void 0 : existing.error_code,
+                active_ports: (_project_active_ports = project.active_ports) !== null && _project_active_ports !== void 0 ? _project_active_ports : existing === null || existing === void 0 ? void 0 : existing.active_ports,
+                bytes_in: (_project_bytes_in = project.bytes_in) !== null && _project_bytes_in !== void 0 ? _project_bytes_in : existing === null || existing === void 0 ? void 0 : existing.bytes_in,
+                bytes_out: (_project_bytes_out = project.bytes_out) !== null && _project_bytes_out !== void 0 ? _project_bytes_out : existing === null || existing === void 0 ? void 0 : existing.bytes_out,
+                forwarders: (_project_forwarders = project.forwarders) !== null && _project_forwarders !== void 0 ? _project_forwarders : existing === null || existing === void 0 ? void 0 : existing.forwarders
+            };
+        });
+        if (merged.length > 0) this.projectStatuses = merged;
+    }
+    buildFrpStatus(fullStatus) {
+        const frp = fullStatus.frp;
+        const frpEnabled = !!(frp === null || frp === void 0 ? void 0 : frp.enabled);
+        const frpVersion = frp === null || frp === void 0 ? void 0 : frp.version;
+        const frpcNodes = (frp === null || frp === void 0 ? void 0 : frp.clients) || [];
+        const frpsNodes = (frp === null || frp === void 0 ? void 0 : frp.servers) || [];
+        const frpcClientCount = frpcNodes.reduce((total, node)=>total + (node.client_count || 0), 0);
+        const frpsClientCount = frpsNodes.reduce((total, node)=>total + (node.client_count || 0), 0);
+        const frpsProxyCount = frpsNodes.reduce((total, node)=>total + (node.proxy_count || 0), 0);
+        const frpsServerCount = frpsNodes.reduce((total, node)=>total + (node.server_count || 0), 0);
+        const frpcStatus = {
+            enabled: frpEnabled,
+            status: this.aggregateFrpStatus(frpcNodes.map((node)=>node.status)),
+            last_error: this.pickFirstError(frpcNodes.map((node)=>node.last_error)),
+            client_count: frpcClientCount
+        };
+        const frpsStatus = {
+            enabled: frpEnabled,
+            status: this.aggregateFrpStatus(frpsNodes.map((node)=>node.status)),
+            last_error: this.pickFirstError(frpsNodes.map((node)=>node.last_error)),
+            client_count: frpsClientCount,
+            proxy_count: frpsProxyCount,
+            server_count: frpsServerCount
+        };
+        return {
+            frp_enabled: frpEnabled,
+            frp_version: frpVersion,
+            frpc: frpcStatus,
+            frps: frpsStatus
+        };
+    }
+    aggregateFrpStatus(statuses) {
+        const normalized = statuses.filter(Boolean);
+        if (normalized.some((status)=>status === "error")) return "error";
+        if (normalized.some((status)=>status === "connected" || status === "running")) return "running";
+        if (normalized.some((status)=>status === "connecting")) return "running";
+        return normalized.length > 0 ? "stopped" : "stopped";
+    }
+    pickFirstError(errors) {
+        return errors.find((error)=>!!error) || undefined;
+    }
     getProjectIndex(section_id) {
         const sections = L.uci.sections("portweaver", "project");
         for(let i = 0; i < sections.length; i++){
@@ -467,18 +546,6 @@ class Client {
             }, _("projects running"))));
         }
     }
-    updateFrpErrorDisplay() {
-        var _this_statusPanel;
-        const errorElem = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.frpErrorEl;
-        if (errorElem && this.frpStatus.last_error) {
-            const truncated = this.frpStatus.last_error.length > 50 ? "".concat(this.frpStatus.last_error.substring(0, 47), "...") : this.frpStatus.last_error;
-            errorElem.title = this.frpStatus.last_error;
-            errorElem.innerHTML = "";
-            errorElem.appendChild(/*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
-            }, truncated));
-        }
-    }
     updateActivityLog() {
         var _this_statusPanel;
         const logContainer = (_this_statusPanel = this.statusPanel) === null || _this_statusPanel === void 0 ? void 0 : _this_statusPanel.activityLogContainer;
@@ -527,45 +594,40 @@ class Client {
         const seconds = date.getSeconds().toString().padStart(2, "0");
         return "".concat(hours, ":").concat(minutes, ":").concat(seconds);
     }
-    constructor(data){
-        _define_property(this, "globalStatus", void 0);
+    constructor(fullStatus){
         _define_property(this, "projectStatuses", void 0);
+        _define_property(this, "globalStatus", void 0);
         _define_property(this, "frpStatus", void 0);
-        _define_property(this, "events", void 0);
         _define_property(this, "ddnsGlobalStatus", void 0);
+        _define_property(this, "events", void 0);
         // References to UI elements provided by StatusPanel and config
         _define_property(this, "statusPanel", void 0);
         _define_property(this, "projectContainers", {});
-        this.globalStatus = data[0] || {};
-        this.projectStatuses = data[1] ? data[1].projects || [] : [];
-        this.frpStatus = data[2] || {
-            frp_enabled: false
-        };
-        this.events = data[3] || [];
-        this.ddnsGlobalStatus = data[4] || {
+        _define_property(this, "_lastPollTime", 0);
+        _define_property(this, "ddnsInstances", []);
+        _define_property(this, "frpClientNodes", []);
+        _define_property(this, "frpServerNodes", []);
+        this.projectStatuses = [];
+        this.globalStatus = {};
+        this.frpStatus = {};
+        this.ddnsGlobalStatus = {
             ddns_enabled: false,
             ddns_version: null
         };
+        this.events = [];
+        this.applyFullStatus(fullStatus);
         L.Poll.add(async ()=>{
             try {
-                var _results_, _results_1, _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7;
-                const results = await Promise.all([
-                    rpcClient.getStatus(),
-                    rpcClient.listProjects(),
-                    rpcClient.getFrpStatus(),
-                    rpcClient.getEvents(),
-                    rpcClient.getDdnsGlobalStatus()
+                var _this_statusPanel, _this_statusPanel1, _this_statusPanel2, _this_statusPanel3, _this_statusPanel4, _this_statusPanel5, _this_statusPanel6, _this_statusPanel7, _this_statusPanel8, _this_statusPanel9, _this_statusPanel10, _this_statusPanel11, _this_statusPanel12;
+                const prevBytesIn = this.globalStatus.total_bytes_in || 0;
+                const prevBytesOut = this.globalStatus.total_bytes_out || 0;
+                const nowMs = Date.now();
+                const [latestStatus, listProjects] = await Promise.all([
+                    rpcClient.getFullStatus(),
+                    rpcClient.listProjects()
                 ]);
-                this.globalStatus = results[0] || {};
-                this.projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
-                this.frpStatus = results[2] || {
-                    frp_enabled: false
-                };
-                this.events = ((_results_1 = results[3]) === null || _results_1 === void 0 ? void 0 : _results_1.events) || [];
-                this.ddnsGlobalStatus = results[4] || {
-                    ddns_enabled: false,
-                    ddns_version: null
-                };
+                if (latestStatus) this.applyFullStatus(latestStatus);
+                if (listProjects === null || listProjects === void 0 ? void 0 : listProjects.projects) this.applyProjectList(listProjects.projects);
                 const statusColors = {
                     running: "green",
                     stopped: "red",
@@ -590,8 +652,90 @@ class Client {
                 }
                 if (((_this_statusPanel7 = this.statusPanel) === null || _this_statusPanel7 === void 0 ? void 0 : _this_statusPanel7.ddnsVersionEl) && this.ddnsGlobalStatus.ddns_version) this.statusPanel.ddnsVersionEl.textContent = this.ddnsGlobalStatus.ddns_version;
                 this.updateProjectHealthIndicator();
-                this.updateFrpErrorDisplay();
                 this.updateActivityLog();
+                // Traffic rate
+                if (((_this_statusPanel8 = this.statusPanel) === null || _this_statusPanel8 === void 0 ? void 0 : _this_statusPanel8.trafficRateInEl) && this.statusPanel.trafficRateOutEl) {
+                    if (this._lastPollTime > 0) {
+                        const elapsed = (nowMs - this._lastPollTime) / 1000;
+                        if (elapsed > 0) {
+                            const rateIn = Math.max(0, (this.globalStatus.total_bytes_in || 0) - prevBytesIn) / elapsed;
+                            const rateOut = Math.max(0, (this.globalStatus.total_bytes_out || 0) - prevBytesOut) / elapsed;
+                            this.statusPanel.trafficRateInEl.textContent = "".concat(formatBytes(rateIn), "/s");
+                            this.statusPanel.trafficRateOutEl.textContent = "".concat(formatBytes(rateOut), "/s");
+                        }
+                    }
+                }
+                this._lastPollTime = nowMs;
+                // Project list
+                if ((_this_statusPanel9 = this.statusPanel) === null || _this_statusPanel9 === void 0 ? void 0 : _this_statusPanel9.projectListEl) {
+                    const projectSections = L.uci.sections("portweaver", "project") || [];
+                    const projectListEl = this.statusPanel.projectListEl;
+                    projectListEl.innerHTML = "";
+                    if (projectSections.length === 0) projectListEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
+                        style: "color: #6c757d;"
+                    }, _("No projects")));
+                    else for(let i = 0; i < projectSections.length; i++){
+                        const sec = projectSections[i];
+                        const name = sec.name || sec[".name"] || "#".concat(i + 1);
+                        const ps = this.projectStatuses[i];
+                        const color = (ps === null || ps === void 0 ? void 0 : ps.status) === "running" ? "#28a745" : (ps === null || ps === void 0 ? void 0 : ps.status) === "stopped" ? "#dc3545" : "#6c757d";
+                        projectListEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
+                        }, /*#__PURE__*/ createJsxElement("span", null, name), /*#__PURE__*/ createJsxElement("span", {
+                            style: "color: ".concat(color, ";")
+                        }, translateStatus((ps === null || ps === void 0 ? void 0 : ps.status) || "unknown"))));
+                    }
+                }
+                // FRPC proxies (per client node)
+                if ((_this_statusPanel10 = this.statusPanel) === null || _this_statusPanel10 === void 0 ? void 0 : _this_statusPanel10.frpcProxiesEl) {
+                    var _this_frpStatus_frpc;
+                    const frpcProxiesEl = this.statusPanel.frpcProxiesEl;
+                    frpcProxiesEl.innerHTML = "";
+                    if (!((_this_frpStatus_frpc = this.frpStatus.frpc) === null || _this_frpStatus_frpc === void 0 ? void 0 : _this_frpStatus_frpc.enabled) || this.frpClientNodes.length === 0) frpcProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
+                        style: "color: #6c757d;"
+                    }, _("disabled")));
+                    else for (const node of this.frpClientNodes){
+                        const color = node.status === "connected" ? "#28a745" : "#dc3545";
+                        frpcProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
+                        }, /*#__PURE__*/ createJsxElement("span", null, node.name), /*#__PURE__*/ createJsxElement("span", {
+                            style: "color: ".concat(color, ";")
+                        }, "".concat(node.client_count, " ").concat(_("clients")))));
+                    }
+                }
+                // FRPS active proxies (per server node)
+                if ((_this_statusPanel11 = this.statusPanel) === null || _this_statusPanel11 === void 0 ? void 0 : _this_statusPanel11.frpsProxiesEl) {
+                    var _this_frpStatus_frps;
+                    const frpsProxiesEl = this.statusPanel.frpsProxiesEl;
+                    frpsProxiesEl.innerHTML = "";
+                    if (!((_this_frpStatus_frps = this.frpStatus.frps) === null || _this_frpStatus_frps === void 0 ? void 0 : _this_frpStatus_frps.enabled) || this.frpServerNodes.length === 0) frpsProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
+                        style: "color: #6c757d;"
+                    }, _("disabled")));
+                    else for (const node of this.frpServerNodes)frpsProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                        style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
+                    }, /*#__PURE__*/ createJsxElement("span", null, node.name), /*#__PURE__*/ createJsxElement("span", {
+                        style: "color: #6c757d;"
+                    }, "".concat(node.proxy_count, " proxies"))));
+                }
+                // DDNS entries
+                if ((_this_statusPanel12 = this.statusPanel) === null || _this_statusPanel12 === void 0 ? void 0 : _this_statusPanel12.ddnsHealthEl) {
+                    const ddnsHealthEl = this.statusPanel.ddnsHealthEl;
+                    ddnsHealthEl.innerHTML = "";
+                    if (!this.ddnsGlobalStatus.ddns_enabled) ddnsHealthEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
+                        style: "color: #6c757d;"
+                    }, _("disabled")));
+                    else if (this.ddnsInstances.length === 0) ddnsHealthEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
+                        style: "color: #6c757d;"
+                    }, _("No entries")));
+                    else for (const inst of this.ddnsInstances){
+                        const color = inst.status === "success" ? "#28a745" : inst.status === "error" ? "#dc3545" : "#6c757d";
+                        ddnsHealthEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
+                        }, /*#__PURE__*/ createJsxElement("span", null, inst.name), /*#__PURE__*/ createJsxElement("span", {
+                            style: "color: ".concat(color, ";")
+                        }, inst.status)));
+                    }
+                }
                 (()=>{
                     const sections = L.uci.sections("portweaver", "project") || [];
                     for(let i = 0; i < sections.length; i++){
@@ -683,7 +827,7 @@ class Dialog {
             }
         }
         if (this.contentEl) {
-            this.contentEl.innerHTML = "";
+            this.contentEl.textContent = "";
             const msg = options.message;
             if (Array.isArray(msg)) msg.forEach((m)=>{
                 var _this_contentEl, _this_contentEl1;
@@ -1345,7 +1489,7 @@ class ProxyStatsViewer {
             if (this.errorEl) this.errorEl.style.display = "none";
             if (this.statsEl) {
                 this.statsEl.style.display = "block";
-                this.statsEl.innerHTML = "";
+                this.statsEl.textContent = "";
                 const proxies = stats.proxies || [];
                 if (!Array.isArray(proxies) || proxies.length === 0) {
                     const colors = this.getStatsColors();
@@ -2942,7 +3086,7 @@ class StatusPanel {
             const statusValueEl = /*#__PURE__*/ createJsxElement("strong", {
                 style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
                 id: "status-value"
-            }, status.status || "-");
+            }, translateStatus(status.status) || "-");
             this.statusValueEl = statusValueEl;
             return this.card(_("Status"), statusValueEl);
         })(), (()=>{
@@ -3060,6 +3204,40 @@ class StatusPanel {
             }, ddnsGlobalStatus.ddns_version) : null;
             if (ddnsVersionEl) this.ddnsVersionEl = ddnsVersionEl;
             return this.card(_("DDNS-GO"), /*#__PURE__*/ createJsxElement("div", null, ddnsEnabledEl, ddnsVersionEl));
+        })(), (()=>{
+            const trafficRateInEl = /*#__PURE__*/ createJsxElement("span", null, _("calculating"));
+            const trafficRateOutEl = /*#__PURE__*/ createJsxElement("span", null, _("calculating"));
+            this.trafficRateInEl = trafficRateInEl;
+            this.trafficRateOutEl = trafficRateOutEl;
+            return this.card(_("Traffic Rate"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em;"
+            }, "\u2193 ", trafficRateInEl), /*#__PURE__*/ createJsxElement("div", {
+                style: "font-size: 0.85em;"
+            }, "\u2191 ", trafficRateOutEl)));
+        })(), (()=>{
+            const projectListEl = /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #6c757d;"
+            }, _("loading"));
+            this.projectListEl = projectListEl;
+            return this.card(_("Project List"), projectListEl);
+        })(), (()=>{
+            const frpcProxiesEl = /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #6c757d;"
+            }, _("loading"));
+            this.frpcProxiesEl = frpcProxiesEl;
+            return this.card(_("FRPC Proxies"), frpcProxiesEl);
+        })(), (()=>{
+            const frpsProxiesEl = /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #6c757d;"
+            }, _("loading"));
+            this.frpsProxiesEl = frpsProxiesEl;
+            return this.card(_("FRPS Active Proxies"), frpsProxiesEl);
+        })(), (()=>{
+            const ddnsHealthEl = /*#__PURE__*/ createJsxElement("span", {
+                style: "color: #6c757d;"
+            }, _("loading"));
+            this.ddnsHealthEl = ddnsHealthEl;
+            return this.card(_("DDNS Entries"), ddnsHealthEl);
         })()), events && events.length > 0 && this.renderActivityLog(events));
     }
     truncateError(error, maxLen) {
@@ -3148,6 +3326,12 @@ class StatusPanel {
         _define_property(this, "ddnsEnabledEl", void 0);
         _define_property(this, "ddnsVersionEl", void 0);
         _define_property(this, "activityLogContainer", void 0);
+        _define_property(this, "trafficRateInEl", void 0);
+        _define_property(this, "trafficRateOutEl", void 0);
+        _define_property(this, "projectListEl", void 0);
+        _define_property(this, "frpcProxiesEl", void 0);
+        _define_property(this, "frpsProxiesEl", void 0);
+        _define_property(this, "ddnsHealthEl", void 0);
     }
 }
 
@@ -3176,15 +3360,29 @@ const header_form = L.form;
         const status = client.getProjectStatus(section_id);
         const newEnabled = !(status === null || status === void 0 ? void 0 : status.enabled);
         try {
-            var _results_;
             await rpcClient.setEnabled(idx, !!newEnabled);
             L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Runtime state updated to: %s").format(newEnabled ? _("enabled") : _("disabled"))), "info");
-            const results = await Promise.all([
-                rpcClient.getStatus(),
-                rpcClient.listProjects()
-            ]);
-            client.globalStatus = results[0] || {};
-            client.projectStatuses = ((_results_ = results[1]) === null || _results_ === void 0 ? void 0 : _results_.projects) ? results[1].projects : [];
+            const fullStatus = await rpcClient.getFullStatus();
+            if (fullStatus) {
+                client.globalStatus = {
+                    status: fullStatus.status,
+                    total_projects: fullStatus.total_projects,
+                    active_ports: fullStatus.active_ports,
+                    uptime: fullStatus.uptime,
+                    total_bytes_in: fullStatus.total_bytes_in,
+                    total_bytes_out: fullStatus.total_bytes_out
+                };
+                client.projectStatuses = (fullStatus.projects || []).map((p)=>({
+                        enabled: p.enabled,
+                        status: p.status,
+                        startup_status: p.startup_status,
+                        error_code: p.error_code,
+                        active_ports: p.active_ports,
+                        bytes_in: p.bytes_in,
+                        bytes_out: p.bytes_out,
+                        forwarders: p.forwarders
+                    }));
+            }
             location.reload();
         } catch (err) {
             L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Failed to toggle runtime state: %s").format((err === null || err === void 0 ? void 0 : err.message) || String(err))), "error");
@@ -3207,6 +3405,20 @@ let logViewerCore = null;
     o.default = "1";
     o.rmempty = false;
     o.description = _("Enable logging output to /tmp/portweaver.log");
+    o = s.taboption(tab_id, logs_form.Value, "max_log_size", _("Max Log Size (KB)"));
+    o.datatype = "uinteger";
+    o.default = "1024";
+    o.rmempty = false;
+    o.description = _("Maximum size of log file before rotation (default: 1024 KB = 1MB)");
+    o.placeholder = "1024";
+    o.depends("log_enabled", "1");
+    o = s.taboption(tab_id, logs_form.Value, "max_log_files", _("Max Log Backup Files"));
+    o.datatype = "uinteger";
+    o.default = "3";
+    o.rmempty = false;
+    o.description = _("Number of rotated log files to keep (default: 3)");
+    o.placeholder = "3";
+    o.depends("log_enabled", "1");
     o = s.taboption(tab_id, logs_form.DummyValue, "_logs_viewer");
     o.rawhtml = true;
     const fetcher = async ()=>{
@@ -3798,39 +4010,9 @@ class main extends L.view {
         return Promise.all([
             main_uci.load("portweaver"),
             main_uci.load("firewall"),
-            rpcClient.getStatus().then((res)=>res || {}).catch((err)=>{
-                console.warn("ubus get_status failed:", err);
+            rpcClient.getFullStatus().then((res)=>res || {}).catch((err)=>{
+                console.warn("ubus get_full_status failed:", err);
                 return {};
-            }),
-            rpcClient.listProjects().then((res)=>res || {
-                    projects: []
-                }).catch((err)=>{
-                console.warn("ubus list_projects failed:", err);
-                return {
-                    projects: []
-                };
-            }),
-            rpcClient.getFrpStatus().then((res)=>res || {
-                    frp_enabled: false
-                }).catch((err)=>{
-                console.warn("ubus get_frpc_status failed:", err);
-                return {
-                    frp_enabled: false
-                };
-            }),
-            rpcClient.getEvents().then((res)=>(res === null || res === void 0 ? void 0 : res.events) || []).catch((err)=>{
-                console.warn("ubus get_events failed:", err);
-                return [];
-            }),
-            rpcClient.getDdnsGlobalStatus().then((res)=>res || {
-                    ddns_enabled: false,
-                    ddns_version: null
-                }).catch((err)=>{
-                console.warn("ubus get_ddns_global_status failed:", err);
-                return {
-                    ddns_enabled: false,
-                    ddns_version: null
-                };
             })
         ]);
     }
@@ -3845,13 +4027,8 @@ class main extends L.view {
         s.tab("frpc", _("FRP Tunnels"));
         s.tab("frps", _("FRP Server"));
         s.tab("logs", _("System Logs"));
-        const client = new Client([
-            data[2],
-            data[3],
-            data[4],
-            data[5],
-            data[6]
-        ]);
+        const fullStatus = data[2];
+        const client = new Client(fullStatus);
         modules_header(m, s, client, "settings");
         config(m, s, client, "projects");
         ddns(m, s, "ddns");
