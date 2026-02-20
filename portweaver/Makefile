@@ -13,7 +13,7 @@ PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=LazuliKao
 
-PKG_BUILD_DEPENDS:=zig/host
+# Zig and Go are downloaded and managed by Build/Compile
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -40,15 +40,17 @@ define Package/portweaver/description
 endef
 
 define Build/Compile
-	# Check if Go is available, download if not
+	# Always use patched Go from LazuliKao/build-golang (bug-fixed version)
+	# Download if not already present
 	@if [ ! -f "$(GO)" ]; then \
-		echo "Go not found, downloading..."; \
+		echo "Downloading patched Go (bug-fixed version)..."; \
 		mkdir -p $(GO_ROOT); \
 		cd $(STAGING_DIR_HOST) && \
 		wget -q -O portweaver-go.tar.gz https://github.com/LazuliKao/build-golang/releases/download/go1.25.7/go1.25.7.linux-amd64.tar.gz && \
 		tar xzf portweaver-go.tar.gz -C $(GO_ROOT) --strip-components=1 && \
 		rm portweaver-go.tar.gz; \
 	fi
+	@echo "Using patched Go: $(GO)"
 	
 	# Check if Zig is available, download if not
 	@if [ ! -f "$(ZIG)" ]; then \
@@ -66,8 +68,7 @@ define Build/Compile
 			-Dubus=true \
 			-Dfrpc=true \
 			-Dddns=true \
-			--prefix $(PKG_INSTALL_DIR) \
-			--release=small; \
+			--prefix $(PKG_INSTALL_DIR); \
 	else \
 		cd $(PKG_BUILD_DIR) && \
 		GOROOT=$(GO_ROOT) PATH=$(GO_ROOT)/bin:$(PATH) \
@@ -78,8 +79,7 @@ define Build/Compile
 			-Dubus=true \
 			-Dfrpc=true \
 			-Dddns=true \
-			--prefix $(PKG_INSTALL_DIR) \
-			--release=small; \
+			--prefix $(PKG_INSTALL_DIR); \
 	fi
 endef
 
