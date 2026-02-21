@@ -39,6 +39,17 @@ define Package/portweaver/description
   for OpenWrt, with UCI configuration support.
 endef
 
+# 核心修改：定义 Go 环境变量隔离宏，彻底阻断 OpenWrt host/golang 的污染
+GO_SANITIZE := \
+	GOENV=off \
+	GOTOOLDIR= \
+	GOROOT_FINAL= \
+	GOCACHE="$(PKG_BUILD_DIR)/.gocache" \
+	GOMODCACHE="$(PKG_BUILD_DIR)/.gomodcache" \
+	GOROOT="$(GO_ROOT)" \
+	HOME="$(PKG_BUILD_DIR)/.home" \
+	PATH="$(GO_ROOT)/bin:$(PATH)"
+
 define Build/Compile
 	# Always use patched Go from LazuliKao/build-golang (bug-fixed version)
 	# Download if not already present
@@ -60,7 +71,7 @@ define Build/Compile
 		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
 		tar xf zig.tar.xz; \
 		cd $(PKG_BUILD_DIR) && \
-		GOROOT=$(GO_ROOT) PATH=$(GO_ROOT)/bin:$(PATH) \
+		$(GO_SANITIZE) \
 		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
@@ -71,7 +82,7 @@ define Build/Compile
 			--prefix $(PKG_INSTALL_DIR); \
 	else \
 		cd $(PKG_BUILD_DIR) && \
-		GOROOT=$(GO_ROOT) PATH=$(GO_ROOT)/bin:$(PATH) \
+		$(GO_SANITIZE) \
 		$(ZIG) build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
