@@ -50,6 +50,7 @@ define Build/Compile
 			-Duci=true \
 			-Dubus=true \
 			-Dfrpc=true \
+			-Dfrps=true \
 			-Dddns=true \
 			--prefix $(PKG_INSTALL_DIR); \
 	else \
@@ -60,6 +61,7 @@ define Build/Compile
 			-Duci=true \
 			-Dubus=true \
 			-Dfrpc=true \
+			-Dfrps=true \
 			-Dddns=true \
 			--prefix $(PKG_INSTALL_DIR); \
 	fi
