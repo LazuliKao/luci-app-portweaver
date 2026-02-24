@@ -62,6 +62,57 @@ jobs:
           ARCH: x86_64-24.10.5
           V: ${{ runner.debug == '1' && 's' || '' }}
 
+  build-mips:
+    name: ${{ matrix.arch }} (${{ matrix.openwrt_version }}) [lite]
+    runs-on: ubuntu-latest
+    needs: pre-build
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - mips_24kc
+          - mips_4kec
+          - mips_mips32
+          - mipsel_24kc
+          - mipsel_74kc
+          - mipsel_mips32
+        openwrt_version:
+          - "24.10.5"
+          - "25.12.0-rc5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Git pull
+        run: git pull origin main
+
+      - name: Build with OpenWrt SDK
+        id: build_openwrt
+        uses: openwrt/gh-action-sdk@main
+        env:
+          FEEDNAME: custom
+          PACKAGES: portweaver-lite luci-app-portweaver
+          ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          V: ${{ runner.debug == '1' && 's' || '' }}
+
+      - name: List built packages
+        run: |
+          echo "=== Listing bin directory ==="
+          find bin -type f \( -name "*.ipk" -o -name "*.apk" \) || true
+          ls -lhR bin/ || true
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: portweaver-${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          path: |
+            bin/packages/*/custom/*.ipk
+            bin/packages/*/custom/*.apk
+            bin/targets/*/*/*.ipk
+            bin/targets/*/*/*.apk
+          if-no-files-found: error
+
   build:
     name: ${{ matrix.arch }} (${{ matrix.openwrt_version }})
     runs-on: ubuntu-latest
@@ -82,15 +133,9 @@ jobs:
           - arm_cortex-a9_neon
           - arm_cortex-a9_vfpv3-d16
           - arm_cortex-a15_neon-vfpv4
-          # - mips_24kc
-          # - mips_4kec
-          # - mips_mips32
-          # - mipsel_24kc
-          # - mipsel_74kc
-          # - mipsel_mips32
         openwrt_version:
           - "24.10.5"
-          - "SNAPSHOT"
+          - "25.12.0-rc5"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -98,7 +143,6 @@ jobs:
           fetch-depth: 0
       - name: Git pull
         run: git pull origin main
-
 
       # - name: Install Zig
       #   uses: mlugg/setup-zig@v2
@@ -133,7 +177,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: build
+    needs: [build, build-mips]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main')
 
@@ -153,7 +197,7 @@ jobs:
           mkdir -p release
           for artifact_dir in all-artifacts/portweaver-*; do
             if [ -d "$artifact_dir" ]; then
-              # Extract arch and version from directory name (e.g., portweaver-mipsel_74kc-SNAPSHOT)
+              # Extract arch and version from directory name (e.g., portweaver-mipsel_74kc-25.12.0-rc5)
               arch_version=$(basename "$artifact_dir" | sed 's/^portweaver-//')
               
               # Find and copy files with renamed names
@@ -193,7 +237,7 @@ jobs:
           body: |
             ## PortWeaver OpenWrt Packages
 
-            Built with OpenWrt SDK (24.10.5 and SNAPSHOT)
+            Built with OpenWrt SDK (24.10.5 and 25.12.0-rc5)
 
             ### Installation
             ```bash
