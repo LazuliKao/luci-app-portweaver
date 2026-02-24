@@ -33,6 +33,37 @@ endef
 define Package/portweaver/description
   PortWeaver is a flexible port forwarding and NAT traversal tool
   for OpenWrt, with UCI configuration support.
+  Includes: frpc, frps, ddns, uci, ubus.
+endef
+
+define Package/portweaver-lite
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Port forwarding tool (lite, no frpc/frps/ddns)
+  URL:=https://github.com/LazuliKao/portweaver
+  DEPENDS:=+libuci
+  CONFLICTS:=portweaver
+endef
+
+define Package/portweaver-lite/description
+  PortWeaver Lite is a lightweight build of PortWeaver for OpenWrt.
+  Only UCI and ubus support are enabled; frpc, frps and ddns are excluded,
+  resulting in a smaller binary suitable for resource-constrained devices.
+endef
+
+# Install directories for the two variants
+PKG_INSTALL_DIR_FULL := $(PKG_INSTALL_DIR)-full
+PKG_INSTALL_DIR_LITE := $(PKG_INSTALL_DIR)-lite
+
+# Macro: build one variant
+# $(1) = zig binary, $(2) = extra flags, $(3) = install prefix
+define BuildVariant
+	cd $(PKG_BUILD_DIR) && \
+	$(1) build \
+		-Dtarget=$(ZIG_TARGET) \
+		-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
+		$(2) \
+		--prefix $(3)
 endef
 
 define Build/Compile
@@ -43,38 +74,46 @@ define Build/Compile
 		cd $(PKG_BUILD_DIR)/zig-tmp && \
 		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
 		tar xf zig.tar.xz; \
-		cd $(PKG_BUILD_DIR) && \
-		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
-			-Dtarget=$(ZIG_TARGET) \
-			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
-			-Duci=true \
-			-Dubus=true \
-			-Dfrpc=true \
-			-Dfrps=true \
-			-Dddns=true \
-			--prefix $(PKG_INSTALL_DIR); \
+		$(call BuildVariant, \
+			$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig, \
+			-Duci=true -Dubus=true -Dfrpc=true -Dfrps=true -Dddns=true, \
+			$(PKG_INSTALL_DIR_FULL)); \
+		$(call BuildVariant, \
+			$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig, \
+			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
+			$(PKG_INSTALL_DIR_LITE)); \
 	else \
-		cd $(PKG_BUILD_DIR) && \
-		$(ZIG) build \
-			-Dtarget=$(ZIG_TARGET) \
-			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
-			-Duci=true \
-			-Dubus=true \
-			-Dfrpc=true \
-			-Dfrps=true \
-			-Dddns=true \
-			--prefix $(PKG_INSTALL_DIR); \
+		$(call BuildVariant, \
+			$(ZIG), \
+			-Duci=true -Dubus=true -Dfrpc=true -Dfrps=true -Dddns=true, \
+			$(PKG_INSTALL_DIR_FULL)); \
+		$(call BuildVariant, \
+			$(ZIG), \
+			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
+			$(PKG_INSTALL_DIR_LITE)); \
 	fi
 endef
 
 define Package/portweaver/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/portweaver $(1)/usr/bin/portweaver
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR_FULL)/bin/portweaver $(1)/usr/bin/portweaver
 	$(INSTALL_BIN) ./files/log-processor.sh $(1)/usr/bin/portweaver-log-processor
-	
+
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/portweaver.config $(1)/etc/config/portweaver
-	
+
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/portweaver.init $(1)/etc/init.d/portweaver
+endef
+
+define Package/portweaver-lite/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR_LITE)/bin/portweaver $(1)/usr/bin/portweaver
+	$(INSTALL_BIN) ./files/log-processor.sh $(1)/usr/bin/portweaver-log-processor
+
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DATA) ./files/portweaver.config $(1)/etc/config/portweaver
+
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/portweaver.init $(1)/etc/init.d/portweaver
 endef
@@ -83,4 +122,9 @@ define Package/portweaver/conffiles
 /etc/config/portweaver
 endef
 
+define Package/portweaver-lite/conffiles
+/etc/config/portweaver
+endef
+
 $(eval $(call BuildPackage,portweaver))
+$(eval $(call BuildPackage,portweaver-lite))
