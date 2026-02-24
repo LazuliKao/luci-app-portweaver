@@ -13,7 +13,7 @@ PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=LazuliKao
 
-# Zig and Go are downloaded and managed by Build/Compile
+# Zig is downloaded and managed by Build/Compile
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -21,10 +21,6 @@ include $(INCLUDE_DIR)/package.mk
 # Zig configuration
 ZIG := $(STAGING_DIR_HOST)/bin/zig
 ZIG_TARGET := $(subst openwrt-,,$(GNU_TARGET_NAME))
-
-# Go configuration
-GO_ROOT := $(STAGING_DIR_HOST)/portweaver-go
-GO := $(GO_ROOT)/bin/go
 
 define Package/portweaver
   SECTION:=net
@@ -39,30 +35,7 @@ define Package/portweaver/description
   for OpenWrt, with UCI configuration support.
 endef
 
-# 核心修改：定义 Go 环境变量隔离宏，彻底阻断 OpenWrt host/golang 的污染
-GO_SANITIZE := \
-	GOENV=off \
-	GOTOOLDIR= \
-	GOROOT_FINAL= \
-	GOCACHE="$(PKG_BUILD_DIR)/.gocache" \
-	GOMODCACHE="$(PKG_BUILD_DIR)/.gomodcache" \
-	GOROOT="$(GO_ROOT)" \
-	HOME="$(PKG_BUILD_DIR)/.home" \
-	PATH="$(GO_ROOT)/bin:$(PATH)"
-
 define Build/Compile
-	# Always use patched Go from LazuliKao/build-golang (bug-fixed version)
-	# Download if not already present
-	@if [ ! -f "$(GO)" ]; then \
-		echo "Downloading patched Go (bug-fixed version)..."; \
-		mkdir -p $(GO_ROOT); \
-		cd $(STAGING_DIR_HOST) && \
-		wget -q -O portweaver-go.tar.gz https://github.com/LazuliKao/build-golang/releases/download/go1.25.7/go1.25.7.linux-amd64.tar.gz && \
-		tar xzf portweaver-go.tar.gz -C $(GO_ROOT) --strip-components=1 && \
-		rm portweaver-go.tar.gz; \
-	fi
-	@echo "Using patched Go: $(GO)"
-	
 	# Check if Zig is available, download if not
 	@if [ ! -f "$(ZIG)" ]; then \
 		echo "Zig not found, downloading..."; \
@@ -71,7 +44,6 @@ define Build/Compile
 		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
 		tar xf zig.tar.xz; \
 		cd $(PKG_BUILD_DIR) && \
-		$(GO_SANITIZE) \
 		$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
@@ -82,7 +54,6 @@ define Build/Compile
 			--prefix $(PKG_INSTALL_DIR); \
 	else \
 		cd $(PKG_BUILD_DIR) && \
-		$(GO_SANITIZE) \
 		$(ZIG) build \
 			-Dtarget=$(ZIG_TARGET) \
 			-Dcpu=$(if $(CPU_TYPE),$(CPU_TYPE),baseline) \
