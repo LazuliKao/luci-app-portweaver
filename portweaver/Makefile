@@ -28,6 +28,7 @@ define Package/portweaver
   TITLE:=Port forwarding and NAT traversal tool
   URL:=https://github.com/LazuliKao/portweaver
   DEPENDS:=+libuci
+  PROVIDES:=portweaver-impl
 endef
 
 define Package/portweaver/description
@@ -42,6 +43,7 @@ define Package/portweaver-lite
   TITLE:=Port forwarding tool (lite, no frpc/frps/ddns)
   URL:=https://github.com/LazuliKao/portweaver
   DEPENDS:=+libuci
+  PROVIDES:=portweaver-impl
   CONFLICTS:=portweaver
 endef
 
