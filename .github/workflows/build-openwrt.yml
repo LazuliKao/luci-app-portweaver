@@ -27,7 +27,7 @@ jobs:
           ARCH: x86_64-24.10.5
       - name: Update Hash if build failed
         if: ${{ steps.build_openwrt.outcome == 'failure' }}
-        continue-on-error: true 
+        continue-on-error: true
         run: |
           if [ -f "portweaver.correct_hash" ]; then
             echo "Found portweaver.correct_hash file."
@@ -78,7 +78,7 @@ jobs:
           - mipsel_mips32
         openwrt_version:
           - "24.10.5"
-          - "25.12.0-rc5"
+          - "25.12.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -136,7 +136,7 @@ jobs:
           - arm_cortex-a15_neon-vfpv4
         openwrt_version:
           - "24.10.5"
-          - "25.12.0-rc5"
+          - "25.12.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -198,7 +198,7 @@ jobs:
           mkdir -p release
           for artifact_dir in all-artifacts/portweaver-*; do
             if [ -d "$artifact_dir" ]; then
-              # Extract arch and version from directory name (e.g., portweaver-mipsel_74kc-25.12.0-rc5)
+              # Extract arch and version from directory name (e.g., portweaver-mipsel_74kc-25.12.0)
               arch_version=$(basename "$artifact_dir" | sed 's/^portweaver-//')
               
               # Find and copy files with renamed names
@@ -238,7 +238,7 @@ jobs:
           body: |
             ## PortWeaver OpenWrt Packages
 
-            Built with OpenWrt SDK (24.10.5 and 25.12.0-rc5)
+            Built with OpenWrt SDK (24.10.5 and 25.12.0)
 
             ### Installation
             ```bash
