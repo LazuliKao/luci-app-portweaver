@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=portweaver
+PKG_NAME:=portweaver-lite
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
@@ -37,22 +37,26 @@ else
   ZIG_CPU := $(CPU_TYPE)
 endif
 
+# Shared files from the full portweaver package
+PORTWEAVER_FILES_DIR := $(CURDIR)/../portweaver/files
+
 # ---------------------------------------------------------------------------
 # Package definition
 # ---------------------------------------------------------------------------
-define Package/portweaver
+define Package/portweaver-lite
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=PortWeaver (port forwarding and NAT traversal)
+  TITLE:=PortWeaver (lite, no frpc/frps/ddns)
   URL:=https://github.com/LazuliKao/portweaver
   DEPENDS:=+libuci
   PROVIDES:=portweaver-impl
+  CONFLICTS:=portweaver
 endef
 
-define Package/portweaver/description
-  PortWeaver is a flexible port forwarding and NAT traversal tool
-  for OpenWrt, with UCI configuration support.
-  Includes: frpc, frps, ddns, uci, ubus.
+define Package/portweaver-lite/description
+  PortWeaver Lite is a lightweight build of PortWeaver for OpenWrt.
+  Only UCI and ubus support are enabled; frpc, frps and ddns are excluded,
+  resulting in a smaller binary suitable for resource-constrained devices.
 endef
 
 # ---------------------------------------------------------------------------
@@ -73,7 +77,7 @@ define Build/Compile
 		-Dcpu=$(ZIG_CPU) \
 		-Doptimize=$(ZIG_OPTIMIZE) \
 		-Duci=true -Dubus=true \
-		-Dfrpc=true -Dfrps=true -Dddns=true \
+		-Dfrpc=false -Dfrps=false -Dddns=false \
 		--prefix $(PKG_INSTALL_DIR)
 endef
 
@@ -81,20 +85,20 @@ endef
 # Install
 # ---------------------------------------------------------------------------
 
-define Package/portweaver/install
+define Package/portweaver-lite/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/portweaver $(1)/usr/bin/portweaver
-	$(INSTALL_BIN) ./files/log-processor.sh $(1)/usr/bin/portweaver-log-processor
+	$(INSTALL_BIN) $(PORTWEAVER_FILES_DIR)/log-processor.sh $(1)/usr/bin/portweaver-log-processor
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/portweaver.config $(1)/etc/config/portweaver
+	$(INSTALL_DATA) $(PORTWEAVER_FILES_DIR)/portweaver.config $(1)/etc/config/portweaver
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/portweaver.init $(1)/etc/init.d/portweaver
+	$(INSTALL_BIN) $(PORTWEAVER_FILES_DIR)/portweaver.init $(1)/etc/init.d/portweaver
 endef
 
-define Package/portweaver/conffiles
+define Package/portweaver-lite/conffiles
 /etc/config/portweaver
 endef
 
 # ---------------------------------------------------------------------------
 
-$(eval $(call BuildPackage,portweaver))
+$(eval $(call BuildPackage,portweaver-lite))

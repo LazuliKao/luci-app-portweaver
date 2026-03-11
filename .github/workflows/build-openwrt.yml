@@ -40,14 +40,15 @@ jobs:
             echo "ERROR: Failed to extract valid SHA256 hash" >&2
             exit 1
           fi
-          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile"
+          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile and portweaver-lite/Makefile"
           # Use extended regex so {64} doesn't require backslashes and works reliably
           sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
-          # Only commit/push if the file actually changed
-          if git diff --quiet --exit-code portweaver/Makefile; then
-            echo "No change in portweaver/Makefile; skipping commit."
+          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
+          # Only commit/push if any file actually changed
+          if git diff --quiet --exit-code portweaver/Makefile portweaver-lite/Makefile; then
+            echo "No change in Makefiles; skipping commit."
           else
-            git add portweaver/Makefile
+            git add portweaver/Makefile portweaver-lite/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "Update PKG_MIRROR_HASH to $CORRECT_HASH"
@@ -60,7 +61,8 @@ jobs:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
           ARCH: x86_64-24.10.5
-          V: ${{ runner.debug == '1' && 's' || '' }}
+          V: 's'
+
 
   build-mips:
     name: ${{ matrix.arch }} (${{ matrix.openwrt_version }}) [lite]
@@ -92,9 +94,8 @@ jobs:
         uses: openwrt/gh-action-sdk@main
         env:
           FEEDNAME: custom
-          PACKAGES: portweaver luci-app-portweaver
+          PACKAGES: portweaver-lite luci-app-portweaver
           ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
-          BUILD_LITE_ONLY: 1
           V: ${{ runner.debug == '1' && 's' || '' }}
 
       - name: List built packages
