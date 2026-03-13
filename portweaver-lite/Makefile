@@ -30,7 +30,6 @@ define Package/portweaver-lite
   URL:=https://github.com/LazuliKao/portweaver
   DEPENDS:=+libuci
   PROVIDES:=portweaver-impl
-  CONFLICTS:=portweaver
 endef
 
 define Package/portweaver-lite/description
