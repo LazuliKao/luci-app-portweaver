@@ -8,8 +8,8 @@ permissions:
   contents: write
   actions: read
 jobs:
-  pre-build:
-    name: Pre-build Setup
+  pre-build-full:
+    name: Pre-build (portweaver full)
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -40,18 +40,15 @@ jobs:
             echo "ERROR: Failed to extract valid SHA256 hash" >&2
             exit 1
           fi
-          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile and portweaver-lite/Makefile"
-          # Use extended regex so {64} doesn't require backslashes and works reliably
+          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile"
           sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
-          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
-          # Only commit/push if any file actually changed
-          if git diff --quiet --exit-code portweaver/Makefile portweaver-lite/Makefile; then
-            echo "No change in Makefiles; skipping commit."
+          if git diff --quiet --exit-code portweaver/Makefile; then
+            echo "No change in portweaver/Makefile; skipping commit."
           else
-            git add portweaver/Makefile portweaver-lite/Makefile
+            git add portweaver/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "Update PKG_MIRROR_HASH to $CORRECT_HASH"
+            git commit -m "chore: update portweaver PKG_MIRROR_HASH to $CORRECT_HASH"
             git push origin HEAD:main
           fi
       - name: Re-run Build with OpenWrt SDK
@@ -63,10 +60,62 @@ jobs:
           ARCH: x86_64-24.10.5
           V: ${{ runner.debug == '1' && 's' || '' }}
 
+  pre-build-lite:
+    name: Pre-build (portweaver-lite)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build with OpenWrt SDK
+        id: build_openwrt
+        uses: LazuliKao/gh-action-sdk@main
+        continue-on-error: true
+        env:
+          FEEDNAME: custom
+          PACKAGES: portweaver-lite luci-app-portweaver
+          ARCH: x86_64-24.10.5
+      - name: Update Hash if build failed
+        if: ${{ steps.build_openwrt.outcome == 'failure' }}
+        continue-on-error: true
+        run: |
+          if [ -f "portweaver.correct_hash" ]; then
+            echo "Found portweaver.correct_hash file."
+          else
+            echo "ERROR: portweaver.correct_hash file not found!" >&2
+            exit 1
+          fi
+          CORRECT_HASH=$(cat portweaver.correct_hash)
+          if [[ ! "$CORRECT_HASH" =~ ^[a-f0-9]{64}$ ]]; then
+            echo "ERROR: Failed to extract valid SHA256 hash" >&2
+            exit 1
+          fi
+          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver-lite/Makefile"
+          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
+          if git diff --quiet --exit-code portweaver-lite/Makefile; then
+            echo "No change in portweaver-lite/Makefile; skipping commit."
+          else
+            git add portweaver-lite/Makefile
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: update portweaver-lite PKG_MIRROR_HASH to $CORRECT_HASH"
+            git push origin HEAD:main
+          fi
+      - name: Re-run Build with OpenWrt SDK
+        if: ${{ steps.build_openwrt.outcome == 'failure' }}
+        uses: openwrt/gh-action-sdk@main
+        env:
+          FEEDNAME: custom
+          PACKAGES: portweaver-lite luci-app-portweaver
+          ARCH: x86_64-24.10.5
+          V: ${{ runner.debug == '1' && 's' || '' }}
+
   build:
     name: ${{ matrix.pkg }} / ${{ matrix.arch }} (${{ matrix.openwrt_version }})
     runs-on: ubuntu-latest
-    needs: pre-build
+    needs: [pre-build-full, pre-build-lite]
     strategy:
       fail-fast: false
       matrix:
@@ -89,6 +138,19 @@ jobs:
         openwrt_version:
           - "24.10.5"
           - "25.12.0"
+        include:
+          - { pkg: portweaver-lite, arch: mips_24kc,    openwrt_version: "24.10.5" }
+          - { pkg: portweaver-lite, arch: mips_24kc,    openwrt_version: "25.12.0" }
+          - { pkg: portweaver-lite, arch: mips_4kec,    openwrt_version: "24.10.5" }
+          - { pkg: portweaver-lite, arch: mips_4kec,    openwrt_version: "25.12.0" }
+          - { pkg: portweaver-lite, arch: mips_mips32,  openwrt_version: "24.10.5" }
+          - { pkg: portweaver-lite, arch: mips_mips32,  openwrt_version: "25.12.0" }
+          - { pkg: portweaver-lite, arch: mipsel_24kc,  openwrt_version: "24.10.5" }
+          - { pkg: portweaver-lite, arch: mipsel_24kc,  openwrt_version: "25.12.0" }
+          - { pkg: portweaver-lite, arch: mipsel_74kc,  openwrt_version: "24.10.5" }
+          - { pkg: portweaver-lite, arch: mipsel_74kc,  openwrt_version: "25.12.0" }
+          - { pkg: portweaver-lite, arch: mipsel_mips32, openwrt_version: "24.10.5" }
+          - { pkg: portweaver-lite, arch: mipsel_mips32, openwrt_version: "25.12.0" }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
