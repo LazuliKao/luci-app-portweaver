@@ -40,14 +40,15 @@ jobs:
             echo "ERROR: Failed to extract valid SHA256 hash" >&2
             exit 1
           fi
-          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile"
+          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile and portweaver-lite/Makefile"
           # Use extended regex so {64} doesn't require backslashes and works reliably
           sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
-          # Only commit/push if the file actually changed
-          if git diff --quiet --exit-code portweaver/Makefile; then
-            echo "No change in portweaver/Makefile; skipping commit."
+          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
+          # Only commit/push if any file actually changed
+          if git diff --quiet --exit-code portweaver/Makefile portweaver-lite/Makefile; then
+            echo "No change in Makefiles; skipping commit."
           else
-            git add portweaver/Makefile
+            git add portweaver/Makefile portweaver-lite/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "Update PKG_MIRROR_HASH to $CORRECT_HASH"
@@ -62,65 +63,16 @@ jobs:
           ARCH: x86_64-24.10.5
           V: ${{ runner.debug == '1' && 's' || '' }}
 
-  # build-mips:
-  #   name: ${{ matrix.arch }} (${{ matrix.openwrt_version }}) [lite]
-  #   runs-on: ubuntu-latest
-  #   needs: pre-build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       arch:
-  #         - mips_24kc
-  #         - mips_4kec
-  #         - mips_mips32
-  #         - mipsel_24kc
-  #         - mipsel_74kc
-  #         - mipsel_mips32
-  #       openwrt_version:
-  #         - "24.10.5"
-  #         - "25.12.0"
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Git pull
-  #       run: git pull origin main
-
-  #     - name: Build with OpenWrt SDK
-  #       id: build_openwrt
-  #       uses: openwrt/gh-action-sdk@main
-  #       env:
-  #         FEEDNAME: custom
-  #         PACKAGES: portweaver luci-app-portweaver
-  #         ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
-  #         BUILD_LITE_ONLY: 1
-  #         V: ${{ runner.debug == '1' && 's' || '' }}
-
-  #     - name: List built packages
-  #       run: |
-  #         echo "=== Listing bin directory ==="
-  #         find bin -type f \( -name "*.ipk" -o -name "*.apk" \) || true
-  #         ls -lhR bin/ || true
-
-  #     - name: Upload Artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: portweaver-${{ matrix.arch }}-${{ matrix.openwrt_version }}
-  #         path: |
-  #           bin/packages/*/custom/*.ipk
-  #           bin/packages/*/custom/*.apk
-  #           bin/targets/*/*/*.ipk
-  #           bin/targets/*/*/*.apk
-  #         if-no-files-found: error
-
   build:
-    name: ${{ matrix.arch }} (${{ matrix.openwrt_version }})
+    name: ${{ matrix.pkg }} / ${{ matrix.arch }} (${{ matrix.openwrt_version }})
     runs-on: ubuntu-latest
     needs: pre-build
     strategy:
       fail-fast: false
       matrix:
+        pkg:
+          - portweaver
+          - portweaver-lite
         arch:
           - x86_64
           - aarch64_generic
@@ -155,7 +107,7 @@ jobs:
         uses: openwrt/gh-action-sdk@main
         env:
           FEEDNAME: custom
-          PACKAGES: portweaver luci-app-portweaver
+          PACKAGES: ${{ matrix.pkg }} luci-app-portweaver
           ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
           V: ${{ runner.debug == '1' && 's' || '' }}
 
@@ -168,7 +120,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: portweaver-${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          name: ${{ matrix.pkg }}-${{ matrix.arch }}-${{ matrix.openwrt_version }}
           path: |
             bin/packages/*/custom/*.ipk
             bin/packages/*/custom/*.apk
@@ -198,9 +150,16 @@ jobs:
           mkdir -p release
           for artifact_dir in all-artifacts/portweaver-*; do
             if [ -d "$artifact_dir" ]; then
-              # Extract arch and version from directory name (e.g., portweaver-mipsel_74kc-25.12.0)
-              arch_version=$(basename "$artifact_dir" | sed 's/^portweaver-//')
-              
+              # Extract pkg, arch and version from directory name
+              # e.g., portweaver-x86_64-24.10.5 or portweaver-lite-x86_64-24.10.5
+              dirname=$(basename "$artifact_dir")
+              # Strip leading "portweaver-" or "portweaver-lite-" prefix to get arch_version
+              if [[ "$dirname" == portweaver-lite-* ]]; then
+                arch_version="${dirname#portweaver-lite-}"
+              else
+                arch_version="${dirname#portweaver-}"
+              fi
+
               # Find and copy files with renamed names
               find "$artifact_dir" \( -name "*.ipk" -o -name "*.apk" \) | while read file; do
                 filename=$(basename "$file")
@@ -241,6 +200,8 @@ jobs:
             Built with OpenWrt SDK (24.10.5 and 25.12.0)
 
             ### Installation
+
+            **Full version** (includes frpc, frps, ddns):
             ```bash
             opkg install portweaver_*.ipk
             opkg install luci-app-portweaver_*.ipk
@@ -248,6 +209,17 @@ jobs:
             apk add portweaver_*.apk
             apk add luci-app-portweaver_*.apk
             ```
+
+            **Lite version** (uci/ubus only, smaller binary for resource-constrained devices):
+            ```bash
+            opkg install portweaver-lite_*.ipk
+            opkg install luci-app-portweaver_*.ipk
+            # For APK format (newer OpenWrt versions):
+            apk add portweaver-lite_*.apk
+            apk add luci-app-portweaver_*.apk
+            ```
+
+            > **Note:** `portweaver` and `portweaver-lite` conflict with each other — install only one.
 
             ### Supported Architectures
             - x86_64

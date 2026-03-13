@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=portweaver
+PKG_NAME:=portweaver-lite
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
@@ -23,19 +23,20 @@ ZIG := $(STAGING_DIR_HOST)/bin/zig
 ZIG_TARGET := $(subst openwrt-,,$(GNU_TARGET_NAME))
 ZIG_OPTIMIZE ?= ReleaseSmall
 
-define Package/portweaver
+define Package/portweaver-lite
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Port forwarding and NAT traversal tool
+  TITLE:=Port forwarding tool (lite, no frpc/frps/ddns)
   URL:=https://github.com/LazuliKao/portweaver
   DEPENDS:=+libuci
   PROVIDES:=portweaver-impl
+  CONFLICTS:=portweaver
 endef
 
-define Package/portweaver/description
-  PortWeaver is a flexible port forwarding and NAT traversal tool
-  for OpenWrt, with UCI configuration support.
-  Includes: frpc, frps, ddns, uci, ubus.
+define Package/portweaver-lite/description
+  PortWeaver Lite is a lightweight build of PortWeaver for OpenWrt.
+  Only UCI and ubus support are enabled; frpc, frps and ddns are excluded,
+  resulting in a smaller binary suitable for resource-constrained devices.
 endef
 
 # Macro: build one variant
@@ -60,17 +61,17 @@ define Build/Compile
 		tar xf zig.tar.xz; \
 		$(call BuildVariant, \
 			$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig, \
-			-Duci=true -Dubus=true -Dfrpc=true -Dfrps=true -Dddns=true, \
+			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
 			$(PKG_INSTALL_DIR)); \
 	else \
 		$(call BuildVariant, \
 			$(ZIG), \
-			-Duci=true -Dubus=true -Dfrpc=true -Dfrps=true -Dddns=true, \
+			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
 			$(PKG_INSTALL_DIR)); \
 	fi
 endef
 
-define Package/portweaver/install
+define Package/portweaver-lite/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/portweaver $(1)/usr/bin/portweaver
 	$(INSTALL_BIN) ./files/log-processor.sh $(1)/usr/bin/portweaver-log-processor
@@ -82,8 +83,8 @@ define Package/portweaver/install
 	$(INSTALL_BIN) ./files/portweaver.init $(1)/etc/init.d/portweaver
 endef
 
-define Package/portweaver/conffiles
+define Package/portweaver-lite/conffiles
 /etc/config/portweaver
 endef
 
-$(eval $(call BuildPackage,portweaver))
+$(eval $(call BuildPackage,portweaver-lite))
