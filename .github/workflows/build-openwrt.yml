@@ -172,7 +172,7 @@ jobs:
         uses: openwrt/gh-action-sdk@main
         env:
           FEEDNAME: custom
-          PACKAGES: ${{ matrix.pkg }} luci-app-portweaver
+          PACKAGES: ${{ matrix.pkg == 'portweaver-lite' && 'portweaver-lite -portweaver luci-app-portweaver' || 'portweaver luci-app-portweaver' }}
           ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
           V: ${{ runner.debug == '1' && 's' || '' }}
 
