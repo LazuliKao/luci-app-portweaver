@@ -178,7 +178,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [build, build-mips]
+    needs: [build]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main')
 
