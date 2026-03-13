@@ -83,13 +83,13 @@ jobs:
         if: ${{ steps.build_openwrt.outcome == 'failure' }}
         continue-on-error: true
         run: |
-          if [ -f "portweaver.correct_hash" ]; then
-            echo "Found portweaver.correct_hash file."
+          if [ -f "portweaver-lite.correct_hash" ]; then
+            echo "Found portweaver-lite.correct_hash file."
           else
-            echo "ERROR: portweaver.correct_hash file not found!" >&2
+            echo "ERROR: portweaver-lite.correct_hash file not found!" >&2
             exit 1
           fi
-          CORRECT_HASH=$(cat portweaver.correct_hash)
+          CORRECT_HASH=$(cat portweaver-lite.correct_hash)
           if [[ ! "$CORRECT_HASH" =~ ^[a-f0-9]{64}$ ]]; then
             echo "ERROR: Failed to extract valid SHA256 hash" >&2
             exit 1
