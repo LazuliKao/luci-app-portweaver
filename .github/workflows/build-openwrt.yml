@@ -228,10 +228,10 @@ jobs:
               find "$artifact_dir" \( -name "*.ipk" -o -name "*.apk" \) | while read file; do
                 filename=$(basename "$file")
                 # Extract package name, version, and extension
-                if [[ "$filename" =~ ^(luci-app-portweaver)-([0-9]+\.[0-9]+\.[0-9]+-r[0-9]+)\.(ipk|apk)$ ]]; then
+                if [[ "$filename" =~ ^(luci-(app|i18n)-portweaver.*)-([0-9]+(\.[0-9]+)*.*)\.(ipk|apk)$ ]]; then
                   pkgname="${BASH_REMATCH[1]}"
-                  version="${BASH_REMATCH[2]}"
-                  ext="${BASH_REMATCH[3]}"
+                  version="${BASH_REMATCH[3]}"
+                  ext="${BASH_REMATCH[5]}"
                   newname="${pkgname}_${version}.${ext}"
                   cp "$file" "release/$newname"
                   echo "Copied: $filename -> $newname"
@@ -244,9 +244,18 @@ jobs:
                   echo "Copied: $filename -> $newname"
                 else
                   # Fallback: just append arch_version before extension
-                  if [[ "$filename" == luci-app-portweaver* ]]; then
-                    cp "$file" "release/$filename"
-                    echo "Copied: $filename -> $filename"
+                  if [[ "$filename" == luci-app-portweaver* ]] || [[ "$filename" == luci-i18n-portweaver* ]]; then
+                    # Remove the arch prefix for the fallback case
+                    if [[ "$filename" =~ ^(luci-(app|i18n)-portweaver.*)_([^_]+)\.(ipk|apk)$ ]]; then
+                      pkgname="${BASH_REMATCH[1]}"
+                      ext="${BASH_REMATCH[3]}"
+                      newname="${pkgname}.${ext}"
+                      cp "$file" "release/$newname"
+                      echo "Copied: $filename -> $newname"
+                    else
+                      cp "$file" "release/$filename"
+                      echo "Copied: $filename -> $filename"
+                    fi
                   else
                     newname="${filename%.*}_${arch_version}.${filename##*.}"
                     cp "$file" "release/$newname"
