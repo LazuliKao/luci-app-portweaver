@@ -18,8 +18,9 @@ function normalizeChildren(input: any[], out: any[] = []): any[] {
 
 function createJsxNode(type: any, config: any): Node {
   const { children, ...props } = config || {};
-  
-  const childArray = children == null ? [] : Array.isArray(children) ? children : [children];
+
+  const childArray =
+    children == null ? [] : Array.isArray(children) ? children : [children];
   const filteredChildren = normalizeChildren(childArray);
 
   if (type === Fragment) {
@@ -34,7 +35,7 @@ function createJsxNode(type: any, config: any): Node {
 
   const eventHandlers: Record<string, any> = {};
   const finalProps = { ...props };
-  
+
   for (const [key, value] of Object.entries(finalProps)) {
     if (key.startsWith("on") && typeof value === "function") {
       eventHandlers[key] = value;
@@ -49,14 +50,13 @@ function createJsxNode(type: any, config: any): Node {
   }
 
   const hasProps = Object.keys(finalProps).length > 0;
-  const element =
-    !hasProps
-      ? filteredChildren.length > 1
-        ? E(type, {}, filteredChildren)
-        : E(type, {}, filteredChildren[0])
-      : filteredChildren.length > 1
-        ? E(type, finalProps, filteredChildren)
-        : E(type, finalProps, filteredChildren[0]);
+  const element = !hasProps
+    ? filteredChildren.length > 1
+      ? E(type, {}, filteredChildren)
+      : E(type, {}, filteredChildren[0])
+    : filteredChildren.length > 1
+      ? E(type, finalProps, filteredChildren)
+      : E(type, finalProps, filteredChildren[0]);
 
   for (const [eventName, handler] of Object.entries(eventHandlers)) {
     const eventType = eventName.slice(2).toLowerCase();

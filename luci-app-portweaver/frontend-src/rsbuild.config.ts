@@ -36,7 +36,7 @@ export default defineConfig({
     },
     assetPrefix: "",
     minify: false,
-    cleanDistPath: true
+    cleanDistPath: true,
   },
   plugins: [],
   tools: {
@@ -44,14 +44,13 @@ export default defineConfig({
     swc: {
       jsc: {
         parser: {
-          syntax: 'typescript',
+          syntax: "typescript",
           tsx: true,
           decorators: true,
         },
         minify: {
           compress: true,
-          mangle: {
-          }
+          mangle: {},
         },
         transform: {
           react: {
@@ -61,7 +60,6 @@ export default defineConfig({
           },
           optimizer: {
             simplify: true,
-
           },
         },
       },
