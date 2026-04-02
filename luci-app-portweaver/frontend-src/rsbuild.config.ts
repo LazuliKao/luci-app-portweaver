@@ -45,12 +45,13 @@ export default defineConfig({
       jsc: {
         transform: {
           react: {
-            pragma: "createJsxElement",
-            pragmaFrag: "createJsxElement.Fragment",
+            runtime: "automatic",
+            importSource: "/utils/jsx-factory",
             useBuiltins: true,
           },
           optimizer: {
             simplify: true,
+
           },
         },
       },

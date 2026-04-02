@@ -6,7 +6,7 @@
 
 // UNUSED EXPORTS: main
 
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_define_property.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.20/node_modules/@swc/helpers/esm/_define_property.js
 function _define_property(obj, key, value) {
     if (key in obj) {
         Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
@@ -16,7 +16,7 @@ function _define_property(obj, key, value) {
 }
 
 
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_object_spread.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.20/node_modules/@swc/helpers/esm/_object_spread.js
 
 
 function _object_spread(target) {
@@ -41,7 +41,7 @@ function _object_spread(target) {
 }
 
 
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.18/node_modules/@swc/helpers/esm/_object_spread_props.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.20/node_modules/@swc/helpers/esm/_object_spread_props.js
 function _object_spread_props_ownKeys(object, enumerableOnly) {
     var keys = Object.keys(object);
 
@@ -71,10 +71,64 @@ function _object_spread_props(target, source) {
 }
 
 
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.20/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
+function _object_without_properties_loose(source, excluded) {
+    if (source == null) return {};
+
+    var target = {}, sourceKeys = Object.getOwnPropertyNames(source), key, i;
+    for (i = 0; i < sourceKeys.length; i++) {
+        key = sourceKeys[i];
+        if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+        target[key] = source[key];
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.20/node_modules/@swc/helpers/esm/_object_without_properties.js
+
+
+function _object_without_properties(source, excluded) {
+    if (source == null) return {};
+
+    var target = {}, sourceKeys, key, i;
+    if (typeof Reflect !== "undefined" && Reflect.ownKeys) {
+        sourceKeys = Reflect.ownKeys(Object(source));
+        for (i = 0; i < sourceKeys.length; i++) {
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+
+        return target;
+    }
+
+    target = _object_without_properties_loose(source, excluded);
+    if (Object.getOwnPropertySymbols) {
+        sourceKeys = Object.getOwnPropertySymbols(source);
+        for (i = 0; i < sourceKeys.length; i++) {
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+    }
+
+    return target;
+}
+
+
+
 ;// CONCATENATED MODULE: ./utils/jsx-factory.ts
 
 
-const JSXFragment = Symbol.for("jsx.fragment");
+
+/**
+ * JSX Fragment symbol
+ */ const Fragment = Symbol.for("jsx.fragment");
 function normalizeChildren(input) {
     let out = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : [];
     for (const child of input){
@@ -84,43 +138,59 @@ function normalizeChildren(input) {
     }
     return out;
 }
-function jsx_factory_createJsxElement(tag, props) {
-    for(var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++){
-        children[_key - 2] = arguments[_key];
-    }
-    const filteredChildren = normalizeChildren(children);
-    if (tag === JSXFragment) {
+function createJsxNode(type, config) {
+    const _ref = config || {}, { children } = _ref, props = _object_without_properties(_ref, [
+        "children"
+    ]);
+    const childArray = children == null ? [] : Array.isArray(children) ? children : [
+        children
+    ];
+    const filteredChildren = normalizeChildren(childArray);
+    if (type === Fragment) {
         const fragment = document.createDocumentFragment();
         fragment.append(...filteredChildren);
         return fragment;
     }
-    if (typeof tag === "function") return tag(_object_spread_props(_object_spread({}, props), {
+    if (typeof type === "function") return type(_object_spread_props(_object_spread({}, props), {
         children: filteredChildren
     }));
-    if (props) {
-        const eventHandlers = {};
-        for (const [key, value] of Object.entries(props)){
-            if (key.startsWith("on") && typeof value === "function") {
-                eventHandlers[key] = value;
-                delete props[key];
-            } else if (typeof value === "boolean") {
-                if (value) props[key] = key;
-                else delete props[key];
-            }
+    const eventHandlers = {};
+    const finalProps = _object_spread({}, props);
+    for (const [key, value] of Object.entries(finalProps)){
+        if (key.startsWith("on") && typeof value === "function") {
+            eventHandlers[key] = value;
+            delete finalProps[key];
+        } else if (typeof value === "boolean") {
+            if (value) finalProps[key] = key;
+            else delete finalProps[key];
         }
-        const element = props === null || Object.keys(props).length === 0 ? filteredChildren.length > 1 ? E(tag, {}, filteredChildren) : E(tag, {}, filteredChildren[0]) : filteredChildren.length > 1 ? E(tag, props, filteredChildren) : E(tag, props, filteredChildren[0]);
-        for (const [eventName, handler] of Object.entries(eventHandlers)){
-            const eventType = eventName.slice(2).toLowerCase();
-            element.addEventListener(eventType, handler);
-        }
-        return element;
     }
-    if (props === null) props = {};
-    if (filteredChildren.length > 1) return E(tag, props, filteredChildren);
-    else return E(tag, props, filteredChildren[0]);
+    const hasProps = Object.keys(finalProps).length > 0;
+    const element = !hasProps ? filteredChildren.length > 1 ? E(type, {}, filteredChildren) : E(type, {}, filteredChildren[0]) : filteredChildren.length > 1 ? E(type, finalProps, filteredChildren) : E(type, finalProps, filteredChildren[0]);
+    for (const [eventName, handler] of Object.entries(eventHandlers)){
+        const eventType = eventName.slice(2).toLowerCase();
+        element.addEventListener(eventType, handler);
+    }
+    return element;
 }
-jsx_factory_createJsxElement.Fragment = JSXFragment;
-globalThis.createJsxElement = jsx_factory_createJsxElement;
+/**
+ * JSX automatic runtime - production (single/no children)
+ */ function jsx(type, config) {
+    return createJsxNode(type, config);
+}
+/**
+ * JSX automatic runtime - production (multiple static children)
+ */ function jsxs(type, config) {
+    return createJsxNode(type, config);
+}
+/**
+ * JSX automatic runtime - development mode
+ */ function jsxDEV(type, config) {
+    return createJsxNode(type, config);
+}
+
+;// CONCATENATED MODULE: ./utils/jsx-factory/jsx-runtime.ts
+
 
 ;// CONCATENATED MODULE: ./utils/formatters.ts
 function formatBytes() {
@@ -311,6 +381,9 @@ const rpcClient = createRpcClient(L.rpc);
 
 
 
+
+
+
 class Client {
     applyFullStatus(fullStatus) {
         var _ref;
@@ -416,9 +489,10 @@ class Client {
     }
     renderStatusElements(status, _section_id) {
         if (!status) return [
-            /*#__PURE__*/ createJsxElement("span", {
-                style: "color: gray;"
-            }, _("N/A"))
+            /*#__PURE__*/ jsx("span", {
+                style: "color: gray;",
+                children: _("N/A")
+            })
         ];
         const startupFailed = status.startup_status === "failed";
         const statusColor = status.status === "running" && !startupFailed ? "green" : "#dc3545";
@@ -433,25 +507,37 @@ class Client {
             statusBadgeAttrs.style += " cursor: help;";
         }
         const statusElements = [
-            /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("span", statusBadgeAttrs, /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
-            }, translateStatus(startupFailed ? "failed" : status.status || "unknown"))))
+            /*#__PURE__*/ jsx("div", {
+                children: /*#__PURE__*/ jsx("span", _object_spread_props(_object_spread({}, statusBadgeAttrs), {
+                    children: /*#__PURE__*/ jsx("strong", {
+                        style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";"),
+                        children: translateStatus(startupFailed ? "failed" : status.status || "unknown")
+                    })
+                }))
+            })
         ];
-        if (errorMessage && status.status !== "stopped") statusElements.push(/*#__PURE__*/ createJsxElement("small", {
-            style: "color: #dc3545; margin-top: 0.3em;"
-        }, "\u26A0 ".concat(errorMessage)));
+        if (errorMessage && status.status !== "stopped") statusElements.push(/*#__PURE__*/ jsx("small", {
+            style: "color: #dc3545; margin-top: 0.3em;",
+            children: "\u26A0 ".concat(errorMessage)
+        }));
         else {
             const elements = [];
-            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ createJsxElement("span", null, _("Ports: %d").format(status.active_ports || 0)));
+            if ((status.active_ports || 0) > 0) elements.push(/*#__PURE__*/ jsx("span", {
+                children: _("Ports: %d").format(status.active_ports || 0)
+            }));
             if (status.bytes_in || 0 || status.bytes_out || 0) {
-                if (elements.length > 0) elements.push(/*#__PURE__*/ createJsxElement("br", null));
-                elements.push(/*#__PURE__*/ createJsxElement("span", null, "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)));
+                if (elements.length > 0) elements.push(/*#__PURE__*/ jsx("br", {}));
+                elements.push(/*#__PURE__*/ jsx("span", {
+                    children: "\u2193 " + formatBytes(status.bytes_in || 0) + " \u2191 " + formatBytes(status.bytes_out || 0)
+                }));
             }
             if (status.forwarders && status.forwarders.length > 0) {
-                if (elements.length > 0) elements.push(/*#__PURE__*/ createJsxElement("br", null));
+                if (elements.length > 0) elements.push(/*#__PURE__*/ jsx("br", {}));
                 elements.push(this.renderForwarderStats(status.forwarders));
             }
-            if (elements.length > 0) statusElements.push(/*#__PURE__*/ createJsxElement("small", null, elements));
+            if (elements.length > 0) statusElements.push(/*#__PURE__*/ jsx("small", {
+                children: elements
+            }));
         }
         return statusElements;
     }
@@ -460,20 +546,34 @@ class Client {
         const borderColor = themeColors.isDark ? "#333" : "#eee";
         const bgColor = themeColors.isDark ? "#222" : "#f8f9fa";
         const textColor = themeColors.isDark ? "#ccc" : "#6c757d";
-        const rows = forwarders.map((f)=>/*#__PURE__*/ createJsxElement("div", {
-                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(borderColor, ";")
-            }, /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 35px; color: ".concat(textColor, ";")
-            }, f.protocol.toUpperCase()), /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 45px;"
-            }, ":", f.local_port), /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #28a745;"
-            }, "\u2193".concat(formatBytes(f.bytes_in))), /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #dc3545;"
-            }, "\u2191".concat(formatBytes(f.bytes_out)))));
-        return /*#__PURE__*/ createJsxElement("div", {
-            style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(bgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
-        }, rows);
+        const rows = forwarders.map((f)=>/*#__PURE__*/ jsxs("div", {
+                style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(borderColor, ";"),
+                children: [
+                    /*#__PURE__*/ jsx("span", {
+                        style: "min-width: 35px; color: ".concat(textColor, ";"),
+                        children: f.protocol.toUpperCase()
+                    }),
+                    /*#__PURE__*/ jsxs("span", {
+                        style: "min-width: 45px;",
+                        children: [
+                            ":",
+                            f.local_port
+                        ]
+                    }),
+                    /*#__PURE__*/ jsx("span", {
+                        style: "color: #28a745;",
+                        children: "\u2193".concat(formatBytes(f.bytes_in))
+                    }),
+                    /*#__PURE__*/ jsx("span", {
+                        style: "color: #dc3545;",
+                        children: "\u2191".concat(formatBytes(f.bytes_out))
+                    })
+                ]
+            }));
+        return /*#__PURE__*/ jsx("div", {
+            style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(bgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;"),
+            children: rows
+        });
     }
     updateFrpCard(status, globalVersion, enabledEl, versionEl, statusEl, infoEl, errorEl) {
         let type = arguments.length > 7 && arguments[7] !== void 0 ? arguments[7] : "frpc";
@@ -524,9 +624,10 @@ class Client {
                 const truncated = status.last_error.length > 50 ? "".concat(status.last_error.substring(0, 47), "...") : status.last_error;
                 errorEl.title = status.last_error;
                 errorEl.innerHTML = "";
-                errorEl.appendChild(/*#__PURE__*/ createJsxElement("strong", {
-                    style: "font-size: 0.95em; font-weight: 600; color: #dc3545;"
-                }, truncated));
+                errorEl.appendChild(/*#__PURE__*/ jsx("strong", {
+                    style: "font-size: 0.95em; font-weight: 600; color: #dc3545;",
+                    children: truncated
+                }));
                 errorEl.style.display = "block";
             } else errorEl.style.display = "none";
         }
@@ -539,11 +640,22 @@ class Client {
         if (healthElem) {
             const healthColor = runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545";
             healthElem.innerHTML = "";
-            healthElem.appendChild(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600; color: ".concat(healthColor, ";")
-            }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-            }, _("projects running"))));
+            healthElem.appendChild(/*#__PURE__*/ jsxs("span", {
+                children: [
+                    /*#__PURE__*/ jsxs("strong", {
+                        style: "font-size: 1.1em; font-weight: 600; color: ".concat(healthColor, ";"),
+                        children: [
+                            runningProjects.length,
+                            " / ",
+                            enabledProjects.length
+                        ]
+                    }),
+                    /*#__PURE__*/ jsx("div", {
+                        style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                        children: _("projects running")
+                    })
+                ]
+            }));
         }
     }
     updateActivityLog() {
@@ -576,16 +688,24 @@ class Client {
         const icon = eventIcons[event.type] || "\u2022";
         const time = this.formatTimestamp(event.timestamp);
         const truncatedMessage = event.message.length > 60 ? "".concat(event.message.substring(0, 57), "...") : event.message;
-        return /*#__PURE__*/ createJsxElement("div", {
-            style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;"
-        }, /*#__PURE__*/ createJsxElement("span", {
-            style: "color: ".concat(color, "; margin-right: 0.5em; flex-shrink: 0;")
-        }, icon), /*#__PURE__*/ createJsxElement("span", {
-            style: "color: #6c757d; margin-right: 0.5em; flex-shrink: 0; min-width: 70px;"
-        }, time), /*#__PURE__*/ createJsxElement("span", {
-            style: "flex: 1; word-break: break-word;",
-            title: event.message
-        }, truncatedMessage));
+        return /*#__PURE__*/ jsxs("div", {
+            style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;",
+            children: [
+                /*#__PURE__*/ jsx("span", {
+                    style: "color: ".concat(color, "; margin-right: 0.5em; flex-shrink: 0;"),
+                    children: icon
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    style: "color: #6c757d; margin-right: 0.5em; flex-shrink: 0; min-width: 70px;",
+                    children: time
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    style: "flex: 1; word-break: break-word;",
+                    title: event.message,
+                    children: truncatedMessage
+                })
+            ]
+        });
     }
     formatTimestamp(timestamp) {
         const date = new Date(timestamp);
@@ -671,19 +791,27 @@ class Client {
                     const projectSections = L.uci.sections("portweaver", "project") || [];
                     const projectListEl = this.statusPanel.projectListEl;
                     projectListEl.innerHTML = "";
-                    if (projectSections.length === 0) projectListEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
-                        style: "color: #6c757d;"
-                    }, _("No projects")));
+                    if (projectSections.length === 0) projectListEl.appendChild(/*#__PURE__*/ jsx("span", {
+                        style: "color: #6c757d;",
+                        children: _("No projects")
+                    }));
                     else for(let i = 0; i < projectSections.length; i++){
                         const sec = projectSections[i];
                         const name = sec.name || sec[".name"] || "#".concat(i + 1);
                         const ps = this.projectStatuses[i];
                         const color = (ps === null || ps === void 0 ? void 0 : ps.status) === "running" ? "#28a745" : (ps === null || ps === void 0 ? void 0 : ps.status) === "stopped" ? "#dc3545" : "#6c757d";
-                        projectListEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
-                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
-                        }, /*#__PURE__*/ createJsxElement("span", null, name), /*#__PURE__*/ createJsxElement("span", {
-                            style: "color: ".concat(color, ";")
-                        }, translateStatus((ps === null || ps === void 0 ? void 0 : ps.status) || "unknown"))));
+                        projectListEl.appendChild(/*#__PURE__*/ jsxs("div", {
+                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;",
+                            children: [
+                                /*#__PURE__*/ jsx("span", {
+                                    children: name
+                                }),
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "color: ".concat(color, ";"),
+                                    children: translateStatus((ps === null || ps === void 0 ? void 0 : ps.status) || "unknown")
+                                })
+                            ]
+                        }));
                     }
                 }
                 // FRPC proxies (per client node)
@@ -691,16 +819,24 @@ class Client {
                     var _this_frpStatus_frpc;
                     const frpcProxiesEl = this.statusPanel.frpcProxiesEl;
                     frpcProxiesEl.innerHTML = "";
-                    if (!((_this_frpStatus_frpc = this.frpStatus.frpc) === null || _this_frpStatus_frpc === void 0 ? void 0 : _this_frpStatus_frpc.enabled) || this.frpClientNodes.length === 0) frpcProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
-                        style: "color: #6c757d;"
-                    }, _("disabled")));
+                    if (!((_this_frpStatus_frpc = this.frpStatus.frpc) === null || _this_frpStatus_frpc === void 0 ? void 0 : _this_frpStatus_frpc.enabled) || this.frpClientNodes.length === 0) frpcProxiesEl.appendChild(/*#__PURE__*/ jsx("span", {
+                        style: "color: #6c757d;",
+                        children: _("disabled")
+                    }));
                     else for (const node of this.frpClientNodes){
                         const color = node.status === "connected" ? "#28a745" : "#dc3545";
-                        frpcProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
-                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
-                        }, /*#__PURE__*/ createJsxElement("span", null, node.name), /*#__PURE__*/ createJsxElement("span", {
-                            style: "color: ".concat(color, ";")
-                        }, "".concat(node.client_count, " ").concat(_("clients")))));
+                        frpcProxiesEl.appendChild(/*#__PURE__*/ jsxs("div", {
+                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;",
+                            children: [
+                                /*#__PURE__*/ jsx("span", {
+                                    children: node.name
+                                }),
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "color: ".concat(color, ";"),
+                                    children: "".concat(node.client_count, " ").concat(_("clients"))
+                                })
+                            ]
+                        }));
                     }
                 }
                 // FRPS active proxies (per server node)
@@ -708,32 +844,49 @@ class Client {
                     var _this_frpStatus_frps;
                     const frpsProxiesEl = this.statusPanel.frpsProxiesEl;
                     frpsProxiesEl.innerHTML = "";
-                    if (!((_this_frpStatus_frps = this.frpStatus.frps) === null || _this_frpStatus_frps === void 0 ? void 0 : _this_frpStatus_frps.enabled) || this.frpServerNodes.length === 0) frpsProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
-                        style: "color: #6c757d;"
-                    }, _("disabled")));
-                    else for (const node of this.frpServerNodes)frpsProxiesEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
-                        style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
-                    }, /*#__PURE__*/ createJsxElement("span", null, node.name), /*#__PURE__*/ createJsxElement("span", {
-                        style: "color: #6c757d;"
-                    }, "".concat(node.proxy_count, " proxies"))));
+                    if (!((_this_frpStatus_frps = this.frpStatus.frps) === null || _this_frpStatus_frps === void 0 ? void 0 : _this_frpStatus_frps.enabled) || this.frpServerNodes.length === 0) frpsProxiesEl.appendChild(/*#__PURE__*/ jsx("span", {
+                        style: "color: #6c757d;",
+                        children: _("disabled")
+                    }));
+                    else for (const node of this.frpServerNodes)frpsProxiesEl.appendChild(/*#__PURE__*/ jsxs("div", {
+                        style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;",
+                        children: [
+                            /*#__PURE__*/ jsx("span", {
+                                children: node.name
+                            }),
+                            /*#__PURE__*/ jsx("span", {
+                                style: "color: #6c757d;",
+                                children: "".concat(node.proxy_count, " proxies")
+                            })
+                        ]
+                    }));
                 }
                 // DDNS entries
                 if ((_this_statusPanel12 = this.statusPanel) === null || _this_statusPanel12 === void 0 ? void 0 : _this_statusPanel12.ddnsHealthEl) {
                     const ddnsHealthEl = this.statusPanel.ddnsHealthEl;
                     ddnsHealthEl.innerHTML = "";
-                    if (!this.ddnsGlobalStatus.ddns_enabled) ddnsHealthEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
-                        style: "color: #6c757d;"
-                    }, _("disabled")));
-                    else if (this.ddnsInstances.length === 0) ddnsHealthEl.appendChild(/*#__PURE__*/ createJsxElement("span", {
-                        style: "color: #6c757d;"
-                    }, _("No entries")));
+                    if (!this.ddnsGlobalStatus.ddns_enabled) ddnsHealthEl.appendChild(/*#__PURE__*/ jsx("span", {
+                        style: "color: #6c757d;",
+                        children: _("disabled")
+                    }));
+                    else if (this.ddnsInstances.length === 0) ddnsHealthEl.appendChild(/*#__PURE__*/ jsx("span", {
+                        style: "color: #6c757d;",
+                        children: _("No entries")
+                    }));
                     else for (const inst of this.ddnsInstances){
                         const color = inst.status === "success" ? "#28a745" : inst.status === "error" ? "#dc3545" : "#6c757d";
-                        ddnsHealthEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
-                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;"
-                        }, /*#__PURE__*/ createJsxElement("span", null, inst.name), /*#__PURE__*/ createJsxElement("span", {
-                            style: "color: ".concat(color, ";")
-                        }, inst.status)));
+                        ddnsHealthEl.appendChild(/*#__PURE__*/ jsxs("div", {
+                            style: "display: flex; justify-content: space-between; font-size: 0.85em; padding: 0.15em 0;",
+                            children: [
+                                /*#__PURE__*/ jsx("span", {
+                                    children: inst.name
+                                }),
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "color: ".concat(color, ";"),
+                                    children: inst.status
+                                })
+                            ]
+                        }));
                     }
                 }
                 (()=>{
@@ -745,9 +898,10 @@ class Client {
                         const section = this.projectContainers[section_id];
                         if (!section) continue;
                         const newStatusElements = this.renderStatusElements(status, section_id);
-                        const newContainer = /*#__PURE__*/ createJsxElement("div", {
-                            id: "project-status-".concat(section_id)
-                        }, newStatusElements);
+                        const newContainer = /*#__PURE__*/ jsx("div", {
+                            id: "project-status-".concat(section_id),
+                            children: newStatusElements
+                        });
                         section.replaceWith(newContainer);
                         this.projectContainers[section_id] = newContainer;
                     }
@@ -762,36 +916,48 @@ class Client {
 ;// CONCATENATED MODULE: ./components/Dialog.tsx
 
 
+
 class Dialog {
     render() {
         if (this.overlay) return this.overlay;
-        this.titleEl = /*#__PURE__*/ createJsxElement("h2", {
-            style: "margin: 0; font-size: 1.25rem; font-weight: 600;"
-        }, _("Dialog"));
-        this.contentEl = /*#__PURE__*/ createJsxElement("div", {
+        this.titleEl = /*#__PURE__*/ jsx("h2", {
+            style: "margin: 0; font-size: 1.25rem; font-weight: 600;",
+            children: _("Dialog")
+        });
+        this.contentEl = /*#__PURE__*/ jsx("div", {
             style: "overflow-y: auto; max-height: 70vh;"
         });
-        this.confirmBtn = /*#__PURE__*/ createJsxElement("button", {
+        this.confirmBtn = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-positive",
             onclick: ()=>this.close(true)
         });
-        this.cancelBtn = /*#__PURE__*/ createJsxElement("button", {
+        this.cancelBtn = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-neutral",
             onclick: ()=>this.close(false)
         });
-        this.footerEl = /*#__PURE__*/ createJsxElement("div", {
-            style: "display: flex; justify-content: flex-end; gap: 0.5rem;"
-        }, this.cancelBtn, this.confirmBtn);
-        this.container = /*#__PURE__*/ createJsxElement("div", {
+        this.footerEl = /*#__PURE__*/ jsxs("div", {
+            style: "display: flex; justify-content: flex-end; gap: 0.5rem;",
+            children: [
+                this.cancelBtn,
+                this.confirmBtn
+            ]
+        });
+        this.container = /*#__PURE__*/ jsxs("div", {
             role: "dialog",
             "aria-modal": "true",
-            style: "display: flex; flex-direction: column; max-width: 90%; min-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px; animation: fadeIn 0.2s ease-out;"
-        }, this.titleEl, this.contentEl, this.footerEl);
-        this.overlay = /*#__PURE__*/ createJsxElement("div", {
-            style: "position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);"
-        }, this.container);
+            style: "display: flex; flex-direction: column; max-width: 90%; min-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px; animation: fadeIn 0.2s ease-out;",
+            children: [
+                this.titleEl,
+                this.contentEl,
+                this.footerEl
+            ]
+        });
+        this.overlay = /*#__PURE__*/ jsx("div", {
+            style: "position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);",
+            children: this.container
+        });
         return this.overlay;
     }
     updateTheme() {
@@ -908,6 +1074,7 @@ function dialog_confirm(message, title) {
 
 
 
+
 const REGEX_IP = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g;
 const REGEX_LOG_TIMESTAMP = /\d{4}[-/]\d{2}[-/]\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d{3})?/g;
 const REGEX_ERROR = /\b(error|fail|failed|exception)\b/gi;
@@ -924,13 +1091,22 @@ class LogViewerCore {
                 render
             });
         };
-        collect(REGEX_IP, (s)=>/*#__PURE__*/ createJsxElement("strong", null, s));
-        collect(REGEX_ERROR, (s)=>/*#__PURE__*/ createJsxElement("strong", null, s));
-        collect(REGEX_LOG_TIMESTAMP, (s)=>/*#__PURE__*/ createJsxElement("span", {
-                style: "font-weight: 300; opacity: 0.7;"
-            }, s));
-        collect(REGEX_SUCCESS, (s)=>/*#__PURE__*/ createJsxElement("strong", null, s));
-        collect(REGEX_UUID, (s)=>/*#__PURE__*/ createJsxElement("code", null, s));
+        collect(REGEX_IP, (s)=>/*#__PURE__*/ jsx("strong", {
+                children: s
+            }));
+        collect(REGEX_ERROR, (s)=>/*#__PURE__*/ jsx("strong", {
+                children: s
+            }));
+        collect(REGEX_LOG_TIMESTAMP, (s)=>/*#__PURE__*/ jsx("span", {
+                style: "font-weight: 300; opacity: 0.7;",
+                children: s
+            }));
+        collect(REGEX_SUCCESS, (s)=>/*#__PURE__*/ jsx("strong", {
+                children: s
+            }));
+        collect(REGEX_UUID, (s)=>/*#__PURE__*/ jsx("code", {
+                children: s
+            }));
         // 按开始位置排序
         matches.sort((a, b)=>a.start - b.start);
         // 如果有重叠，只保留最长（或最先定义的）
@@ -983,10 +1159,11 @@ class LogViewerCore {
             type: "text/plain"
         });
         const url = URL.createObjectURL(blob);
-        const a = /*#__PURE__*/ createJsxElement("a", {
+        const a = /*#__PURE__*/ jsx("a", {
             href: url,
-            download: "".concat(this.props.name, "-logs.txt")
-        }, _("Download Logs"));
+            download: "".concat(this.props.name, "-logs.txt"),
+            children: _("Download Logs")
+        });
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -1004,13 +1181,15 @@ class LogViewerCore {
             stopped: "#9E9E9E",
             unavailable: "#9E9E9E"
         }[this.status] || "#9E9E9E";
-        this.statusSpan = /*#__PURE__*/ createJsxElement("span", {
-            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;")
-        }, this.status);
-        this.errorSpan = /*#__PURE__*/ createJsxElement("div", {
-            style: this.lastError ? "color: #F44336; margin-top: 0.3em; display:block" : "color: #F44336; margin-top: 0.3em; display:none"
-        }, this.lastError);
-        this.searchInput = /*#__PURE__*/ createJsxElement("input", {
+        this.statusSpan = /*#__PURE__*/ jsx("span", {
+            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;"),
+            children: this.status
+        });
+        this.errorSpan = /*#__PURE__*/ jsx("div", {
+            style: this.lastError ? "color: #F44336; margin-top: 0.3em; display:block" : "color: #F44336; margin-top: 0.3em; display:none",
+            children: this.lastError
+        });
+        this.searchInput = /*#__PURE__*/ jsx("input", {
             type: "text",
             class: "cbi-input-text",
             placeholder: _("Search logs..."),
@@ -1022,12 +1201,13 @@ class LogViewerCore {
                 this.updateDisplay();
             }
         });
-        const refreshButton = /*#__PURE__*/ createJsxElement("button", {
+        const refreshButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-neutral",
-            onclick: ()=>this.fetchLogs()
-        }, _("REFRESH"));
-        this.pauseButton = /*#__PURE__*/ createJsxElement("button", {
+            onclick: ()=>this.fetchLogs(),
+            children: _("REFRESH")
+        });
+        this.pauseButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-neutral",
             onclick: ()=>{
@@ -1035,67 +1215,108 @@ class LogViewerCore {
                 if (this.pauseButton) this.pauseButton.textContent = this.isPaused ? _("PAUSED") : _("PAUSE");
                 if (this.isPaused) this.stopPolling();
                 else this.startPolling();
-            }
-        }, _("PAUSE"));
-        this.followButton = /*#__PURE__*/ createJsxElement("button", {
+            },
+            children: _("PAUSE")
+        });
+        this.followButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-neutral",
             onclick: ()=>{
                 this.isFollowing = !this.isFollowing;
                 if (this.followButton) this.followButton.textContent = this.isFollowing ? _("FOLLOW: ON") : _("FOLLOW: OFF");
-            }
-        }, _("FOLLOW: ON"));
-        this.wrapButton = /*#__PURE__*/ createJsxElement("button", {
+            },
+            children: _("FOLLOW: ON")
+        });
+        this.wrapButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-neutral",
-            onclick: ()=>this.toggleWrap()
-        }, _("WRAP: OFF"));
-        this.logContainer = /*#__PURE__*/ createJsxElement("div", {
+            onclick: ()=>this.toggleWrap(),
+            children: _("WRAP: OFF")
+        });
+        this.logContainer = /*#__PURE__*/ jsx("div", {
             class: "log-container",
-            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;"
-        }, this.logs.length === 0 ? _("No logs available") : null);
-        const copyButton = /*#__PURE__*/ createJsxElement("button", {
+            style: "flex: 1; overflow-x: auto; overflow-y: auto; padding: 1em; font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; white-space: pre; min-height: 200px;",
+            children: this.logs.length === 0 ? _("No logs available") : null
+        });
+        const copyButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button",
-            onclick: ()=>this.copyToClipboard()
-        }, _("COPY"));
-        const copySelectedButton = /*#__PURE__*/ createJsxElement("button", {
+            onclick: ()=>this.copyToClipboard(),
+            children: _("COPY")
+        });
+        const copySelectedButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-positive",
             onclick: async ()=>{
                 if (this.selectedLines.size > 0) await this.copyToClipboard();
                 else await dialog_alert(_("No lines selected"));
-            }
-        }, _("COPY SELECTED"));
-        const exportButton = /*#__PURE__*/ createJsxElement("button", {
+            },
+            children: _("COPY SELECTED")
+        });
+        const exportButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-positive",
-            onclick: ()=>this.exportAll()
-        }, _("EXPORT"));
-        const clearButton = /*#__PURE__*/ createJsxElement("button", {
+            onclick: ()=>this.exportAll(),
+            children: _("EXPORT")
+        });
+        const clearButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button",
             onclick: async ()=>await this.clearLogs(),
-            style: "background: #dc3545; color: white;"
-        }, _("CLEAR"));
-        this.searchBar = /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;"
-        }, this.searchInput, refreshButton, this.pauseButton, this.followButton, this.wrapButton);
-        this.footer = /*#__PURE__*/ createJsxElement("div", {
+            style: "background: #dc3545; color: white;",
+            children: _("CLEAR")
+        });
+        this.searchBar = /*#__PURE__*/ jsxs("div", {
+            style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;",
+            children: [
+                this.searchInput,
+                refreshButton,
+                this.pauseButton,
+                this.followButton,
+                this.wrapButton
+            ]
+        });
+        this.footer = /*#__PURE__*/ jsxs("div", {
             class: "button-row",
-            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
-        }, copyButton, copySelectedButton, exportButton, clearButton);
-        this.header = /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
-        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
-            style: "margin: 0; font-size: 1.2em; font-weight: 600;"
-        }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, _("Status:"), " ", this.statusSpan, this.errorSpan)));
-        const content = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;",
+            children: [
+                copyButton,
+                copySelectedButton,
+                exportButton,
+                clearButton
+            ]
+        });
+        this.header = /*#__PURE__*/ jsx("div", {
+            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;",
+            children: /*#__PURE__*/ jsxs("div", {
+                children: [
+                    /*#__PURE__*/ jsx("h4", {
+                        style: "margin: 0; font-size: 1.2em; font-weight: 600;",
+                        children: this.props.title
+                    }),
+                    /*#__PURE__*/ jsxs("div", {
+                        style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                        children: [
+                            _("Status:"),
+                            " ",
+                            this.statusSpan,
+                            this.errorSpan
+                        ]
+                    })
+                ]
+            })
+        });
+        const content = /*#__PURE__*/ jsxs("div", {
             class: "log-viewer-core",
-            style: "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
-        }, this.props.showHeader ? this.header : null, this.searchBar, this.applyScrollbarStyles(), this.logContainer, this.footer);
+            style: "width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;",
+            children: [
+                this.props.showHeader ? this.header : null,
+                this.searchBar,
+                this.applyScrollbarStyles(),
+                this.logContainer,
+                this.footer
+            ]
+        });
         return content;
     }
     getSearchBar() {
@@ -1158,7 +1379,9 @@ class LogViewerCore {
         const scrollbarThumb = themeColors.isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(0, 0, 0, 0.4)";
         const scrollbarThumbHover = themeColors.isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.6)";
         const scrollbarThumbActive = themeColors.isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.8)";
-        return /*#__PURE__*/ createJsxElement("style", null, "\n      .log-container::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .log-container::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .log-container::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .log-container::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .log-container {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    "));
+        return /*#__PURE__*/ jsx("style", {
+            children: "\n      .log-container::-webkit-scrollbar {\n        width: 10px;\n        height: 10px;\n      }\n      .log-container::-webkit-scrollbar-track {\n        background: ".concat(scrollbarTrack, ";\n        border-radius: 5px;\n      }\n      .log-container::-webkit-scrollbar-thumb {\n        background: ").concat(scrollbarThumb, ";\n        border-radius: 5px;\n        border: 2px solid ").concat(scrollbarTrack, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:hover {\n        background: ").concat(scrollbarThumbHover, ";\n      }\n      .log-container::-webkit-scrollbar-thumb:active {\n        background: ").concat(scrollbarThumbActive, ";\n      }\n      .log-container::-webkit-scrollbar-corner {\n        background: ").concat(scrollbarTrack, ";\n      }\n      .log-container {\n        scrollbar-width: auto;\n        scrollbar-color: ").concat(scrollbarThumb, " ").concat(scrollbarTrack, ";\n      }\n    ")
+        });
     }
     updateDisplay() {
         const themeColors = getThemeColors();
@@ -1184,16 +1407,17 @@ class LogViewerCore {
             const wasAtBottom = this.logContainer.scrollHeight - this.logContainer.scrollTop <= this.logContainer.clientHeight + 50;
             while(this.logContainer.firstChild)this.logContainer.removeChild(this.logContainer.firstChild);
             if (this.filteredLogs.length === 0) {
-                const noLogs = /*#__PURE__*/ createJsxElement("div", {
-                    style: "color: ".concat(themeColors.lineNumberColor, "; text-align: center; padding: 2em; font-family: monospace;")
-                }, this.searchFilter ? _("No logs match your search") : _("No logs available"));
+                const noLogs = /*#__PURE__*/ jsx("div", {
+                    style: "color: ".concat(themeColors.lineNumberColor, "; text-align: center; padding: 2em; font-family: monospace;"),
+                    children: this.searchFilter ? _("No logs match your search") : _("No logs available")
+                });
                 this.logContainer.appendChild(noLogs);
             } else {
                 const lineNumberWidth = "".concat(this.filteredLogs.length.toString().length, ".5ch");
                 this.filteredLogs.forEach((log, index)=>{
                     var _this_logContainer;
                     const isSelected = this.selectedLines.has(index);
-                    (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(/*#__PURE__*/ createJsxElement("div", {
+                    (_this_logContainer = this.logContainer) === null || _this_logContainer === void 0 ? void 0 : _this_logContainer.appendChild(/*#__PURE__*/ jsxs("div", {
                         onclick: (e)=>{
                             e.preventDefault();
                             if (e.ctrlKey || e.metaKey) this.toggleLineSelection(index);
@@ -1204,10 +1428,17 @@ class LogViewerCore {
                             }
                             this.updateDisplay();
                         },
-                        style: "cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.15em 0.25em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;")
-                    }, /*#__PURE__*/ createJsxElement("span", {
-                        style: "color: ".concat(themeColors.lineNumberColor, "; margin-right: 1ch; min-width: ").concat(lineNumberWidth, "; display: inline-block; text-align: right; flex-shrink: 0;")
-                    }, index + 1), /*#__PURE__*/ createJsxElement("span", null, this.highlightLog(log))));
+                        style: "cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; padding: 0.15em 0.25em; ".concat(isSelected ? "background: ".concat(themeColors.selectionBg, ";") : "", " font-family: monospace, monospace; font-size: 0.9em; line-height: 1.4; display: flex; align-items: flex-start;"),
+                        children: [
+                            /*#__PURE__*/ jsx("span", {
+                                style: "color: ".concat(themeColors.lineNumberColor, "; margin-right: 1ch; min-width: ").concat(lineNumberWidth, "; display: inline-block; text-align: right; flex-shrink: 0;"),
+                                children: index + 1
+                            }),
+                            /*#__PURE__*/ jsx("span", {
+                                children: this.highlightLog(log)
+                            })
+                        ]
+                    }));
                 });
             }
             if (this.isFollowing && wasAtBottom) this.logContainer.scrollTop = this.logContainer.scrollHeight;
@@ -1237,9 +1468,10 @@ class LogViewerCore {
             await dialog_alert(_("Failed to copy logs"));
         });
         else {
-            const textarea = /*#__PURE__*/ createJsxElement("textarea", {
-                style: "position: fixed; opacity: 0; display: none;"
-            }, text);
+            const textarea = /*#__PURE__*/ jsx("textarea", {
+                style: "position: fixed; opacity: 0; display: none;",
+                children: text
+            });
             document.body.appendChild(textarea);
             textarea.select();
             try {
@@ -1299,6 +1531,7 @@ class LogViewerCore {
 
 
 
+
 class LogViewerDialog {
     render() {
         this.core = new LogViewerCore(_object_spread_props(_object_spread({}, this.props), {
@@ -1306,49 +1539,95 @@ class LogViewerDialog {
         }));
         this.core.render();
         const statusColor = "#9E9E9E";
-        this.statusSpan = /*#__PURE__*/ createJsxElement("span", {
-            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;")
-        }, _("unavailable"));
-        this.errorSpan = /*#__PURE__*/ createJsxElement("div", {
+        this.statusSpan = /*#__PURE__*/ jsx("span", {
+            style: "display: inline-block; padding: 0.25em 0.6em; border-radius: 3px; background: ".concat(statusColor, "; color: white; font-weight: 600; font-size: 0.85em;"),
+            children: _("unavailable")
+        });
+        this.errorSpan = /*#__PURE__*/ jsx("div", {
             style: "color: #F44336; margin-top: 0.3em; display:none"
         });
-        const header = /*#__PURE__*/ createJsxElement("div", {
-            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;"
-        }, /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("h4", {
-            style: "margin: 0; font-size: 1.2em; font-weight: 600;"
-        }, this.props.title), /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, _("Status:"), this.statusSpan, this.errorSpan)), /*#__PURE__*/ createJsxElement("button", {
-            type: "button",
-            onclick: ()=>this.close(),
-            style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;"
-        }, "\xd7"));
+        const header = /*#__PURE__*/ jsxs("div", {
+            style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;",
+            children: [
+                /*#__PURE__*/ jsxs("div", {
+                    children: [
+                        /*#__PURE__*/ jsx("h4", {
+                            style: "margin: 0; font-size: 1.2em; font-weight: 600;",
+                            children: this.props.title
+                        }),
+                        /*#__PURE__*/ jsxs("div", {
+                            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                            children: [
+                                _("Status:"),
+                                this.statusSpan,
+                                this.errorSpan
+                            ]
+                        })
+                    ]
+                }),
+                /*#__PURE__*/ jsx("button", {
+                    type: "button",
+                    onclick: ()=>this.close(),
+                    style: "background: none; border: none; font-size: 1.5em; cursor: pointer; color: #6c757d;",
+                    children: "\xd7"
+                })
+            ]
+        });
         const searchBar = this.core.getSearchBar();
         const logContainer = this.core.getLogContainer();
         const footer = this.core.getFooter();
-        const closeFooterButton = /*#__PURE__*/ createJsxElement("button", {
+        const closeFooterButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button",
-            onclick: ()=>this.close()
-        }, _("Close"));
-        const dialogFooter = /*#__PURE__*/ createJsxElement("div", {
+            onclick: ()=>this.close(),
+            children: _("Close")
+        });
+        const dialogFooter = /*#__PURE__*/ jsxs("div", {
             class: "button-row",
-            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
-        }, /*#__PURE__*/ createJsxElement("span", null, footer ? Array.from(footer.children) : null), /*#__PURE__*/ createJsxElement("span", null, closeFooterButton));
-        const content = /*#__PURE__*/ createJsxElement("div", {
+            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;",
+            children: [
+                /*#__PURE__*/ jsx("span", {
+                    children: footer ? Array.from(footer.children) : null
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    children: closeFooterButton
+                })
+            ]
+        });
+        const content = /*#__PURE__*/ jsxs("div", {
             class: "modal cbi-modal cbi-section-node",
             role: "dialog",
             "aria-modal": "true",
-            style: "width: 95vw; max-width: 1200px; max-height: 90vh; display: grid; grid-template-rows: auto auto 1fr auto;"
-        }, /*#__PURE__*/ createJsxElement("div", null, " ", header), /*#__PURE__*/ createJsxElement("div", null, searchBar), /*#__PURE__*/ createJsxElement("div", {
-            style: "max-height: min(calc(85vh - 220px), 100vh); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;"
-        }, logContainer), /*#__PURE__*/ createJsxElement("div", null, " ", dialogFooter));
-        this.modal = /*#__PURE__*/ createJsxElement("div", {
+            style: "width: 95vw; max-width: 1200px; max-height: 90vh; display: grid; grid-template-rows: auto auto 1fr auto;",
+            children: [
+                /*#__PURE__*/ jsxs("div", {
+                    children: [
+                        " ",
+                        header
+                    ]
+                }),
+                /*#__PURE__*/ jsx("div", {
+                    children: searchBar
+                }),
+                /*#__PURE__*/ jsx("div", {
+                    style: "max-height: min(calc(85vh - 220px), 100vh); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;",
+                    children: logContainer
+                }),
+                /*#__PURE__*/ jsxs("div", {
+                    children: [
+                        " ",
+                        dialogFooter
+                    ]
+                })
+            ]
+        });
+        this.modal = /*#__PURE__*/ jsx("div", {
             style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
             onclick: (e)=>{
                 if (e.target === e.currentTarget) this.close();
-            }
-        }, content);
+            },
+            children: content
+        });
         return this.modal;
     }
     open() {
@@ -1433,6 +1712,7 @@ class LogViewerDialog {
 
 
 
+
 class ProxyStatsViewer {
     getStatsColors() {
         const { isDark } = getThemeColors();
@@ -1449,18 +1729,19 @@ class ProxyStatsViewer {
     }
     render() {
         const colors = this.getStatsColors();
-        const container = /*#__PURE__*/ createJsxElement("div", {
+        const container = /*#__PURE__*/ jsx("div", {
             style: "padding: 12px; border: 1px solid ".concat(colors.borderColor, "; border-radius: 4px; background-color: ").concat(colors.bgColor, ";")
         });
-        this.loadingEl = /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 14px; color: ".concat(colors.textColor, ";")
-        }, _("Loading stats..."));
+        this.loadingEl = /*#__PURE__*/ jsx("div", {
+            style: "font-size: 14px; color: ".concat(colors.textColor, ";"),
+            children: _("Loading stats...")
+        });
         container.appendChild(this.loadingEl);
-        this.errorEl = /*#__PURE__*/ createJsxElement("div", {
+        this.errorEl = /*#__PURE__*/ jsx("div", {
             style: "color: ".concat(colors.errorColor, "; font-size: 14px; display: none;")
         });
         container.appendChild(this.errorEl);
-        this.statsEl = /*#__PURE__*/ createJsxElement("div", {
+        this.statsEl = /*#__PURE__*/ jsx("div", {
             style: "display: none; color: ".concat(colors.textColor, ";")
         });
         container.appendChild(this.statsEl);
@@ -1493,42 +1774,62 @@ class ProxyStatsViewer {
                 const proxies = stats.proxies || [];
                 if (!Array.isArray(proxies) || proxies.length === 0) {
                     const colors = this.getStatsColors();
-                    this.statsEl.appendChild(/*#__PURE__*/ createJsxElement("div", {
-                        style: "font-size: 14px; color: ".concat(colors.textColor, ";")
-                    }, _("No proxies configured")));
+                    this.statsEl.appendChild(/*#__PURE__*/ jsx("div", {
+                        style: "font-size: 14px; color: ".concat(colors.textColor, ";"),
+                        children: _("No proxies configured")
+                    }));
                     return;
                 }
                 const colors = this.getStatsColors();
                 const hasError = proxies.some((p)=>p.err && p.err.length > 0 || p.status === "error");
                 const statusColor = hasError ? colors.errorColor : colors.successColor;
                 const statusText = hasError ? _("error") : _("running");
-                const statusBadge = /*#__PURE__*/ createJsxElement("div", {
-                    style: "margin-bottom: 8px;"
-                }, /*#__PURE__*/ createJsxElement("span", {
-                    class: "ifacebadge",
-                    style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";")
-                }, translateStatus(statusText)));
+                const statusBadge = /*#__PURE__*/ jsx("div", {
+                    style: "margin-bottom: 8px;",
+                    children: /*#__PURE__*/ jsx("span", {
+                        class: "ifacebadge",
+                        style: "font-size: 1em; font-weight: 600; color: ".concat(statusColor, ";"),
+                        children: translateStatus(statusText)
+                    })
+                });
                 this.statsEl.appendChild(statusBadge);
-                const countEl = /*#__PURE__*/ createJsxElement("small", {
-                    style: "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";")
-                }, /*#__PURE__*/ createJsxElement("span", null, _("Proxies: %d").format(proxies.length)), /*#__PURE__*/ createJsxElement("br", null));
+                const countEl = /*#__PURE__*/ jsxs("small", {
+                    style: "display: block; margin-bottom: 4px; color: ".concat(colors.textColor, ";"),
+                    children: [
+                        /*#__PURE__*/ jsx("span", {
+                            children: _("Proxies: %d").format(proxies.length)
+                        }),
+                        /*#__PURE__*/ jsx("br", {})
+                    ]
+                });
                 this.statsEl.appendChild(countEl);
-                const container = /*#__PURE__*/ createJsxElement("div", {
-                    style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(colors.innerBgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;")
-                }, proxies.map((proxy)=>{
-                    var _proxy_cfg;
-                    return /*#__PURE__*/ createJsxElement("div", {
-                        style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(colors.rowBorderColor, ";")
-                    }, /*#__PURE__*/ createJsxElement("span", {
-                        style: "min-width: 35px; color: ".concat(colors.mutedTextColor, ";")
-                    }, proxy.type.toUpperCase()), /*#__PURE__*/ createJsxElement("span", {
-                        style: "min-width: 45px; color: ".concat(colors.textColor, ";")
-                    }, ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remotePort) || proxy.remote_addr || "N/A")), /*#__PURE__*/ createJsxElement("span", {
-                        style: "color: ".concat(colors.successColor, ";")
-                    }, "\u21930 B"), /*#__PURE__*/ createJsxElement("span", {
-                        style: "color: ".concat(colors.errorColor, ";")
-                    }, "\u21910 B"));
-                }));
+                const container = /*#__PURE__*/ jsx("div", {
+                    style: "margin-top: 0.3em; padding: 0.3em; background: ".concat(colors.innerBgColor, "; border-radius: 3px; max-height: 80px; overflow-y: auto;"),
+                    children: proxies.map((proxy)=>{
+                        var _proxy_cfg;
+                        return /*#__PURE__*/ jsxs("div", {
+                            style: "display: flex; gap: 0.5em; padding: 0.15em 0; font-size: 0.9em; border-bottom: 1px solid ".concat(colors.rowBorderColor, ";"),
+                            children: [
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "min-width: 35px; color: ".concat(colors.mutedTextColor, ";"),
+                                    children: proxy.type.toUpperCase()
+                                }),
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "min-width: 45px; color: ".concat(colors.textColor, ";"),
+                                    children: ":".concat(((_proxy_cfg = proxy.cfg) === null || _proxy_cfg === void 0 ? void 0 : _proxy_cfg.remotePort) || proxy.remote_addr || "N/A")
+                                }),
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "color: ".concat(colors.successColor, ";"),
+                                    children: "\u21930 B"
+                                }),
+                                /*#__PURE__*/ jsx("span", {
+                                    style: "color: ".concat(colors.errorColor, ";"),
+                                    children: "\u21910 B"
+                                })
+                            ]
+                        });
+                    })
+                });
                 this.statsEl.appendChild(container);
             }
         } catch (error) {
@@ -1577,6 +1878,7 @@ class ProxyStatsViewer {
 }
 
 ;// CONCATENATED MODULE: ./modules/frpc.tsx
+
 
 
 
@@ -1652,11 +1954,17 @@ const actionButtons = {};
             stopped: _("Stopped"),
             unavailable: _("Unavailable")
         }[info.status] || info.status;
-        const container = /*#__PURE__*/ createJsxElement("span", {
-            style: "display:flex; align-items:center;"
-        }, /*#__PURE__*/ createJsxElement("span", {
-            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
-        }), /*#__PURE__*/ createJsxElement("span", null, statusText));
+        const container = /*#__PURE__*/ jsxs("span", {
+            style: "display:flex; align-items:center;",
+            children: [
+                /*#__PURE__*/ jsx("span", {
+                    style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    children: statusText
+                })
+            ]
+        });
         frpc_statusElements[section_id] = container;
         return container;
     };
@@ -1711,7 +2019,7 @@ const actionButtons = {};
     o.textvalue = (section_id)=>{
         var _nodeStatuses_section_id;
         const isRunning = (((_nodeStatuses_section_id = nodeStatuses[section_id]) === null || _nodeStatuses_section_id === void 0 ? void 0 : _nodeStatuses_section_id.status) || "stopped") !== "stopped";
-        const btn = /*#__PURE__*/ createJsxElement("button", {
+        const btn = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-action",
             onclick: ()=>{
@@ -1724,8 +2032,9 @@ const actionButtons = {};
                 });
                 logViewer.open();
             },
-            disabled: !isRunning
-        }, _("View Logs"));
+            disabled: !isRunning,
+            children: _("View Logs")
+        });
         actionButtons[section_id] = btn;
         return btn;
     };
@@ -1733,7 +2042,7 @@ const actionButtons = {};
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const nodeName = L.uci.get("portweaver", section_id, "name");
-        const container = /*#__PURE__*/ createJsxElement("div", {
+        const container = /*#__PURE__*/ jsx("div", {
             style: "display: flex; gap: 8px; flex-wrap: wrap;"
         });
         // Create stats viewer for the client (now shows all proxies)
@@ -1815,6 +2124,7 @@ const actionButtons = {};
 
 
 
+
 const frps_form = L.form;
 function frps_getStatusColors() {
     const { isDark } = getThemeColors();
@@ -1889,11 +2199,17 @@ const frps_actionButtons = {};
             stopped: _("Stopped"),
             unavailable: _("Unavailable")
         }[info.status] || info.status;
-        const container = /*#__PURE__*/ createJsxElement("span", {
-            style: "display:flex; align-items:center;"
-        }, /*#__PURE__*/ createJsxElement("span", {
-            style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
-        }), /*#__PURE__*/ createJsxElement("span", null, statusText));
+        const container = /*#__PURE__*/ jsxs("span", {
+            style: "display:flex; align-items:center;",
+            children: [
+                /*#__PURE__*/ jsx("span", {
+                    style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    children: statusText
+                })
+            ]
+        });
         frps_statusElements[section_id] = container;
         return container;
     };
@@ -1987,7 +2303,7 @@ const frps_actionButtons = {};
     o.textvalue = (section_id)=>{
         var _nodeStatuses_section_id;
         const isRunning = (((_nodeStatuses_section_id = frps_nodeStatuses[section_id]) === null || _nodeStatuses_section_id === void 0 ? void 0 : _nodeStatuses_section_id.status) || "stopped") !== "stopped";
-        const btn = /*#__PURE__*/ createJsxElement("button", {
+        const btn = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-action",
             onclick: ()=>{
@@ -2000,8 +2316,9 @@ const frps_actionButtons = {};
                 });
                 logViewer.open();
             },
-            disabled: !isRunning
-        }, _("View Logs"));
+            disabled: !isRunning,
+            children: _("View Logs")
+        });
         frps_actionButtons[section_id] = btn;
         return btn;
     };
@@ -2072,6 +2389,7 @@ const frps_actionButtons = {};
 
 ;// CONCATENATED MODULE: ./components/ValidatedInput.tsx
 
+
 /**
  * 创建带验证的通用 input 元素
  * @param options 配置选项
@@ -2083,7 +2401,7 @@ const frps_actionButtons = {};
         let [key, val] = param;
         dataAttrs["data-".concat(key)] = val;
     });
-    const input = /*#__PURE__*/ createJsxElement("input", _object_spread({
+    const input = /*#__PURE__*/ jsx("input", _object_spread({
         type: type,
         class: className,
         value: value,
@@ -2116,6 +2434,7 @@ const frps_actionButtons = {};
 ;// CONCATENATED MODULE: ./components/FrpNodeSelector.tsx
 
 
+
 /**
  * 创建可复用的 FRP 节点选择器 UI
  * @param options 配置选项
@@ -2144,16 +2463,17 @@ const frps_actionButtons = {};
         }
         if (onChange) onChange(values);
     };
-    const container = /*#__PURE__*/ createJsxElement("div", {
+    const container = /*#__PURE__*/ jsx("div", {
         style: containerStyle || ""
     });
     if (frp_sections.length === 0) {
         const emptyMsg = _("No FRP nodes configured");
-        container.appendChild(/*#__PURE__*/ createJsxElement("em", {
-            style: "color: #999;"
-        }, emptyMsg));
+        container.appendChild(/*#__PURE__*/ jsx("em", {
+            style: "color: #999;",
+            children: emptyMsg
+        }));
     } else {
-        const table = /*#__PURE__*/ createJsxElement("table", {
+        const table = /*#__PURE__*/ jsx("table", {
             class: "table",
             style: "margin: 0; width: auto;"
         });
@@ -2163,17 +2483,22 @@ const frps_actionButtons = {};
             const is_checked = Object.hasOwn(node_map, node_name);
             const port_value = node_map[node_name] || "";
             const is_enabled = frp_section.enabled !== "0";
-            const warning = /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #e6a23c; margin-left: 8px; font-size: 0.9em; display: ".concat(is_checked && !is_enabled ? "" : "none", ";")
-            }, "\u26A0", " ", _("Warning: FRP node '%s' is disabled.").format(node_name));
-            const checkbox = /*#__PURE__*/ createJsxElement("input", {
+            const warning = /*#__PURE__*/ jsxs("span", {
+                style: "color: #e6a23c; margin-left: 8px; font-size: 0.9em; display: ".concat(is_checked && !is_enabled ? "" : "none", ";"),
+                children: [
+                    "\u26A0",
+                    " ",
+                    _("Warning: FRP node '%s' is disabled.").format(node_name)
+                ]
+            });
+            const checkbox = /*#__PURE__*/ jsx("input", {
                 type: "checkbox",
                 class: checkboxClass,
                 "data-node": node_name,
                 checked: is_checked,
                 style: "margin-right: 8px;"
             });
-            const port_input = /*#__PURE__*/ createJsxElement(ValidatedInput, {
+            const port_input = /*#__PURE__*/ jsx(ValidatedInput, {
                 type: "text",
                 className: portInputClass,
                 value: port_value,
@@ -2191,11 +2516,16 @@ const frps_actionButtons = {};
             });
             checkboxes.push(checkbox);
             portInputs.set(node_name, port_input);
-            const port_input_area = /*#__PURE__*/ createJsxElement("td", {
-                style: "padding: 4px 8px; border: none;".concat(is_checked ? "" : "display: none;")
-            }, /*#__PURE__*/ createJsxElement("span", {
-                style: "margin-right: 5px; color: #666;"
-            }, _("Port:")), port_input);
+            const port_input_area = /*#__PURE__*/ jsxs("td", {
+                style: "padding: 4px 8px; border: none;".concat(is_checked ? "" : "display: none;"),
+                children: [
+                    /*#__PURE__*/ jsx("span", {
+                        style: "margin-right: 5px; color: #666;",
+                        children: _("Port:")
+                    }),
+                    port_input
+                ]
+            });
             checkbox.addEventListener("change", (ev)=>{
                 const element = ev.currentTarget;
                 port_input.disabled = !element.checked;
@@ -2205,11 +2535,26 @@ const frps_actionButtons = {};
                 updateHandler();
             });
             port_input.addEventListener("change", updateHandler);
-            const row = /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("tr", null, /*#__PURE__*/ createJsxElement("td", {
-                style: "padding: 4px 8px; border: none;"
-            }, checkbox, /*#__PURE__*/ createJsxElement("span", {
-                style: "cursor: pointer; font-weight: normal; margin: 0;"
-            }, node_name)), port_input_area), warning);
+            const row = /*#__PURE__*/ jsxs("div", {
+                children: [
+                    /*#__PURE__*/ jsxs("tr", {
+                        children: [
+                            /*#__PURE__*/ jsxs("td", {
+                                style: "padding: 4px 8px; border: none;",
+                                children: [
+                                    checkbox,
+                                    /*#__PURE__*/ jsx("span", {
+                                        style: "cursor: pointer; font-weight: normal; margin: 0;",
+                                        children: node_name
+                                    })
+                                ]
+                            }),
+                            port_input_area
+                        ]
+                    }),
+                    warning
+                ]
+            });
             table.appendChild(row);
         }
         container.appendChild(table);
@@ -2295,22 +2640,23 @@ class FrpNodeSelector extends L.form.Value {
             isValid: selector.isValid,
             getValidationError: selector.getValidationError
         };
-        hiddenInput = /*#__PURE__*/ createJsxElement("input", {
+        hiddenInput = /*#__PURE__*/ jsx("input", {
             type: "hidden",
             id: widget_id,
             name: widget_id,
             value: current_value.join(" ")
         });
-        const container = /*#__PURE__*/ createJsxElement("div", {
+        const container = /*#__PURE__*/ jsx("div", {
             class: "cbi-value-field"
         });
         container.appendChild(selectorContainer);
         container.appendChild(hiddenInput);
         // 存储 hiddenInput 引用供 formvalue 方法使用
         this.hiddenInput = hiddenInput;
-        const description = /*#__PURE__*/ createJsxElement("div", {
-            class: "cbi-value-description"
-        }, _("Select FRP nodes and optionally specify custom ports. Leave port empty to use default."));
+        const description = /*#__PURE__*/ jsx("div", {
+            class: "cbi-value-description",
+            children: _("Select FRP nodes and optionally specify custom ports. Leave port empty to use default.")
+        });
         container.appendChild(description);
         return container;
     }
@@ -2359,6 +2705,7 @@ class FrpNodeSelector extends L.form.Value {
 /* export default */ const components_FrpNodeSelector = (FrpNodeSelector);
 
 ;// CONCATENATED MODULE: ./components/PortMappingEditor.tsx
+
 
 
 
@@ -2419,7 +2766,7 @@ class PortMappingEditor extends L.form.Value {
         this.errorDivRefs = [];
         const current_values = Array.isArray(cfgvalue) ? cfgvalue : typeof cfgvalue === "string" ? String(cfgvalue).split(/\s+/).filter(Boolean) : [];
         const widget_id = this.cbid(section_id);
-        const mappings_wrapper = /*#__PURE__*/ createJsxElement("div", {
+        const mappings_wrapper = /*#__PURE__*/ jsx("div", {
             id: "portmapping-wrapper-".concat(section_id)
         });
         // 存储每个行的元素引用
@@ -2451,7 +2798,7 @@ class PortMappingEditor extends L.form.Value {
             };
             const row_id = "portmapping-row-".concat(section_id, "-").concat(index);
             let isTextMode = true;
-            const listenInput = /*#__PURE__*/ createJsxElement(ValidatedInput, {
+            const listenInput = /*#__PURE__*/ jsx(ValidatedInput, {
                 type: "text",
                 className: "listen-port-input",
                 value: mapping.listenPort,
@@ -2466,7 +2813,7 @@ class PortMappingEditor extends L.form.Value {
                     return this.validatePortOrRange(value.trim());
                 }
             });
-            const targetInput = /*#__PURE__*/ createJsxElement(ValidatedInput, {
+            const targetInput = /*#__PURE__*/ jsx(ValidatedInput, {
                 type: "text",
                 className: "target-port-input",
                 value: mapping.targetPort,
@@ -2481,22 +2828,30 @@ class PortMappingEditor extends L.form.Value {
                     return this.validatePortOrRange(value.trim());
                 }
             });
-            const protocolSelect = /*#__PURE__*/ createJsxElement("select", {
+            const protocolSelect = /*#__PURE__*/ jsxs("select", {
                 class: "protocol-select",
                 "data-index": index,
                 "data-section": section_id,
-                style: "width: 100px; margin-right: 10px;"
-            }, /*#__PURE__*/ createJsxElement("option", {
-                value: "tcp",
-                selected: mapping.protocol === "tcp"
-            }, "TCP"), /*#__PURE__*/ createJsxElement("option", {
-                value: "udp",
-                selected: mapping.protocol === "udp"
-            }, "UDP"), /*#__PURE__*/ createJsxElement("option", {
-                value: "both",
-                selected: mapping.protocol === "both"
-            }, "Both"));
-            const textModeInput = /*#__PURE__*/ createJsxElement(ValidatedInput, {
+                style: "width: 100px; margin-right: 10px;",
+                children: [
+                    /*#__PURE__*/ jsx("option", {
+                        value: "tcp",
+                        selected: mapping.protocol === "tcp",
+                        children: "TCP"
+                    }),
+                    /*#__PURE__*/ jsx("option", {
+                        value: "udp",
+                        selected: mapping.protocol === "udp",
+                        children: "UDP"
+                    }),
+                    /*#__PURE__*/ jsx("option", {
+                        value: "both",
+                        selected: mapping.protocol === "both",
+                        children: "Both"
+                    })
+                ]
+            });
+            const textModeInput = /*#__PURE__*/ jsx(ValidatedInput, {
                 type: "text",
                 className: "text-mode-input",
                 value: mapping_str,
@@ -2508,11 +2863,12 @@ class PortMappingEditor extends L.form.Value {
                     return !!parsed;
                 }
             });
-            const previewDiv = /*#__PURE__*/ createJsxElement("div", {
+            const previewDiv = /*#__PURE__*/ jsx("div", {
                 class: "portmapping-preview",
                 "data-index": index,
-                style: "margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
-            }, _("Preview: %s").format(this.buildString(mapping)));
+                style: "margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;",
+                children: _("Preview: %s").format(this.buildString(mapping))
+            });
             const updatePreview = ()=>{
                 const listen = listenInput.value.trim();
                 const target = targetInput.value.trim();
@@ -2538,48 +2894,79 @@ class PortMappingEditor extends L.form.Value {
                 portInputClass: "frp-node-port-pm"
             });
             const { container: selectorContainer, getSelectedNodes, isValid: isFrpValid, getValidationError: getFrpError } = selector;
-            const frpContainer = /*#__PURE__*/ createJsxElement("div", {
+            const frpContainer = /*#__PURE__*/ jsx("div", {
                 class: "frp-nodes-select",
-                style: "display: block; margin-top: 6px;"
-            }, /*#__PURE__*/ createJsxElement("span", {
-                style: "display: block; margin-bottom: 6px; font-weight: bold;"
-            }, _("FRP Nodes (Optional):")));
+                style: "display: block; margin-top: 6px;",
+                children: /*#__PURE__*/ jsx("span", {
+                    style: "display: block; margin-bottom: 6px; font-weight: bold;",
+                    children: _("FRP Nodes (Optional):")
+                })
+            });
             frpContainer.appendChild(selectorContainer);
-            const errorDiv = /*#__PURE__*/ createJsxElement("div", {
+            const errorDiv = /*#__PURE__*/ jsx("div", {
                 class: "portmapping-error",
                 "data-index": index,
                 style: "color: red; margin-top: 6px; font-size: 12px; display: none;"
             });
             this.errorDivRefs.push(errorDiv);
-            const titleRow = /*#__PURE__*/ createJsxElement("div", {
-                style: "display: flex; gap: 10px; align-items: center;"
-            }, /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 80px; font-weight: bold;"
-            }, _("Listen Port:")), listenInput, /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 80px; font-weight: bold;"
-            }, _("Target Port:")), targetInput, /*#__PURE__*/ createJsxElement("span", {
-                style: "min-width: 60px; font-weight: bold;"
-            }, _("Protocol:")), protocolSelect);
-            const modeToggleBtn = /*#__PURE__*/ createJsxElement("button", {
+            const titleRow = /*#__PURE__*/ jsxs("div", {
+                style: "display: flex; gap: 10px; align-items: center;",
+                children: [
+                    /*#__PURE__*/ jsx("span", {
+                        style: "min-width: 80px; font-weight: bold;",
+                        children: _("Listen Port:")
+                    }),
+                    listenInput,
+                    /*#__PURE__*/ jsx("span", {
+                        style: "min-width: 80px; font-weight: bold;",
+                        children: _("Target Port:")
+                    }),
+                    targetInput,
+                    /*#__PURE__*/ jsx("span", {
+                        style: "min-width: 60px; font-weight: bold;",
+                        children: _("Protocol:")
+                    }),
+                    protocolSelect
+                ]
+            });
+            const modeToggleBtn = /*#__PURE__*/ jsx("button", {
                 type: "button",
                 class: "btn cbi-button cbi-button-edit",
-                style: "margin-right: 8px;"
-            }, _("Text Edit"));
-            const deleteBtn = /*#__PURE__*/ createJsxElement("button", {
+                style: "margin-right: 8px;",
+                children: _("Text Edit")
+            });
+            const deleteBtn = /*#__PURE__*/ jsx("button", {
                 type: "button",
                 class: "btn cbi-button cbi-button-remove",
                 "data-index": index,
-                "data-section": section_id
-            }, _("Delete"));
-            const buttonRow = /*#__PURE__*/ createJsxElement("div", {
-                style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"
-            }, /*#__PURE__*/ createJsxElement("div", null, modeToggleBtn), /*#__PURE__*/ createJsxElement("div", null, deleteBtn));
-            const row = /*#__PURE__*/ createJsxElement("div", {
+                "data-section": section_id,
+                children: _("Delete")
+            });
+            const buttonRow = /*#__PURE__*/ jsxs("div", {
+                style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
+                children: [
+                    /*#__PURE__*/ jsx("div", {
+                        children: modeToggleBtn
+                    }),
+                    /*#__PURE__*/ jsx("div", {
+                        children: deleteBtn
+                    })
+                ]
+            });
+            const row = /*#__PURE__*/ jsxs("div", {
                 id: row_id,
                 class: "portmapping-row",
                 "data-index": index,
-                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
-            }, buttonRow, titleRow, textModeInput, frpContainer, errorDiv, previewDiv);
+                style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;",
+                children: [
+                    buttonRow,
+                    titleRow,
+                    textModeInput,
+                    frpContainer,
+                    errorDiv,
+                    previewDiv
+                ]
+            });
             const validateAndUpdate = ()=>{
                 const listen = listenInput.value.trim();
                 const target = targetInput.value.trim();
@@ -2680,11 +3067,12 @@ class PortMappingEditor extends L.form.Value {
             rowRefs.push(rowData);
             mappings_wrapper.appendChild(rowData.element);
         }
-        const addBtn = /*#__PURE__*/ createJsxElement("button", {
+        const addBtn = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "btn btn-sm btn-primary",
-            style: "margin-bottom: 10px;"
-        }, _("Add Port Mapping"));
+            style: "margin-bottom: 10px;",
+            children: _("Add Port Mapping")
+        });
         addBtn.onclick = (e)=>{
             e.preventDefault();
             const new_index = rowRefs.length;
@@ -2692,17 +3080,24 @@ class PortMappingEditor extends L.form.Value {
             rowRefs.push(rowData);
             mappings_wrapper.appendChild(rowData.element);
         };
-        const hiddenInput = /*#__PURE__*/ createJsxElement("input", {
+        const hiddenInput = /*#__PURE__*/ jsx("input", {
             type: "hidden",
             name: widget_id,
             value: current_values.join(" ")
         });
         this.hiddenInput = hiddenInput;
-        const container = /*#__PURE__*/ createJsxElement("div", {
-            class: "cbi-value-field"
-        }, mappings_wrapper, addBtn, hiddenInput, /*#__PURE__*/ createJsxElement("div", {
-            class: "cbi-value-description"
-        }, _("Configure port forwarding rules. Listen Port and Target Port support single port (8080) or port range (8080-8090).")));
+        const container = /*#__PURE__*/ jsxs("div", {
+            class: "cbi-value-field",
+            children: [
+                mappings_wrapper,
+                addBtn,
+                hiddenInput,
+                /*#__PURE__*/ jsx("div", {
+                    class: "cbi-value-description",
+                    children: _("Configure port forwarding rules. Listen Port and Target Port support single port (8080) or port range (8080-8090).")
+                })
+            ]
+        });
         return container;
     }
     cfgvalue(section_id) {
@@ -2853,9 +3248,10 @@ class PortMappingEditor extends L.form.Value {
 ;// CONCATENATED MODULE: ./modules/config.tsx
 
 
+
 const config_form = L.form;
 const uci = L.uci;
-/* export default */ function config(_m, s, client, tab_id) {
+/* export default */ function modules_config(_m, s, client, tab_id) {
     let o;
     o = s.taboption(tab_id, config_form.SectionValue, "_projects", config_form.GridSection, "project");
     const ss = o.subsection;
@@ -2868,9 +3264,10 @@ const uci = L.uci;
     o.modalonly = false;
     o.textvalue = (section_id)=>{
         const status = client.getProjectStatus(section_id);
-        const container = /*#__PURE__*/ createJsxElement("div", {
-            id: "project-status-".concat(section_id)
-        }, client.renderStatusElements(status, section_id));
+        const container = /*#__PURE__*/ jsx("div", {
+            id: "project-status-".concat(section_id),
+            children: client.renderStatusElements(status, section_id)
+        });
         client.projectContainers = client.projectContainers || {};
         client.projectContainers[section_id] = container;
         return container;
@@ -2910,42 +3307,114 @@ const uci = L.uci;
             ipv6: _("IPv6")
         }[family] || family;
         const lines = [];
-        lines.push(/*#__PURE__*/ createJsxElement("span", null, _("Incoming "), /*#__PURE__*/ createJsxElement("var", null, family_text), _(" protocol "), /*#__PURE__*/ createJsxElement("var", null, proto_text)));
+        lines.push(/*#__PURE__*/ jsxs("span", {
+            children: [
+                _("Incoming "),
+                /*#__PURE__*/ jsx("var", {
+                    children: family_text
+                }),
+                _(" protocol "),
+                /*#__PURE__*/ jsx("var", {
+                    children: proto_text
+                })
+            ]
+        }));
         if (src_zones.length > 0) {
-            const src_badges = src_zones.map((z)=>/*#__PURE__*/ createJsxElement("span", {
+            const src_badges = src_zones.map((z)=>/*#__PURE__*/ jsx("span", {
                     class: "zonebadge",
-                    style: fwmodel.getZoneColorStyle(z)
-                }, /*#__PURE__*/ createJsxElement("strong", null, z || /*#__PURE__*/ createJsxElement("em", null, _("any zone")))));
-            lines.push(/*#__PURE__*/ createJsxElement("br", null));
-            lines.push(/*#__PURE__*/ createJsxElement("span", null, _("From "), ...src_badges));
+                    style: fwmodel.getZoneColorStyle(z),
+                    children: /*#__PURE__*/ jsx("strong", {
+                        children: z || /*#__PURE__*/ jsx("em", {
+                            children: _("any zone")
+                        })
+                    })
+                }));
+            lines.push(/*#__PURE__*/ jsx("br", {}));
+            lines.push(/*#__PURE__*/ jsxs("span", {
+                children: [
+                    _("From "),
+                    ...src_badges
+                ]
+            }));
         }
         if (port_mappings.length > 0) {
-            lines.push(/*#__PURE__*/ createJsxElement("br", null));
-            lines.push(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("strong", {
-                style: "color: #09c;"
-            }, _("Multi-Port")), _(" - "), /*#__PURE__*/ createJsxElement("var", null, port_mappings.length), _(" mapping(s)")));
+            lines.push(/*#__PURE__*/ jsx("br", {}));
+            lines.push(/*#__PURE__*/ jsxs("span", {
+                children: [
+                    /*#__PURE__*/ jsx("strong", {
+                        style: "color: #09c;",
+                        children: _("Multi-Port")
+                    }),
+                    _(" - "),
+                    /*#__PURE__*/ jsx("var", {
+                        children: port_mappings.length
+                    }),
+                    _(" mapping(s)")
+                ]
+            }));
             const first = port_mappings[0];
-            lines.push(/*#__PURE__*/ createJsxElement("br", null));
-            lines.push(/*#__PURE__*/ createJsxElement("span", null, _("e.g. "), /*#__PURE__*/ createJsxElement("var", null, first)));
+            lines.push(/*#__PURE__*/ jsx("br", {}));
+            lines.push(/*#__PURE__*/ jsxs("span", {
+                children: [
+                    _("e.g. "),
+                    /*#__PURE__*/ jsx("var", {
+                        children: first
+                    })
+                ]
+            }));
         } else if (listen_port) {
-            lines.push(/*#__PURE__*/ createJsxElement("br", null));
-            lines.push(/*#__PURE__*/ createJsxElement("span", null, _("Port "), /*#__PURE__*/ createJsxElement("var", null, listen_port)));
+            lines.push(/*#__PURE__*/ jsx("br", {}));
+            lines.push(/*#__PURE__*/ jsxs("span", {
+                children: [
+                    _("Port "),
+                    /*#__PURE__*/ jsx("var", {
+                        children: listen_port
+                    })
+                ]
+            }));
         }
-        lines.push(/*#__PURE__*/ createJsxElement("br", null));
-        lines.push(/*#__PURE__*/ createJsxElement("span", null, /*#__PURE__*/ createJsxElement("var", {
-            "data-tooltip": "Forward"
-        }, _("Forward")), _(" to ")));
+        lines.push(/*#__PURE__*/ jsx("br", {}));
+        lines.push(/*#__PURE__*/ jsxs("span", {
+            children: [
+                /*#__PURE__*/ jsx("var", {
+                    "data-tooltip": "Forward",
+                    children: _("Forward")
+                }),
+                _(" to ")
+            ]
+        }));
         if (dest_zones.length > 0) {
-            const dest_badges = dest_zones.map((z)=>/*#__PURE__*/ createJsxElement("span", {
+            const dest_badges = dest_zones.map((z)=>/*#__PURE__*/ jsx("span", {
                     class: "zonebadge",
-                    style: fwmodel.getZoneColorStyle(z)
-                }, /*#__PURE__*/ createJsxElement("strong", null, z || /*#__PURE__*/ createJsxElement("em", null, _("any zone")))));
+                    style: fwmodel.getZoneColorStyle(z),
+                    children: /*#__PURE__*/ jsx("strong", {
+                        children: z || /*#__PURE__*/ jsx("em", {
+                            children: _("any zone")
+                        })
+                    })
+                }));
             lines.push(...dest_badges);
             lines.push(_(" "));
         }
-        if (target_address) lines.push(/*#__PURE__*/ createJsxElement("span", null, _("IP "), /*#__PURE__*/ createJsxElement("var", null, target_address)));
-        if (port_mappings.length === 0 && target_port) lines.push(/*#__PURE__*/ createJsxElement("span", null, _(" port "), /*#__PURE__*/ createJsxElement("var", null, target_port)));
-        return /*#__PURE__*/ createJsxElement("small", null, lines);
+        if (target_address) lines.push(/*#__PURE__*/ jsxs("span", {
+            children: [
+                _("IP "),
+                /*#__PURE__*/ jsx("var", {
+                    children: target_address
+                })
+            ]
+        }));
+        if (port_mappings.length === 0 && target_port) lines.push(/*#__PURE__*/ jsxs("span", {
+            children: [
+                _(" port "),
+                /*#__PURE__*/ jsx("var", {
+                    children: target_port
+                })
+            ]
+        }));
+        return /*#__PURE__*/ jsx("small", {
+            children: lines
+        });
     };
     // Modal configuration fields
     o = ss.option(config_form.Value, "remark", _("Remark"));
@@ -3069,6 +3538,7 @@ const uci = L.uci;
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
 
 
+
 class StatusPanel {
     render(status, frpStatus, projectStatuses, events, ddnsGlobalStatus) {
         const statusColor = {
@@ -3080,165 +3550,251 @@ class StatusPanel {
         const enabledProjects = (projectStatuses === null || projectStatuses === void 0 ? void 0 : projectStatuses.filter((p)=>p.enabled)) || [];
         const runningProjects = enabledProjects.filter((p)=>p.status === "running");
         const hasEnabledProjects = enabledProjects.length > 0;
-        return /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("div", {
-            style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;"
-        }, (()=>{
-            const statusValueEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
-                id: "status-value"
-            }, translateStatus(status.status) || "-");
-            this.statusValueEl = statusValueEl;
-            return this.card(_("Status"), statusValueEl);
-        })(), (()=>{
-            const totalProjectsEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600;",
-                id: "total-projects-value"
-            }, status.total_projects || 0);
-            this.totalProjectsEl = totalProjectsEl;
-            return this.card(_("Total Projects"), totalProjectsEl);
-        })(), (()=>{
-            const activePortsEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600;",
-                id: "active-ports-value"
-            }, status.active_ports || 0);
-            this.activePortsEl = activePortsEl;
-            return this.card(_("Active Ports"), activePortsEl);
-        })(), (()=>{
-            const uptimeEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600;",
-                id: "uptime-value"
-            }, formatUptime(status.uptime || 0));
-            this.uptimeEl = uptimeEl;
-            return this.card(_("Uptime"), uptimeEl);
-        })(), (()=>{
-            const trafficInEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600;",
-                id: "traffic-in-value"
-            }, formatBytes(status.total_bytes_in || 0));
-            this.trafficInEl = trafficInEl;
-            return this.card(_("Traffic In"), trafficInEl);
-        })(), (()=>{
-            const trafficOutEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600;",
-                id: "traffic-out-value"
-            }, formatBytes(status.total_bytes_out || 0));
-            this.trafficOutEl = trafficOutEl;
-            return this.card(_("Traffic Out"), trafficOutEl);
-        })(), hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ createJsxElement("div", {
-            id: "project-health-value"
-        }, /*#__PURE__*/ createJsxElement("strong", {
-            style: "font-size: 1.1em; font-weight: 600; color: ".concat(runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545", ";")
-        }, runningProjects.length, " / ", enabledProjects.length), /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;"
-        }, _("projects running")))), frpStatus && (()=>{
-            const frpc = frpStatus.frpc || {
-                enabled: false
-            };
-            const isEnabled = frpc.enabled;
-            const frpcEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600; color: ".concat(isEnabled ? "#28a745" : "#6c757d", ";"),
-                id: "frpc-enabled-value"
-            }, isEnabled ? _("Enabled") : _("Disabled"));
-            this.frpcEnabledEl = frpcEnabledEl;
-            const frpcVersionEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
-                id: "frpc-version-value"
-            }, isEnabled && frpStatus.frp_version ? frpStatus.frp_version : "");
-            this.frpcVersionEl = frpcVersionEl;
-            const frpcStatusEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; margin-top: 0.2em;",
-                id: "frpc-status-value"
-            });
-            this.frpcStatusEl = frpcStatusEl;
-            const frpcInfoEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
-                id: "frpc-info-value"
-            });
-            this.frpcInfoEl = frpcInfoEl;
-            const frpcErrorEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
-                id: "frpc-error-value"
-            });
-            this.frpcErrorEl = frpcErrorEl;
-            return this.card("FRPC", /*#__PURE__*/ createJsxElement("div", null, frpcEnabledEl, frpcVersionEl, frpcStatusEl, frpcInfoEl, frpcErrorEl));
-        })(), frpStatus && (()=>{
-            const frps = frpStatus.frps || {
-                enabled: false
-            };
-            const isEnabled = frps.enabled;
-            const frpsEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600; color: ".concat(isEnabled ? "#28a745" : "#6c757d", ";"),
-                id: "frps-enabled-value"
-            }, isEnabled ? _("Enabled") : _("Disabled"));
-            this.frpsEnabledEl = frpsEnabledEl;
-            const frpsVersionEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
-                id: "frps-version-value"
-            }, isEnabled && frpStatus.frp_version ? frpStatus.frp_version : "");
-            this.frpsVersionEl = frpsVersionEl;
-            const frpsStatusEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; margin-top: 0.2em;",
-                id: "frps-status-value"
-            });
-            this.frpsStatusEl = frpsStatusEl;
-            const frpsInfoEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
-                id: "frps-info-value"
-            });
-            this.frpsInfoEl = frpsInfoEl;
-            const frpsErrorEl = /*#__PURE__*/ createJsxElement("div", {
-                style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
-                id: "frps-error-value"
-            });
-            this.frpsErrorEl = frpsErrorEl;
-            return this.card("FRPS", /*#__PURE__*/ createJsxElement("div", null, frpsEnabledEl, frpsVersionEl, frpsStatusEl, frpsInfoEl, frpsErrorEl));
-        })(), ddnsGlobalStatus && (()=>{
-            const ddnsEnabledEl = /*#__PURE__*/ createJsxElement("strong", {
-                style: "font-size: 1.1em; font-weight: 600; color: ".concat(ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d", ";"),
-                id: "ddns-enabled-value"
-            }, ddnsGlobalStatus.ddns_enabled ? _("Enabled") : _("Disabled"));
-            this.ddnsEnabledEl = ddnsEnabledEl;
-            const ddnsVersionEl = ddnsGlobalStatus.ddns_version ? /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
-                id: "ddns-version-value"
-            }, ddnsGlobalStatus.ddns_version) : null;
-            if (ddnsVersionEl) this.ddnsVersionEl = ddnsVersionEl;
-            return this.card(_("DDNS-GO"), /*#__PURE__*/ createJsxElement("div", null, ddnsEnabledEl, ddnsVersionEl));
-        })(), (()=>{
-            const trafficRateInEl = /*#__PURE__*/ createJsxElement("span", null, _("calculating"));
-            const trafficRateOutEl = /*#__PURE__*/ createJsxElement("span", null, _("calculating"));
-            this.trafficRateInEl = trafficRateInEl;
-            this.trafficRateOutEl = trafficRateOutEl;
-            return this.card(_("Traffic Rate"), /*#__PURE__*/ createJsxElement("div", null, /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em;"
-            }, "\u2193 ", trafficRateInEl), /*#__PURE__*/ createJsxElement("div", {
-                style: "font-size: 0.85em;"
-            }, "\u2191 ", trafficRateOutEl)));
-        })(), (()=>{
-            const projectListEl = /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #6c757d;"
-            }, _("loading"));
-            this.projectListEl = projectListEl;
-            return this.card(_("Project List"), projectListEl);
-        })(), (()=>{
-            const frpcProxiesEl = /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #6c757d;"
-            }, _("loading"));
-            this.frpcProxiesEl = frpcProxiesEl;
-            return this.card(_("FRPC Proxies"), frpcProxiesEl);
-        })(), (()=>{
-            const frpsProxiesEl = /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #6c757d;"
-            }, _("loading"));
-            this.frpsProxiesEl = frpsProxiesEl;
-            return this.card(_("FRPS Active Proxies"), frpsProxiesEl);
-        })(), (()=>{
-            const ddnsHealthEl = /*#__PURE__*/ createJsxElement("span", {
-                style: "color: #6c757d;"
-            }, _("loading"));
-            this.ddnsHealthEl = ddnsHealthEl;
-            return this.card(_("DDNS Entries"), ddnsHealthEl);
-        })()), events && events.length > 0 && this.renderActivityLog(events));
+        return /*#__PURE__*/ jsxs("div", {
+            children: [
+                /*#__PURE__*/ jsxs("div", {
+                    style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;",
+                    children: [
+                        (()=>{
+                            const statusValueEl = /*#__PURE__*/ jsx("strong", {
+                                style: "color: ".concat(statusColor, "; font-size: 1.1em; font-weight: 600;"),
+                                id: "status-value",
+                                children: translateStatus(status.status) || "-"
+                            });
+                            this.statusValueEl = statusValueEl;
+                            return this.card(_("Status"), statusValueEl);
+                        })(),
+                        (()=>{
+                            const totalProjectsEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600;",
+                                id: "total-projects-value",
+                                children: status.total_projects || 0
+                            });
+                            this.totalProjectsEl = totalProjectsEl;
+                            return this.card(_("Total Projects"), totalProjectsEl);
+                        })(),
+                        (()=>{
+                            const activePortsEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600;",
+                                id: "active-ports-value",
+                                children: status.active_ports || 0
+                            });
+                            this.activePortsEl = activePortsEl;
+                            return this.card(_("Active Ports"), activePortsEl);
+                        })(),
+                        (()=>{
+                            const uptimeEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600;",
+                                id: "uptime-value",
+                                children: formatUptime(status.uptime || 0)
+                            });
+                            this.uptimeEl = uptimeEl;
+                            return this.card(_("Uptime"), uptimeEl);
+                        })(),
+                        (()=>{
+                            const trafficInEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600;",
+                                id: "traffic-in-value",
+                                children: formatBytes(status.total_bytes_in || 0)
+                            });
+                            this.trafficInEl = trafficInEl;
+                            return this.card(_("Traffic In"), trafficInEl);
+                        })(),
+                        (()=>{
+                            const trafficOutEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600;",
+                                id: "traffic-out-value",
+                                children: formatBytes(status.total_bytes_out || 0)
+                            });
+                            this.trafficOutEl = trafficOutEl;
+                            return this.card(_("Traffic Out"), trafficOutEl);
+                        })(),
+                        hasEnabledProjects && this.card(_("Project Health"), /*#__PURE__*/ jsxs("div", {
+                            id: "project-health-value",
+                            children: [
+                                /*#__PURE__*/ jsxs("strong", {
+                                    style: "font-size: 1.1em; font-weight: 600; color: ".concat(runningProjects.length === enabledProjects.length ? "#28a745" : runningProjects.length > 0 ? "#ffc107" : "#dc3545", ";"),
+                                    children: [
+                                        runningProjects.length,
+                                        " / ",
+                                        enabledProjects.length
+                                    ]
+                                }),
+                                /*#__PURE__*/ jsx("div", {
+                                    style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                                    children: _("projects running")
+                                })
+                            ]
+                        })),
+                        frpStatus && (()=>{
+                            const frpc = frpStatus.frpc || {
+                                enabled: false
+                            };
+                            const isEnabled = frpc.enabled;
+                            const frpcEnabledEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600; color: ".concat(isEnabled ? "#28a745" : "#6c757d", ";"),
+                                id: "frpc-enabled-value",
+                                children: isEnabled ? _("Enabled") : _("Disabled")
+                            });
+                            this.frpcEnabledEl = frpcEnabledEl;
+                            const frpcVersionEl = /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                                id: "frpc-version-value",
+                                children: isEnabled && frpStatus.frp_version ? frpStatus.frp_version : ""
+                            });
+                            this.frpcVersionEl = frpcVersionEl;
+                            const frpcStatusEl = /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; margin-top: 0.2em;",
+                                id: "frpc-status-value"
+                            });
+                            this.frpcStatusEl = frpcStatusEl;
+                            const frpcInfoEl = /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
+                                id: "frpc-info-value"
+                            });
+                            this.frpcInfoEl = frpcInfoEl;
+                            const frpcErrorEl = /*#__PURE__*/ jsx("div", {
+                                style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
+                                id: "frpc-error-value"
+                            });
+                            this.frpcErrorEl = frpcErrorEl;
+                            return this.card("FRPC", /*#__PURE__*/ jsxs("div", {
+                                children: [
+                                    frpcEnabledEl,
+                                    frpcVersionEl,
+                                    frpcStatusEl,
+                                    frpcInfoEl,
+                                    frpcErrorEl
+                                ]
+                            }));
+                        })(),
+                        frpStatus && (()=>{
+                            const frps = frpStatus.frps || {
+                                enabled: false
+                            };
+                            const isEnabled = frps.enabled;
+                            const frpsEnabledEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600; color: ".concat(isEnabled ? "#28a745" : "#6c757d", ";"),
+                                id: "frps-enabled-value",
+                                children: isEnabled ? _("Enabled") : _("Disabled")
+                            });
+                            this.frpsEnabledEl = frpsEnabledEl;
+                            const frpsVersionEl = /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                                id: "frps-version-value",
+                                children: isEnabled && frpStatus.frp_version ? frpStatus.frp_version : ""
+                            });
+                            this.frpsVersionEl = frpsVersionEl;
+                            const frpsStatusEl = /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; margin-top: 0.2em;",
+                                id: "frps-status-value"
+                            });
+                            this.frpsStatusEl = frpsStatusEl;
+                            const frpsInfoEl = /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
+                                id: "frps-info-value"
+                            });
+                            this.frpsInfoEl = frpsInfoEl;
+                            const frpsErrorEl = /*#__PURE__*/ jsx("div", {
+                                style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
+                                id: "frps-error-value"
+                            });
+                            this.frpsErrorEl = frpsErrorEl;
+                            return this.card("FRPS", /*#__PURE__*/ jsxs("div", {
+                                children: [
+                                    frpsEnabledEl,
+                                    frpsVersionEl,
+                                    frpsStatusEl,
+                                    frpsInfoEl,
+                                    frpsErrorEl
+                                ]
+                            }));
+                        })(),
+                        ddnsGlobalStatus && (()=>{
+                            const ddnsEnabledEl = /*#__PURE__*/ jsx("strong", {
+                                style: "font-size: 1.1em; font-weight: 600; color: ".concat(ddnsGlobalStatus.ddns_enabled ? "#28a745" : "#6c757d", ";"),
+                                id: "ddns-enabled-value",
+                                children: ddnsGlobalStatus.ddns_enabled ? _("Enabled") : _("Disabled")
+                            });
+                            this.ddnsEnabledEl = ddnsEnabledEl;
+                            const ddnsVersionEl = ddnsGlobalStatus.ddns_version ? /*#__PURE__*/ jsx("div", {
+                                style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
+                                id: "ddns-version-value",
+                                children: ddnsGlobalStatus.ddns_version
+                            }) : null;
+                            if (ddnsVersionEl) this.ddnsVersionEl = ddnsVersionEl;
+                            return this.card(_("DDNS-GO"), /*#__PURE__*/ jsxs("div", {
+                                children: [
+                                    ddnsEnabledEl,
+                                    ddnsVersionEl
+                                ]
+                            }));
+                        })(),
+                        (()=>{
+                            const trafficRateInEl = /*#__PURE__*/ jsx("span", {
+                                children: _("calculating")
+                            });
+                            const trafficRateOutEl = /*#__PURE__*/ jsx("span", {
+                                children: _("calculating")
+                            });
+                            this.trafficRateInEl = trafficRateInEl;
+                            this.trafficRateOutEl = trafficRateOutEl;
+                            return this.card(_("Traffic Rate"), /*#__PURE__*/ jsxs("div", {
+                                children: [
+                                    /*#__PURE__*/ jsxs("div", {
+                                        style: "font-size: 0.85em;",
+                                        children: [
+                                            "\u2193 ",
+                                            trafficRateInEl
+                                        ]
+                                    }),
+                                    /*#__PURE__*/ jsxs("div", {
+                                        style: "font-size: 0.85em;",
+                                        children: [
+                                            "\u2191 ",
+                                            trafficRateOutEl
+                                        ]
+                                    })
+                                ]
+                            }));
+                        })(),
+                        (()=>{
+                            const projectListEl = /*#__PURE__*/ jsx("span", {
+                                style: "color: #6c757d;",
+                                children: _("loading")
+                            });
+                            this.projectListEl = projectListEl;
+                            return this.card(_("Project List"), projectListEl);
+                        })(),
+                        (()=>{
+                            const frpcProxiesEl = /*#__PURE__*/ jsx("span", {
+                                style: "color: #6c757d;",
+                                children: _("loading")
+                            });
+                            this.frpcProxiesEl = frpcProxiesEl;
+                            return this.card(_("FRPC Proxies"), frpcProxiesEl);
+                        })(),
+                        (()=>{
+                            const frpsProxiesEl = /*#__PURE__*/ jsx("span", {
+                                style: "color: #6c757d;",
+                                children: _("loading")
+                            });
+                            this.frpsProxiesEl = frpsProxiesEl;
+                            return this.card(_("FRPS Active Proxies"), frpsProxiesEl);
+                        })(),
+                        (()=>{
+                            const ddnsHealthEl = /*#__PURE__*/ jsx("span", {
+                                style: "color: #6c757d;",
+                                children: _("loading")
+                            });
+                            this.ddnsHealthEl = ddnsHealthEl;
+                            return this.card(_("DDNS Entries"), ddnsHealthEl);
+                        })()
+                    ]
+                }),
+                events && events.length > 0 && this.renderActivityLog(events)
+            ]
+        });
     }
     truncateError(error, maxLen) {
         if (error.length <= maxLen) return error;
@@ -3247,18 +3803,24 @@ class StatusPanel {
     renderActivityLog(events) {
         // Show last 5 events, most recent first
         const recentEvents = events.slice(-5).reverse();
-        return /*#__PURE__*/ createJsxElement("div", {
-            style: "margin-top: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;"
-        }, /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;"
-        }, _("Recent Activity")), (()=>{
-            const activityLogContainer = /*#__PURE__*/ createJsxElement("div", {
-                style: "max-height: 150px; overflow-y: auto;",
-                id: "activity-log-container"
-            }, recentEvents.map((event)=>this.renderEventRow(event)));
-            this.activityLogContainer = activityLogContainer;
-            return activityLogContainer;
-        })());
+        return /*#__PURE__*/ jsxs("div", {
+            style: "margin-top: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;",
+            children: [
+                /*#__PURE__*/ jsx("div", {
+                    style: "font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;",
+                    children: _("Recent Activity")
+                }),
+                (()=>{
+                    const activityLogContainer = /*#__PURE__*/ jsx("div", {
+                        style: "max-height: 150px; overflow-y: auto;",
+                        id: "activity-log-container",
+                        children: recentEvents.map((event)=>this.renderEventRow(event))
+                    });
+                    this.activityLogContainer = activityLogContainer;
+                    return activityLogContainer;
+                })()
+            ]
+        });
     }
     renderEventRow(event) {
         const eventColors = {
@@ -3280,16 +3842,24 @@ class StatusPanel {
         const color = eventColors[event.type] || "#6c757d";
         const icon = eventIcons[event.type] || "\u2022";
         const time = this.formatTimestamp(event.timestamp);
-        return /*#__PURE__*/ createJsxElement("div", {
-            style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;"
-        }, /*#__PURE__*/ createJsxElement("span", {
-            style: "color: ".concat(color, "; margin-right: 0.5em; flex-shrink: 0;")
-        }, icon), /*#__PURE__*/ createJsxElement("span", {
-            style: "color: #6c757d; margin-right: 0.5em; flex-shrink: 0; min-width: 70px;"
-        }, time), /*#__PURE__*/ createJsxElement("span", {
-            style: "flex: 1; word-break: break-word;",
-            title: event.message
-        }, this.truncateError(event.message, 60)));
+        return /*#__PURE__*/ jsxs("div", {
+            style: "display: flex; align-items: flex-start; padding: 0.3em 0; border-bottom: 1px solid #eee; font-size: 0.85em;",
+            children: [
+                /*#__PURE__*/ jsx("span", {
+                    style: "color: ".concat(color, "; margin-right: 0.5em; flex-shrink: 0;"),
+                    children: icon
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    style: "color: #6c757d; margin-right: 0.5em; flex-shrink: 0; min-width: 70px;",
+                    children: time
+                }),
+                /*#__PURE__*/ jsx("span", {
+                    style: "flex: 1; word-break: break-word;",
+                    title: event.message,
+                    children: this.truncateError(event.message, 60)
+                })
+            ]
+        });
     }
     formatTimestamp(timestamp) {
         const date = new Date(timestamp);
@@ -3299,11 +3869,16 @@ class StatusPanel {
         return "".concat(hours, ":").concat(minutes, ":").concat(seconds);
     }
     card(label, valueEl) {
-        return /*#__PURE__*/ createJsxElement("div", {
-            style: "border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;"
-        }, /*#__PURE__*/ createJsxElement("div", {
-            style: "font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;"
-        }, label), valueEl);
+        return /*#__PURE__*/ jsxs("div", {
+            style: "border: 1px solid #dee2e6; padding: 0.8em; border-radius: 4px; background: transparent;",
+            children: [
+                /*#__PURE__*/ jsx("div", {
+                    style: "font-size: 0.85em; color: #6c757d; margin-bottom: 0.3em;",
+                    children: label
+                }),
+                valueEl
+            ]
+        });
     }
     constructor(){
         _define_property(this, "statusValueEl", void 0);
@@ -3338,6 +3913,7 @@ class StatusPanel {
 ;// CONCATENATED MODULE: ./modules/header.tsx
 
 
+
 const header_form = L.form;
 /* export default */ function modules_header(_m, s, client, tab_id) {
     let o;
@@ -3354,14 +3930,18 @@ const header_form = L.form;
     const runtimeToggle = async (section_id)=>{
         const idx = client.getProjectIndex(section_id);
         if (idx < 0) {
-            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Could not determine project index")), "error");
+            L.ui.addNotification(null, /*#__PURE__*/ jsx("p", {
+                children: _("Could not determine project index")
+            }), "error");
             return Promise.resolve();
         }
         const status = client.getProjectStatus(section_id);
         const newEnabled = !(status === null || status === void 0 ? void 0 : status.enabled);
         try {
             await rpcClient.setEnabled(idx, !!newEnabled);
-            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Runtime state updated to: %s").format(newEnabled ? _("enabled") : _("disabled"))), "info");
+            L.ui.addNotification(null, /*#__PURE__*/ jsx("p", {
+                children: _("Runtime state updated to: %s").format(newEnabled ? _("enabled") : _("disabled"))
+            }), "info");
             const fullStatus = await rpcClient.getFullStatus();
             if (fullStatus) {
                 client.globalStatus = {
@@ -3385,13 +3965,16 @@ const header_form = L.form;
             }
             location.reload();
         } catch (err) {
-            L.ui.addNotification(null, /*#__PURE__*/ createJsxElement("p", null, _("Failed to toggle runtime state: %s").format((err === null || err === void 0 ? void 0 : err.message) || String(err))), "error");
+            L.ui.addNotification(null, /*#__PURE__*/ jsx("p", {
+                children: _("Failed to toggle runtime state: %s").format((err === null || err === void 0 ? void 0 : err.message) || String(err))
+            }), "error");
         }
     };
     window.portweaverToggle = runtimeToggle;
 }
 
 ;// CONCATENATED MODULE: ./modules/logs.tsx
+
 
 
 const logs_form = L.form;
@@ -3474,11 +4057,12 @@ let logViewerCore = null;
         });
         const coreElement = logViewerCore.render();
         logViewerCore.init();
-        const restartButton = /*#__PURE__*/ createJsxElement("button", {
+        const restartButton = /*#__PURE__*/ jsx("button", {
             type: "button",
             class: "cbi-button cbi-button-apply",
-            onclick: ()=>restartService()
-        }, _("Restart Service"));
+            onclick: ()=>restartService(),
+            children: _("Restart Service")
+        });
         const footer = coreElement.querySelector(".button-row");
         if (footer) {
             var _clearButton_parentNode;
@@ -3486,13 +4070,15 @@ let logViewerCore = null;
             if (clearButton) (_clearButton_parentNode = clearButton.parentNode) === null || _clearButton_parentNode === void 0 ? void 0 : _clearButton_parentNode.insertBefore(restartButton, clearButton);
             else footer.appendChild(restartButton);
         }
-        return /*#__PURE__*/ createJsxElement("div", {
-            style: "height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;"
-        }, coreElement);
+        return /*#__PURE__*/ jsx("div", {
+            style: "height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;",
+            children: coreElement
+        });
     };
 }
 
 ;// CONCATENATED MODULE: ./modules/ddns.tsx
+
 
 
 const ddns_form = L.form;
@@ -3683,38 +4269,43 @@ const ddns_statusElements = {};
         };
         const statusColor = statusColors[status.status] || statusColors.unknown;
         const statusText = statusLabels[status.status] || status.status;
-        const indicator = /*#__PURE__*/ createJsxElement("span", {
+        const indicator = /*#__PURE__*/ jsx("span", {
             style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
         });
-        const textSpan = /*#__PURE__*/ createJsxElement("span", null, statusText);
-        const container = /*#__PURE__*/ createJsxElement("div", {
+        const textSpan = /*#__PURE__*/ jsx("span", {
+            children: statusText
+        });
+        const container = /*#__PURE__*/ jsx("div", {
             style: "display:flex; flex-direction:column; gap:4px;"
         });
-        const statusRow = /*#__PURE__*/ createJsxElement("div", {
+        const statusRow = /*#__PURE__*/ jsx("div", {
             style: "display:flex; align-items:center;"
         });
         statusRow.appendChild(indicator);
         statusRow.appendChild(textSpan);
         container.appendChild(statusRow);
         if (status.last_ip) {
-            const ipInfo = /*#__PURE__*/ createJsxElement("small", {
-                style: "color:#666;"
-            }, _("IP: %s").format(status.last_ip));
+            const ipInfo = /*#__PURE__*/ jsx("small", {
+                style: "color:#666;",
+                children: _("IP: %s").format(status.last_ip)
+            });
             container.appendChild(ipInfo);
         }
         if (status.last_update > 0) {
             const date = new Date(status.last_update * 1000);
             const formattedTime = date.toLocaleString();
-            const updateInfo = /*#__PURE__*/ createJsxElement("small", {
-                style: "color:#666;"
-            }, _("Updated: %s").format(formattedTime));
+            const updateInfo = /*#__PURE__*/ jsx("small", {
+                style: "color:#666;",
+                children: _("Updated: %s").format(formattedTime)
+            });
             container.appendChild(updateInfo);
         }
         if (status.message && status.status === "error") {
-            const errorMsg = /*#__PURE__*/ createJsxElement("small", {
+            const errorMsg = /*#__PURE__*/ jsx("small", {
                 style: "color:#F44336;",
-                title: status.message
-            }, status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message);
+                title: status.message,
+                children: status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message
+            });
             container.appendChild(errorMsg);
         }
         ddns_statusElements[name] = container;
@@ -3745,10 +4336,11 @@ const ddns_statusElements = {};
     o = ss.option(ddns_form.DummyValue, "_actions", _("Actions"));
     o.modalonly = false;
     o.textvalue = (section_id)=>{
-        const viewLogsBtn = /*#__PURE__*/ createJsxElement("button", {
+        const viewLogsBtn = /*#__PURE__*/ jsx("button", {
             class: "btn cbi-button cbi-button-action",
-            type: "button"
-        }, _("View Logs"));
+            type: "button",
+            children: _("View Logs")
+        });
         const nodeName = L.uci.get("portweaver", section_id, "name");
         viewLogsBtn.onclick = ()=>{
             const viewer = new LogViewerDialog({
@@ -3951,35 +4543,40 @@ const ddns_statusElements = {};
                         const statusText = statusLabels[status.status] || status.status;
                         // Clear container by removing all children
                         while(container.firstChild)container.removeChild(container.firstChild);
-                        const statusRow = /*#__PURE__*/ createJsxElement("div", {
+                        const statusRow = /*#__PURE__*/ jsx("div", {
                             style: "display:flex; align-items:center;"
                         });
-                        const indicator = /*#__PURE__*/ createJsxElement("span", {
+                        const indicator = /*#__PURE__*/ jsx("span", {
                             style: "display:inline-block; width:12px; height:12px; border-radius:50%; background-color:".concat(statusColor, "; margin-right:8px;")
                         });
-                        const textSpan = /*#__PURE__*/ createJsxElement("span", null, statusText);
+                        const textSpan = /*#__PURE__*/ jsx("span", {
+                            children: statusText
+                        });
                         statusRow.appendChild(indicator);
                         statusRow.appendChild(textSpan);
                         container.appendChild(statusRow);
                         if (status.last_ip) {
-                            const ipInfo = /*#__PURE__*/ createJsxElement("small", {
-                                style: "color:#666;"
-                            }, _("IP: %s").format(status.last_ip));
+                            const ipInfo = /*#__PURE__*/ jsx("small", {
+                                style: "color:#666;",
+                                children: _("IP: %s").format(status.last_ip)
+                            });
                             container.appendChild(ipInfo);
                         }
                         if (status.last_update > 0) {
                             const date = new Date(status.last_update * 1000);
                             const formattedTime = date.toLocaleString();
-                            const updateInfo = /*#__PURE__*/ createJsxElement("small", {
-                                style: "color:#666;"
-                            }, _("Updated: %s").format(formattedTime));
+                            const updateInfo = /*#__PURE__*/ jsx("small", {
+                                style: "color:#666;",
+                                children: _("Updated: %s").format(formattedTime)
+                            });
                             container.appendChild(updateInfo);
                         }
                         if (status.message && status.status === "error") {
-                            const errorMsg = /*#__PURE__*/ createJsxElement("small", {
+                            const errorMsg = /*#__PURE__*/ jsx("small", {
                                 style: "color:#F44336;",
-                                title: status.message
-                            }, status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message);
+                                title: status.message,
+                                children: status.message.length > 40 ? "".concat(status.message.substring(0, 37), "...") : status.message
+                            });
                             container.appendChild(errorMsg);
                         }
                     }
@@ -4030,7 +4627,7 @@ class main extends L.view {
         const fullStatus = data[2];
         const client = new Client(fullStatus);
         modules_header(m, s, client, "settings");
-        config(m, s, client, "projects");
+        modules_config(m, s, client, "projects");
         ddns(m, s, "ddns");
         modules_frpc(m, s, "frpc");
         modules_frps(m, s, "frps");
