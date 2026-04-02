@@ -36,13 +36,23 @@ export default defineConfig({
     },
     assetPrefix: "",
     minify: false,
-    cleanDistPath: true,
+    cleanDistPath: true
   },
   plugins: [],
   tools: {
     htmlPlugin: false,
     swc: {
       jsc: {
+        parser: {
+          syntax: 'typescript',
+          tsx: true,
+          decorators: true,
+        },
+        minify: {
+          compress: true,
+          mangle: {
+          }
+        },
         transform: {
           react: {
             runtime: "automatic",
