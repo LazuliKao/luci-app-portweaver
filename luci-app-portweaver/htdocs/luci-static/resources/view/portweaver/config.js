@@ -1891,10 +1891,8 @@ class PortMappingEditor_o extends L.form.Value {
         }), t.listenPort && (t.frpNodes && t.frpNodes.length > 0 ? e += "[".concat(t.listenPort, "]") : e += t.listenPort), t.targetPort && (e += ":".concat(t.targetPort)), t.protocol && (e += "/".concat(t.protocol)), e;
     }
     renderWidget(t, o, l) {
-        this.errorDivRefs = [];
-        let a = Array.isArray(l) ? l : "string" == typeof l ? String(l).split(/\s+/).filter(Boolean) : [], s = this.cbid(t), p = jsx("div", {
-            id: "portmapping-wrapper-".concat(t)
-        }), d = [], c = ()=>{
+        this.errorDivRefs = [], console.log(l);
+        let a = Array.isArray(l) ? l : "string" == typeof l ? String(l).split(/\s+/).filter(Boolean) : [], s = this.cbid(t), p = jsx("div", {}), d = [], u = ()=>{
             let t = [];
             for (let e of d){
                 let r = e.listenInput.value.trim(), i = e.targetInput.value.trim(), n = e.protocolSelect.value, o = {
@@ -1906,13 +1904,13 @@ class PortMappingEditor_o extends L.form.Value {
                 l && r && i && t.push(l);
             }
             this.hiddenInput && (this.hiddenInput.value = t.join(" "));
-        }, u = (o, l)=>{
+        }, c = (o, l)=>{
             let a = this.parseMapping(o) || {
                 listenPort: "",
                 targetPort: "",
                 frpNodes: [],
                 protocol: "tcp"
-            }, s = "portmapping-row-".concat(t, "-").concat(l), p = !1, u = jsx(ValidatedInput_r, {
+            }, s = o ? this.buildString(a) : "", p = "portmapping-row-".concat(t, "-").concat(l), c = !0, h = jsx(ValidatedInput_r, {
                 type: "text",
                 className: "listen-port-input",
                 value: a.listenPort,
@@ -1923,7 +1921,7 @@ class PortMappingEditor_o extends L.form.Value {
                     section: t
                 },
                 onValidate: (t)=>!!t.trim() && this.validatePortOrRange(t.trim())
-            }), h = jsx(ValidatedInput_r, {
+            }), g = jsx(ValidatedInput_r, {
                 type: "text",
                 className: "target-port-input",
                 value: a.targetPort,
@@ -1934,7 +1932,7 @@ class PortMappingEditor_o extends L.form.Value {
                     section: t
                 },
                 onValidate: (t)=>!!t.trim() && this.validatePortOrRange(t.trim())
-            }), g = jsxs("select", {
+            }), f = jsxs("select", {
                 class: "protocol-select",
                 "data-index": l,
                 "data-section": t,
@@ -1956,35 +1954,41 @@ class PortMappingEditor_o extends L.form.Value {
                         children: "Both"
                     })
                 ]
-            }), f = jsx(ValidatedInput_r, {
+            }), m = jsx(ValidatedInput_r, {
                 type: "text",
                 className: "text-mode-input",
-                value: o,
+                value: s,
                 placeholder: _("[8080][node1:9888]:80/tcp or 8080:80/tcp"),
                 style: "width: 100%; margin-bottom: 6px; padding: 5px; display: none;",
                 validateOn: "blur",
                 onValidate: (t)=>!!this.parseMapping(t)
-            }), m = jsx("div", {
+            }), v = jsx("div", {
                 class: "portmapping-preview",
                 "data-index": l,
                 style: "margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;",
                 children: _("Preview: %s").format(this.buildString(a))
-            }), v = ()=>{
-                let t = u.value.trim(), e = h.value.trim(), r = g.value, i = x(), n = this.buildString({
+            }), b = ()=>{
+                let t = h.value.trim(), e = g.value.trim(), r = f.value, i = y(), n = this.buildString({
                     listenPort: t,
                     targetPort: e,
                     frpNodes: i,
                     protocol: r
                 });
-                m.textContent = _("Preview: %s").format(n), f.value = n;
-            }, { container: b, getSelectedNodes: x, isValid: y, getValidationError: P } = createFrpNodeSelector({
-                selectedNodes: a.frpNodes || [],
-                onChange: ()=>{
-                    F();
-                },
-                checkboxClass: "frp-node-checkbox-pm",
-                portInputClass: "frp-node-port-pm"
-            }), w = jsx("div", {
+                v.textContent = _("Preview: %s").format(n), c || (m.value = n);
+            }, x = null, y = null, P = null, w = null, N = (t)=>{
+                var e;
+                let r = createFrpNodeSelector({
+                    selectedNodes: t,
+                    onChange: ()=>{
+                        k();
+                    },
+                    checkboxClass: "frp-node-checkbox-pm",
+                    portInputClass: "frp-node-port-pm"
+                });
+                null == x || null == (e = x.parentNode) || e.replaceChild(r.container, x), x = r.container, y = r.getSelectedNodes, P = r.isValid, w = r.getValidationError;
+            };
+            N(a.frpNodes || []);
+            let V = jsx("div", {
                 class: "frp-nodes-select",
                 style: "display: block; margin-top: 6px;",
                 children: jsx("span", {
@@ -1992,109 +1996,123 @@ class PortMappingEditor_o extends L.form.Value {
                     children: _("FRP Nodes (Optional):")
                 })
             });
-            w.appendChild(b);
-            let V = jsx("div", {
+            V.appendChild(x);
+            let I = jsx("div", {
                 class: "portmapping-error",
                 "data-index": l,
                 style: "color: red; margin-top: 6px; font-size: 12px; display: none;"
             });
-            this.errorDivRefs.push(V);
-            let I = jsxs("div", {
+            this.errorDivRefs.push(I);
+            let C = jsxs("div", {
                 style: "display: flex; gap: 10px; align-items: center;",
                 children: [
                     jsx("span", {
                         style: "min-width: 80px; font-weight: bold;",
                         children: _("Listen Port:")
                     }),
-                    u,
+                    h,
                     jsx("span", {
                         style: "min-width: 80px; font-weight: bold;",
                         children: _("Target Port:")
                     }),
-                    h,
+                    g,
                     jsx("span", {
                         style: "min-width: 60px; font-weight: bold;",
                         children: _("Protocol:")
                     }),
-                    g
+                    f
                 ]
-            }), N = jsx("button", {
+            }), E = jsx("button", {
                 type: "button",
                 class: "btn cbi-button cbi-button-edit",
                 style: "margin-right: 8px;",
                 children: _("Text Edit")
-            }), C = jsx("button", {
+            }), R = jsx("button", {
                 type: "button",
                 class: "btn cbi-button cbi-button-remove",
                 "data-index": l,
                 "data-section": t,
                 children: _("Delete")
-            }), E = jsxs("div", {
+            }), F = jsxs("div", {
                 style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
                 children: [
                     jsx("div", {
-                        children: N
+                        children: E
                     }),
                     jsx("div", {
-                        children: C
+                        children: R
                     })
                 ]
-            }), R = jsxs("div", {
-                id: s,
+            }), S = jsxs("div", {
+                id: p,
                 class: "portmapping-row",
                 "data-index": l,
                 style: "margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;",
                 children: [
-                    E,
-                    I,
-                    f,
-                    w,
+                    F,
+                    C,
+                    m,
                     V,
-                    m
+                    I,
+                    v
                 ]
-            }), F = ()=>{
-                let t = u.value.trim(), e = h.value.trim();
-                V.textContent = "", V.style.display = "none";
+            }), k = ()=>{
+                let t = h.value.trim(), e = g.value.trim();
+                I.textContent = "", I.style.display = "none";
                 let r = !1;
-                if (t && !this.validatePortOrRange(t) && (V.textContent = _("Invalid listen port format"), V.style.display = "block", r = !0), r || !e || this.validatePortOrRange(e) || (V.textContent = _("Invalid target port format"), V.style.display = "block", r = !0), !r && t && e) {
+                if (t && !this.validatePortOrRange(t) && (I.textContent = _("Invalid listen port format"), I.style.display = "block", r = !0), r || !e || this.validatePortOrRange(e) || (I.textContent = _("Invalid target port format"), I.style.display = "block", r = !0), !r && t && e) {
                     let i = this.parsePortRange(t), n = this.parsePortRange(e);
-                    i.length !== n.length && (V.textContent = _("Port ranges must have the same size"), V.style.display = "block", r = !0);
+                    i.length !== n.length && (I.textContent = _("Port ranges must have the same size"), I.style.display = "block", r = !0);
                 }
-                r || y() || (V.textContent = P(), V.style.display = "block", r = !0), r || v(), c();
+                r || P() || (I.textContent = w(), I.style.display = "block", r = !0), r || b(), u();
             };
-            u.oninput = F, u.onchange = F, h.oninput = F, h.onchange = F, g.onchange = F;
-            let k = ()=>{
-                let t = this.parseMapping(f.value);
+            h.oninput = k, h.onchange = k, g.oninput = k, g.onchange = k, f.onchange = k;
+            let A = ()=>{
+                let t = this.parseMapping(m.value);
                 if (t) {
-                    let e = u.oninput, r = h.oninput, i = g.onchange;
-                    u.oninput = null, h.oninput = null, g.onchange = null, u.value = t.listenPort, h.value = t.targetPort, g.value = t.protocol, u.oninput = e, h.oninput = r, g.onchange = i, F();
+                    let e = h.oninput, r = g.oninput, i = f.onchange;
+                    h.oninput = null, g.oninput = null, f.onchange = null, h.value = t.listenPort, g.value = t.targetPort, f.value = t.protocol, N(t.frpNodes || []), h.oninput = e, g.oninput = r, f.onchange = i, k();
                 }
             };
-            function S(t, e) {
+            function O(t, e) {
                 t.style.setProperty("display", e, "important");
             }
-            function O() {
-                S(I, p ? "none" : "flex"), S(w, p ? "none" : "block"), S(f, p ? "block" : "none"), S(m, p ? "none" : "block"), N.textContent = p ? _("Visual Edit") : _("Text Edit");
+            function D() {
+                O(C, c ? "none" : "flex"), O(V, c ? "none" : "block"), O(m, c ? "block" : "none"), O(v, c ? "none" : "block"), E.textContent = c ? _("Visual Edit") : _("Text Edit");
             }
-            return f.oninput = k, f.onblur = (t)=>{
+            return m.oninput = A, m.onblur = (t)=>{
                 let e = t.currentTarget;
-                e && (V.textContent = "", V.style.display = "none", this.parseMapping(e.value) ? k() : (V.textContent = _("Invalid port mapping format"), V.style.display = "block"));
-            }, O(), N.onclick = (t)=>{
-                t.preventDefault(), p && k(), p = !p, O(), p && v();
-            }, C.onclick = (t)=>{
-                t.preventDefault(), R.remove();
-                let e = d.findIndex((t)=>t.listenInput === u && t.targetInput === h && t.protocolSelect === g);
-                -1 !== e && d.splice(e, 1), c();
+                if (!e) return;
+                I.textContent = "", I.style.display = "none";
+                let r = this.parseMapping(e.value);
+                if (r) {
+                    let t = this.buildString(r);
+                    t && t !== e.value && (e.value = t), A();
+                } else I.textContent = _("Invalid port mapping format"), I.style.display = "block";
+            }, D(), E.onclick = (t)=>{
+                if (t.preventDefault(), c && A(), c = !c, D(), c) {
+                    let t = h.value.trim(), e = g.value.trim(), r = f.value, i = y(), n = this.buildString({
+                        listenPort: t,
+                        targetPort: e,
+                        frpNodes: i,
+                        protocol: r
+                    });
+                    m.value = n, v.textContent = _("Preview: %s").format(n);
+                }
+            }, R.onclick = (t)=>{
+                t.preventDefault(), S.remove();
+                let e = d.findIndex((t)=>t.listenInput === h && t.targetInput === g && t.protocolSelect === f);
+                -1 !== e && d.splice(e, 1), u();
             }, {
-                element: R,
-                listenInput: u,
-                targetInput: h,
-                protocolSelect: g,
-                getSelectedNodes: x
+                element: S,
+                listenInput: h,
+                targetInput: g,
+                protocolSelect: f,
+                getSelectedNodes: y
             };
         };
         for(let t = 0; t < a.length; t++){
-            let e = u(a[t], t);
+            let e = c(a[t], t);
             d.push(e), p.appendChild(e.element);
         }
         let h = jsx("button", {
@@ -2105,7 +2123,7 @@ class PortMappingEditor_o extends L.form.Value {
         });
         h.onclick = (t)=>{
             t.preventDefault();
-            let e = u("", d.length);
+            let e = c("", d.length);
             d.push(e), p.appendChild(e.element);
         };
         let g = jsx("input", {
@@ -2132,7 +2150,7 @@ class PortMappingEditor_o extends L.form.Value {
     }
     formvalue(t) {
         var e;
-        return (null == (e = this.hiddenInput) ? void 0 : e.value) ? this.hiddenInput.value.split(/\s+/).filter(Boolean) : null;
+        return (null == (e = this.hiddenInput) ? void 0 : e.value) ? Array.from(new Set(this.hiddenInput.value.split(/\s+/).filter(Boolean))) : null;
     }
     write(t, e) {
         return e && e.length > 0 ? L.uci.set("portweaver", t, "port_mapping", e) : L.uci.unset("portweaver", t, "port_mapping");
