@@ -56,10 +56,10 @@ define Build/Compile
 		echo "Zig not found, downloading..."; \
 		mkdir -p $(PKG_BUILD_DIR)/zig-tmp; \
 		cd $(PKG_BUILD_DIR)/zig-tmp && \
-		wget -q -O zig.tar.xz https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz && \
+		wget -q -O zig.tar.xz https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz && \
 		tar xf zig.tar.xz; \
 		$(call BuildVariant, \
-			$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.15.2/zig, \
+			$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.16.0/zig, \
 			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
 			$(PKG_INSTALL_DIR)); \
 	else \

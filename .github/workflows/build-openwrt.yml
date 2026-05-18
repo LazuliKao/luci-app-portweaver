@@ -142,17 +142,61 @@ jobs:
           - "24.10.5"
           - "25.12.0"
         include:
-          - { pkg: portweaver-lite, arch: mips_24kc,    openwrt_version: "24.10.5" }
-          - { pkg: portweaver-lite, arch: mips_24kc,    openwrt_version: "25.12.0" }
-          - { pkg: portweaver-lite, arch: mips_4kec,    openwrt_version: "24.10.5" }
-          - { pkg: portweaver-lite, arch: mips_mips32,  openwrt_version: "24.10.5" }
-          - { pkg: portweaver-lite, arch: mips_mips32,  openwrt_version: "25.12.0" }
-          - { pkg: portweaver-lite, arch: mipsel_24kc,  openwrt_version: "24.10.5" }
-          - { pkg: portweaver-lite, arch: mipsel_24kc,  openwrt_version: "25.12.0" }
-          - { pkg: portweaver-lite, arch: mipsel_74kc,  openwrt_version: "24.10.5" }
-          - { pkg: portweaver-lite, arch: mipsel_74kc,  openwrt_version: "25.12.0" }
-          - { pkg: portweaver-lite, arch: mipsel_mips32, openwrt_version: "24.10.5" }
-          - { pkg: portweaver-lite, arch: mipsel_mips32, openwrt_version: "25.12.0" }
+          - {
+              pkg: portweaver-lite,
+              arch: mips_24kc,
+              openwrt_version: "24.10.5",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mips_24kc,
+              openwrt_version: "25.12.0",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mips_4kec,
+              openwrt_version: "24.10.5",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mips_mips32,
+              openwrt_version: "24.10.5",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mips_mips32,
+              openwrt_version: "25.12.0",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mipsel_24kc,
+              openwrt_version: "24.10.5",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mipsel_24kc,
+              openwrt_version: "25.12.0",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mipsel_74kc,
+              openwrt_version: "24.10.5",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mipsel_74kc,
+              openwrt_version: "25.12.0",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mipsel_mips32,
+              openwrt_version: "24.10.5",
+            }
+          - {
+              pkg: portweaver-lite,
+              arch: mipsel_mips32,
+              openwrt_version: "25.12.0",
+            }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -164,7 +208,7 @@ jobs:
       # - name: Install Zig
       #   uses: mlugg/setup-zig@v2
       #   with:
-      #     version: 0.15.2
+      #     version: 0.16.0
 
       - name: Build with OpenWrt SDK
         id: build_openwrt
