@@ -12,8 +12,6 @@
     "dev:remote": "pnpm --filter @portweaver/luci-ui dev:remote",
     "format": "pnpm -r --if-present format",
     "lint": "pnpm -r --if-present lint",
-    "translations:extract": "pnpm --filter @portweaver/translation-scripts start",
-    "translations:generate": "pnpm --filter @portweaver/translation-scripts translate",
-    "translations:build": "pnpm --filter @portweaver/translation-scripts build"
+    "i18n:export": "pnpm --filter @portweaver/luci-ui i18n:export"
   }
 }
