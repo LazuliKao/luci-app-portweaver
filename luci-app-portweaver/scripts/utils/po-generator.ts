@@ -36,7 +36,8 @@ export async function generatePOFile(
 			"Project-Id-Version": "portweaver",
 			"POT-Creation-Date": `${new Date().toISOString().split("T")[0]} 00:00+0000`,
 			"PO-Revision-Date": `${new Date().toISOString().split("T")[0]} 00:00+0000`,
-			"Last-Translator": "PortWeaver Translator Tools <lazulikao233@outlook.com>",
+			"Last-Translator":
+				"PortWeaver Translator Tools <lazulikao233@outlook.com>",
 			"Language-Team": "Chinese <lazulikao233@outlook.com>",
 			Language: "zh_CN",
 			"MIME-Version": "1.0",

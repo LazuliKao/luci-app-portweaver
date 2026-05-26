@@ -162,7 +162,9 @@ function main(): void {
 	// Sort translations alphabetically
 	const sortedTranslations = Array.from(translations)
 		.sort()
-		.filter((str) => str.trim() !== "" && str.trim() !== "-"&& str.trim() !== "+");
+		.filter(
+			(str) => str.trim() !== "" && str.trim() !== "-" && str.trim() !== "+",
+		);
 
 	// Write to output file
 	const outputPath = join(projectRoot, "translations.json");

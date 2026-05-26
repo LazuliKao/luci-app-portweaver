@@ -17,13 +17,7 @@ async function main(): Promise<void> {
 
 		const translationsJsonPath = join(__dirname, "..", "translations.json");
 		const cacheFilePath = join(__dirname, "..", "translation.cache.json");
-		const poFilePath = join(
-			__dirname,
-			"..",
-			"po",
-			"zh_Hans",
-			"portweaver.po",
-		);
+		const poFilePath = join(__dirname, "..", "po", "zh_Hans", "portweaver.po");
 
 		console.log("📖 Loading translations.json...");
 		const translationsContent = await readFile(translationsJsonPath, "utf-8");

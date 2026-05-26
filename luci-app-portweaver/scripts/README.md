@@ -18,9 +18,11 @@ The extraction script scans the project for `_()` function calls (the translatio
 
 ## Installation
 
-Install dependencies using pnpm:
+This package is managed from the `luci-app-portweaver/` pnpm workspace root.
+Install dependencies once from the workspace root:
 
 ```bash
+cd ..
 pnpm install
 ```
 
@@ -37,7 +39,7 @@ This will install:
 Run the extraction script:
 
 ```bash
-pnpm start
+pnpm --filter @portweaver/translation-scripts start
 ```
 
 This executes `extract-translations.ts` and generates `translations.json` in the parent directory.
@@ -66,28 +68,28 @@ Runs the translation extraction script. Scans the codebase and generates `transl
 Runs Biome linter to check code quality. Reports issues without modifying files.
 
 ```bash
-pnpm lint
+pnpm --filter @portweaver/translation-scripts lint
 ```
 
 ### `pnpm format`
 Formats all code files using Biome. Automatically fixes formatting issues.
 
 ```bash
-pnpm format
+pnpm --filter @portweaver/translation-scripts format
 ```
 
 ### `pnpm check`
-Runs Biome check with auto-fix enabled. Checks and fixes both linting and formatting issues.
+Runs Biome check to verify linting and formatting issues without modifying files.
 
 ```bash
-pnpm check
+pnpm --filter @portweaver/translation-scripts check
 ```
 
 ### `pnpm lint:fix`
-Alias for `pnpm check`. Runs Biome check with auto-fix.
+Runs Biome check with auto-fix enabled. Checks and fixes both linting and formatting issues.
 
 ```bash
-pnpm lint:fix
+pnpm --filter @portweaver/translation-scripts lint:fix
 ```
 
 ## Output
@@ -153,7 +155,7 @@ Before running the translation script, you need to configure your OpenAI API cre
 Run the translation generation script:
 
 ```bash
-pnpm translate
+pnpm --filter @portweaver/translation-scripts translate
 ```
 
 This executes `generate-po.ts` and generates `.po` files in the `po/` directory.
@@ -189,7 +191,7 @@ The cache file is automatically created and updated during translation. You can 
 Runs the translation generation script. Translates extracted strings and generates `.po` files.
 
 ```bash
-pnpm translate
+pnpm --filter @portweaver/translation-scripts translate
 ```
 
 **Prerequisites:**

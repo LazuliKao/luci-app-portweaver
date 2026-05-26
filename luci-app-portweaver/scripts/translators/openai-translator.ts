@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 import type { Translator } from "./index.js";
-import { readFileSync } from "node:fs";
+
 const md = readFileSync(new URL("./prompt.md", import.meta.url), "utf8");
 dotenv.config();
 console.log(md);
