@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-portweaver\n"
-"POT-Creation-Date: 2026-05-26 17:11+0800\n"
+"POT-Creation-Date: 2026-05-26 17:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 msgid " - "
-msgstr ""
+msgstr " - "
 
 msgid " mapping(s)"
 msgstr "映射"
@@ -88,7 +88,7 @@ msgid "Alert"
 msgstr "警报"
 
 msgid "Allow Ports"
-msgstr ""
+msgstr "允许端口"
 
 msgid "any zone"
 msgstr "任意区域"
@@ -103,7 +103,7 @@ msgid "Authentication Token"
 msgstr "认证令牌"
 
 msgid "Bind Address"
-msgstr ""
+msgstr "绑定地址"
 
 msgid "Bind Port"
 msgstr "绑定端口"
@@ -112,7 +112,7 @@ msgid "Bind port is required"
 msgstr "需要指定绑定端口"
 
 msgid "calculating"
-msgstr ""
+msgstr "计算中"
 
 msgid "Cancel"
 msgstr "取消"
@@ -124,7 +124,7 @@ msgid "CLEAR"
 msgstr "清除"
 
 msgid "clients"
-msgstr ""
+msgstr "客户端"
 
 msgid "Close"
 msgstr "关闭"
@@ -171,7 +171,7 @@ msgid "Could not determine project index"
 msgstr "无法确定项目索引"
 
 msgid "Dashboard Address"
-msgstr ""
+msgstr "仪表盘地址"
 
 msgid "Dashboard Password"
 msgstr "仪表盘密码"
@@ -183,16 +183,16 @@ msgid "Dashboard User"
 msgstr "仪表盘用户名"
 
 msgid "DDNS"
-msgstr ""
+msgstr "动态域名服务"
 
 msgid "DDNS Entries"
-msgstr ""
+msgstr "动态域名服务条目"
 
 msgid "DDNS Logs - %s"
 msgstr "DDNS 日志 - %s"
 
 msgid "DDNS-GO"
-msgstr ""
+msgstr "DDNS-GO"
 
 msgid "default port"
 msgstr "默认端口"
@@ -267,7 +267,7 @@ msgid "Enable Statistics"
 msgstr "启用 统计信息"
 
 msgid "Enable TCP multiplexing for better performance"
-msgstr ""
+msgstr "启用 TCP 多路复用来提高性能"
 
 msgid ""
 "Enable to configure multiple port mappings or port ranges. Disable for single po"
@@ -366,10 +366,10 @@ msgid "FRP Tunnels"
 msgstr "FRP 隧道"
 
 msgid "FRPC Proxies"
-msgstr ""
+msgstr "FRPC 代理"
 
 msgid "FRPS Active Proxies"
-msgstr ""
+msgstr "FRPS 活动代理"
 
 msgid "FRPS Logs - %s"
 msgstr "FRPS 日志 - %s"
@@ -402,13 +402,13 @@ msgid "Invalid target port format. Use port (80) or range (80-90)"
 msgstr "无效的目标端口格式。请使用端口 (80) 或范围 (80-90)"
 
 msgid "IP "
-msgstr ""
+msgstr "IP "
 
 msgid "IP: %s"
 msgstr " IP 地址：%s "
 
 msgid "IPv4"
-msgstr ""
+msgstr "IPv4"
 
 msgid "IPv4 and IPv6"
 msgstr "IPv4 和 IPv6"
@@ -426,10 +426,10 @@ msgid "IPv4 Network Interface"
 msgstr "IPv4 网络接口"
 
 msgid "IPv4 URL"
-msgstr ""
+msgstr "IPv4 URL"
 
 msgid "IPv6"
-msgstr ""
+msgstr "IPv6"
 
 msgid "IPv6 Command"
 msgstr "IPv6 命令"
@@ -465,7 +465,7 @@ msgid "Listen Port:"
 msgstr "监听端口："
 
 msgid "loading"
-msgstr ""
+msgstr "加载中"
 
 msgid "Loading stats..."
 msgstr "正在加载统计数据..."
@@ -483,25 +483,25 @@ msgid "Logs copied to clipboard"
 msgstr "日志已复制到剪贴板"
 
 msgid "Max Log Backup Files"
-msgstr ""
+msgstr "最大日志备份文件数"
 
 msgid "Max Log Size (KB)"
-msgstr ""
+msgstr "最大日志大小 (KB)"
 
 msgid "Max Pool Count"
-msgstr ""
+msgstr "最大连接池数量"
 
 msgid "Max Ports Per Client"
-msgstr ""
+msgstr "每个客户端最大端口数"
 
 msgid "Maximum connection pool size per proxy"
-msgstr ""
+msgstr "每个代理服务器的最大连接池大小"
 
 msgid "Maximum number of ports per client (0 = unlimited)"
-msgstr ""
+msgstr "每个客户端的最大端口数量（0 = 无限制）"
 
 msgid "Maximum size of log file before rotation (default: 1024 KB = 1MB)"
-msgstr ""
+msgstr "日志文件轮换前的最大大小（默认：1024 KB = 1MB）"
 
 msgid "Memory allocation failed"
 msgstr "内存分配失败"
@@ -510,7 +510,7 @@ msgid "Multi-Port"
 msgstr "多端口"
 
 msgid "N/A"
-msgstr ""
+msgstr "N/A"
 
 msgid "Network Interface"
 msgstr "网络接口"
@@ -522,7 +522,7 @@ msgid "Network is unreachable"
 msgstr "网络不可达"
 
 msgid "No entries"
-msgstr ""
+msgstr "无条目"
 
 msgid "No FRP nodes configured"
 msgstr "未配置任何 FRP 节点"
@@ -537,7 +537,7 @@ msgid "No logs match your search"
 msgstr "没有日志符合您的搜索条件"
 
 msgid "No projects"
-msgstr ""
+msgstr "无项目"
 
 msgid "No proxies configured"
 msgstr "未配置任何代理"
@@ -555,7 +555,7 @@ msgid "Node name must contain only alphanumeric characters, underscore, or hyphe
 msgstr "节点名称只能包含字母、数字、下划线或连字符"
 
 msgid "Number of rotated log files to keep (default: 3)"
-msgstr ""
+msgstr "保留的轮换日志文件数量（默认：3）"
 
 msgid "OK"
 msgstr "确定"
@@ -608,7 +608,7 @@ msgstr "端口必须在 1 到 65535 之间"
 msgid ""
 "Port range or list of ports that clients can use. e.g., '10000-20000' or '8080,8"
 "081,8082'"
-msgstr ""
+msgstr "客户端可以使用的端口范围或端口列表。例如：'10000-20000' 或 '8080,8081,8082'"
 
 msgid "Port ranges must have the same size"
 msgstr "端口范围必须具有相同的数量"
@@ -632,7 +632,7 @@ msgid "Project Health"
 msgstr "项目状态"
 
 msgid "Project List"
-msgstr ""
+msgstr "项目列表"
 
 msgid "projects running"
 msgstr "运行中项目"
@@ -662,7 +662,7 @@ msgid "Provider"
 msgstr "提供商"
 
 msgid "proxies"
-msgstr ""
+msgstr "代理服务器"
 
 msgid "Proxies: %d"
 msgstr "代理：%d"
@@ -715,7 +715,7 @@ msgid "Server port is required"
 msgstr "需要服务器端口"
 
 msgid "servers"
-msgstr ""
+msgstr "服务器"
 
 msgid "Service restarted successfully"
 msgstr "服务已成功重启"
@@ -754,13 +754,13 @@ msgid "Target Port:"
 msgstr "目标端口："
 
 msgid "TCP"
-msgstr ""
+msgstr "TCP"
 
 msgid "TCP and UDP"
 msgstr "TCP 和 UDP"
 
 msgid "TCP Mux"
-msgstr ""
+msgstr "TCP 多路复用"
 
 msgid "Text Edit"
 msgstr "文本编辑"
@@ -784,13 +784,13 @@ msgid "Traffic Out"
 msgstr "出站流量"
 
 msgid "Traffic Rate"
-msgstr ""
+msgstr "流量速率"
 
 msgid "TTL (Time To Live)"
 msgstr "TTL（生存时间）"
 
 msgid "UDP"
-msgstr ""
+msgstr "UDP"
 
 msgid "unavailable"
 msgstr "不可用"
@@ -826,7 +826,7 @@ msgid "Uptime"
 msgstr "运行时间"
 
 msgid "URL"
-msgstr ""
+msgstr "URL"
 
 msgid "Use Port Mappings Mode"
 msgstr "使用端口映射模式"
@@ -850,7 +850,7 @@ msgid "Webhook Headers"
 msgstr "Webhook 头部"
 
 msgid "Webhook URL"
-msgstr ""
+msgstr "Webhook URL"
 
 msgid "WRAP: OFF"
 msgstr "自动换行：关闭"
