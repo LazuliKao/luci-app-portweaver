@@ -1,3 +1,5 @@
+[English](README.md) | [中文](README_zh.md)
+
 # PortWeaver OpenWrt Packages
 
 This repository contains OpenWrt packages for [PortWeaver](https://github.com/LazuliKao/PortWeaver) - a flexible port forwarding and NAT traversal tool.
@@ -129,18 +131,14 @@ After installing `luci-app-portweaver`, access the web interface at:
 
 **Services → PortWeaver**
 
-The interface allows you to:
-- Add/remove port forwarding projects
-- Configure all forwarding options
-- Enable/disable specific rules
+The interface provides 6 tabs: Global Settings, Port Forwarding, DDNS, FRP Tunnels, FRP Server, and System Logs.
 
+> Screenshots and detailed documentation coming soon.
 ## Requirements
 
 - OpenWrt 24.10.5 or later (or SNAPSHOT builds)
 - Dependencies (automatically installed):
   - `libuci`
-  - `kmod-ipt-nat`
-  - `iptables-mod-ipopt`
 
 ## Development
 
