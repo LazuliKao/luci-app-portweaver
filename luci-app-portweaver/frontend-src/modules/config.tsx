@@ -405,6 +405,9 @@ export default function (
   o.value("socks5", "SOCKS5");
   o.value("postgresql", "PostgreSQL");
   o.value("telnet", "Telnet");
+  o.value("minecraft", "Minecraft (Java Edition)");
+  o.value("mqtt", "MQTT");
+  o.value("smb", "SMB/CIFS");
 
   o = ss.option(
     form.DynamicList,
@@ -487,4 +490,7 @@ export default function (
   o.value("socks5", "SOCKS5");
   o.value("postgresql", "PostgreSQL");
   o.value("telnet", "Telnet");
+  o.value("minecraft", "Minecraft (Java Edition)");
+  o.value("mqtt", "MQTT");
+  o.value("smb", "SMB/CIFS");
 }
