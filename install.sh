@@ -10,7 +10,7 @@ NC='\033[0m' # No Color
 REPO="LazuliKao/openwrt-portweaver"
 API_URL="https://api.github.com/repos/$REPO/releases/latest"
 
-echo -e "${GREEN}PortWeaver OpenWrt One-Click Installer${NC}"
+printf "${GREEN}PortWeaver OpenWrt One-Click Installer${NC}\n"
 echo "======================================"
 
 # Determine architecture
@@ -25,7 +25,7 @@ if [ -z "$ARCH" ]; then
     ARCH=$(uname -m)
 fi
 
-echo -e "Detected Architecture: ${YELLOW}$ARCH${NC}"
+printf "Detected Architecture: ${YELLOW}%s${NC}\n" "$ARCH"
 
 # Select version
 echo ""
@@ -44,11 +44,11 @@ elif [ "$choice" = "2" ]; then
     CORE_PKG="portweaver-lite"
     LUCI_PKG=""
 else
-    echo -e "${RED}Invalid choice. Exiting.${NC}"
+    printf "${RED}Invalid choice. Exiting.${NC}\n"
     exit 1
 fi
 
-echo -e "You have selected the ${YELLOW}${VERSION_TYPE}${NC} version."
+printf "You have selected the ${YELLOW}%s${NC} version.\n" "${VERSION_TYPE}"
 
 # Get download tool
 if command -v curl >/dev/null 2>&1; then
@@ -57,7 +57,7 @@ elif command -v wget >/dev/null 2>&1; then
     # In OpenWrt, uclient-fetch is symlinked to wget. We use -qO-
     FETCH_CMD="wget -qO-"
 else
-    echo -e "${RED}Error: curl or wget is required to download packages.${NC}"
+    printf "${RED}Error: curl or wget is required to download packages.${NC}\n"
     exit 1
 fi
 
@@ -65,7 +65,7 @@ echo "Fetching latest release information..."
 RELEASE_INFO=$($FETCH_CMD "$API_URL")
 
 if [ -z "$RELEASE_INFO" ]; then
-    echo -e "${RED}Failed to fetch release information. Please check your network connection.${NC}"
+    printf "${RED}Failed to fetch release information. Please check your network connection.${NC}\n"
     exit 1
 fi
 
@@ -73,7 +73,7 @@ fi
 URLS=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": *"[^"]*"' | sed 's/"browser_download_url": "//' | sed 's/"//')
 
 if [ -z "$URLS" ]; then
-    echo -e "${RED}Failed to parse release information or no assets found.${NC}"
+    printf "${RED}Failed to parse release information or no assets found.${NC}\n"
     exit 1
 fi
 
@@ -88,7 +88,7 @@ if [ -z "$CORE_URL" ]; then
 fi
 
 if [ -z "$CORE_URL" ]; then
-    echo -e "${RED}Could not find the core package for your architecture (${ARCH}).${NC}"
+    printf "${RED}Could not find the core package for your architecture (${ARCH}).${NC}\n"
     echo "Available architectures in the latest release:"
     echo "$URLS" | grep -E "/${CORE_PKG}_" | sed "s|.*/${CORE_PKG}_.*_||" | sed 's/\.ipk//' | sort -u
     exit 1
@@ -99,14 +99,14 @@ LUCI_URL=""
 if [ -n "$LUCI_PKG" ]; then
     LUCI_URL=$(echo "$URLS" | grep -E "/${LUCI_PKG}_.*_all\.ipk" | head -n 1)
     if [ -z "$LUCI_URL" ]; then
-        echo -e "${YELLOW}Warning: Could not find LuCI package for the latest release. Proceeding with core package only.${NC}"
+        printf "${YELLOW}Warning: Could not find LuCI package for the latest release. Proceeding with core package only.${NC}\n"
     fi
 fi
 
 echo ""
-echo -e "Found Core Package: ${GREEN}${CORE_URL##*/}${NC}"
+printf "Found Core Package: ${GREEN}%s${NC}\n" "${CORE_URL##*/}"
 if [ -n "$LUCI_URL" ]; then
-    echo -e "Found LuCI Package: ${GREEN}${LUCI_URL##*/}${NC}"
+    printf "Found LuCI Package: ${GREEN}%s${NC}\n" "${LUCI_URL##*/}"
 fi
 
 echo ""
@@ -117,7 +117,7 @@ if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
     exit 0
 fi
 
-cd /tmp
+cd /tmp || { printf "${RED}Failed to cd into /tmp${NC}\n"; exit 1; }
 
 echo "Downloading ${CORE_URL##*/}..."
 if command -v curl >/dev/null 2>&1; then
@@ -126,12 +126,21 @@ else
     wget -qO "${CORE_URL##*/}" "$CORE_URL"
 fi
 
+if [ ! -s "${CORE_URL##*/}" ]; then
+    printf "${RED}Failed to download core package.${NC}\n"
+    exit 1
+fi
+
 if [ -n "$LUCI_URL" ]; then
     echo "Downloading ${LUCI_URL##*/}..."
     if command -v curl >/dev/null 2>&1; then
         curl -sL "$LUCI_URL" -o "${LUCI_URL##*/}"
     else
         wget -qO "${LUCI_URL##*/}" "$LUCI_URL"
+    fi
+    if [ ! -s "${LUCI_URL##*/}" ]; then
+        printf "${RED}Failed to download LuCI package.${NC}\n"
+        exit 1
     fi
 fi
 
@@ -143,19 +152,19 @@ if command -v opkg >/dev/null 2>&1; then
 
     opkg install "/tmp/${CORE_URL##*/}"
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Failed to install core package.${NC}"
+        printf "${RED}Failed to install core package.${NC}\n"
         exit 1
     fi
 
     if [ -n "$LUCI_URL" ]; then
         opkg install "/tmp/${LUCI_URL##*/}"
         if [ $? -ne 0 ]; then
-            echo -e "${RED}Failed to install LuCI package.${NC}"
+            printf "${RED}Failed to install LuCI package.${NC}\n"
             exit 1
         fi
     fi
 else
-    echo -e "${YELLOW}opkg not found. This does not appear to be an OpenWrt system.${NC}"
+    printf "${YELLOW}opkg not found. This does not appear to be an OpenWrt system.${NC}\n"
     echo "The downloaded packages are located in /tmp:"
     echo " - /tmp/${CORE_URL##*/}"
     if [ -n "$LUCI_URL" ]; then
@@ -170,4 +179,4 @@ if [ -n "$LUCI_URL" ]; then
     rm -f "/tmp/${LUCI_URL##*/}"
 fi
 
-echo -e "${GREEN}Installation completed successfully!${NC}"
+printf "${GREEN}Installation completed successfully!${NC}\n"
