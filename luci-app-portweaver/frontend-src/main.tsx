@@ -8,6 +8,7 @@ import logs from "./modules/logs";
 import ddns from "./modules/ddns";
 import nftables from "./modules/nftables";
 import about from "./modules/about";
+import wol from "./modules/wol";
 import { rpcClient } from "./utils/rpc-client";
 import { setVersionInfo, isFeatureEnabled } from "./utils/feature";
 
@@ -60,6 +61,9 @@ export class main extends L.view {
 
     s.tab("settings", _("Global Settings"));
     s.tab("projects", _("Port Forwarding"));
+    if (isFeatureEnabled("wol_mode")) {
+      s.tab("wol", _("Wake-on-LAN"));
+    }
     if (isFeatureEnabled("ddns_mode")) {
       s.tab("ddns", _("DDNS"));
     }
@@ -81,6 +85,9 @@ export class main extends L.view {
 
     header(m, s, client, "settings");
     config(m, s, client, "projects");
+    if (isFeatureEnabled("wol_mode")) {
+      wol(m, s, "wol");
+    }
     if (isFeatureEnabled("ddns_mode")) {
       ddns(m, s, "ddns");
     }

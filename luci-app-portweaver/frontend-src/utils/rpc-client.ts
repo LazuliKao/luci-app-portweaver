@@ -102,11 +102,11 @@ export function createRpcClient(rpc: typeof L.rpc) {
 
   const wolWake = rpc.declare<
     { success: boolean; sent_count: number },
-    [project: string]
+    [project?: string, target?: string]
   >({
     object: "portweaver",
     method: "wol_wake",
-    params: ["project"],
+    params: ["project", "target"],
   });
 
   const wolStatus = rpc.declare<
@@ -116,11 +116,11 @@ export function createRpcClient(rpc: typeof L.rpc) {
       cooldown_ms: number;
       detect_protocols: string[];
     },
-    [project: string]
+    [project?: string, target?: string]
   >({
     object: "portweaver",
     method: "wol_status",
-    params: ["project"],
+    params: ["project", "target"],
   });
 
   return {

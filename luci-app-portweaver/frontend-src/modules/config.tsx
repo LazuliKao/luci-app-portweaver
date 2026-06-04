@@ -414,32 +414,25 @@ export default function (
     o.value("smb", "SMB/CIFS");
 
     o = ss.option(
-      form.DynamicList,
-      "wol_mac_addresses",
-      /* i18n */ _("MAC Addresses"),
+      form.ListValue,
+      "wol_target",
+      /* i18n */ _("WoL Target"),
       /* i18n */ _(
-        "MAC addresses of machines to wake (e.g. AA:BB:CC:DD:EE:FF).",
+        "Select the global Wake-on-LAN target configuration for this project.",
       ),
     );
     o.modalonly = true;
     o.rmempty = true;
     o.depends("enable_wol", "1");
-    o.datatype = "macaddr";
+    o.value("", _("-- Select Target --"));
 
-    o = ss.option(
-      form.Value,
-      "wol_cooldown_ms",
-      /* i18n */ _("WoL Cooldown (ms)"),
-      /* i18n */ _(
-        "Minimum interval between successive WoL packets in milliseconds (1000–300000).",
-      ),
-    );
-    o.modalonly = true;
-    o.rmempty = true;
-    o.default = "30000";
-    o.datatype = "uinteger";
-    o.placeholder = "30000";
-    o.depends("enable_wol", "1");
+    const wol_sections = L.uci.sections("portweaver", "wol_target") || [];
+    for (const target of wol_sections) {
+      const name = target.name || target[".name"];
+      if (name) {
+        o.value(name, name);
+      }
+    }
 
     o = ss.option(form.Button, "_wol_wake", /* i18n */ _("Wake Now"));
     o.modalonly = true;

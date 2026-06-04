@@ -60,6 +60,9 @@ export class StatusPanel {
 
     return (
       <div>
+        {/* Activity Log Section */}
+        {events && events.length > 0 && this.renderActivityLog(events)}
+
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;">
           {(() => {
             const statusValueEl = (
@@ -393,9 +396,6 @@ export class StatusPanel {
               return this.card(_("DDNS Entries"), ddnsHealthEl);
             })()}
         </div>
-
-        {/* Activity Log Section */}
-        {events && events.length > 0 && this.renderActivityLog(events)}
       </div>
     );
   }
@@ -410,7 +410,7 @@ export class StatusPanel {
     const recentEvents = events.slice(-5).reverse();
 
     return (
-      <div style="margin-top: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;">
+      <div style="margin-bottom: 1em; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.8em;">
         <div style="font-size: 0.9em; font-weight: 600; margin-bottom: 0.5em; color: #495057;">
           {_("Recent Activity")}
         </div>
