@@ -268,14 +268,11 @@ function createRpcClient(e) {
         method: "get_full_status"
     }), j = e.declare({
         object: "portweaver",
-        method: "get_version"
+        method: "get_nftables_rules"
     }), b = e.declare({
         object: "portweaver",
-        method: "get_nftables_rules"
-    }), n = e.declare({
-        object: "portweaver",
         method: "reload_config"
-    }), v = e.declare({
+    }), n = e.declare({
         object: "portweaver",
         method: "restart_project",
         params: [
@@ -295,10 +292,9 @@ function createRpcClient(e) {
         clearFrpsLogs: m,
         getFrpsProxyStats: _,
         getFullStatus: w,
-        getVersion: j,
-        getNftablesRules: b,
-        reloadConfig: n,
-        restartProject: v,
+        getNftablesRules: j,
+        reloadConfig: b,
+        restartProject: n,
         wolWake: e.declare({
             object: "portweaver",
             method: "wol_wake",
@@ -2301,25 +2297,37 @@ class PortMappingEditor_l extends L.form.Value {
 }
 /* export default */ const PortMappingEditor = (PortMappingEditor_l);
 
+;// CONCATENATED MODULE: ./utils/feature.ts
+let feature_e = null;
+function setVersionInfo(n) {
+    feature_e = n;
+}
+function isFeatureEnabled(n) {
+    if (!feature_e) return !0;
+    let t = feature_e[n];
+    return "boolean" != typeof t || t;
+}
+
 ;// CONCATENATED MODULE: ./modules/config.tsx
 
 
 
 
-let config_r = L.form, config_n = L.uci;
-/* export default */ function config(i, s, p, d) {
-    let c, m = (c = s.taboption(d, config_r.SectionValue, "_projects", config_r.GridSection, "project")).subsection;
-    m.anonymous = !0, m.addremove = !0, m.sortable = !0, m.cloneable = !0, m.sectiontitle = (e)=>config_n.get("portweaver", e, "remark") || _("Unnamed project"), (c = m.option(config_r.DummyValue, "_runtime_status", _("Status"))).modalonly = !1, c.textvalue = (t)=>{
-        let o = p.getProjectStatus(t), l = jsx("div", {
-            id: "project-status-".concat(t),
-            children: p.renderStatusElements(o, t)
+
+let config_n = L.form, config_i = L.uci;
+/* export default */ function config(s, p, d, c) {
+    let m, u = (m = p.taboption(c, config_n.SectionValue, "_projects", config_n.GridSection, "project")).subsection;
+    u.anonymous = !0, u.addremove = !0, u.sortable = !0, u.cloneable = !0, u.sectiontitle = (e)=>config_i.get("portweaver", e, "remark") || _("Unnamed project"), (m = u.option(config_n.DummyValue, "_runtime_status", _("Status"))).modalonly = !1, m.textvalue = (o)=>{
+        let t = d.getProjectStatus(o), l = jsx("div", {
+            id: "project-status-".concat(o),
+            children: d.renderStatusElements(t, o)
         });
-        return p.projectContainers = p.projectContainers || {}, p.projectContainers[t] = l, l;
-    }, (c = m.option(config_r.Button, "_runtime_toggle", _("Toggle"))).modalonly = !1, c.editable = !0, c.inputtitle = (e)=>{
-        let t = p.getProjectStatus(e);
-        return (null == t ? void 0 : t.enabled) ? _("Disable") : _("Enable");
-    }, c.onclick = (e, t)=>window.portweaverToggle(t), (c = m.option(config_r.Button, "_runtime_restart", _("Restart"))).modalonly = !1, c.editable = !0, c.inputtitle = _("Restart"), c.onclick = (e, t)=>window.portweaverRestart(t), (c = m.option(config_r.Flag, "enabled", _("Enabled"))).modalonly = !1, c.default = "1", c.editable = !0, (c = m.option(config_r.DummyValue, "_preview", _("Overview"))).modalonly = !1, c.textvalue = (o)=>{
-        let l = config_n.get("portweaver", o, "protocol") || "tcp", a = config_n.get("portweaver", o, "family") || "any", r = config_n.get("portweaver", o, "listen_port") || "", i = config_n.get("portweaver", o, "target_address") || "", s = config_n.get("portweaver", o, "target_port") || "", p = L.toArray(config_n.get("portweaver", o, "port_mapping")), d = L.toArray(config_n.get("portweaver", o, "src_zone")), c = L.toArray(config_n.get("portweaver", o, "dest_zone")), m = {
+        return d.projectContainers = d.projectContainers || {}, d.projectContainers[o] = l, l;
+    }, (m = u.option(config_n.Button, "_runtime_toggle", _("Toggle"))).modalonly = !1, m.editable = !0, m.inputtitle = (e)=>{
+        let o = d.getProjectStatus(e);
+        return (null == o ? void 0 : o.enabled) ? _("Disable") : _("Enable");
+    }, m.onclick = (e, o)=>window.portweaverToggle(o), (m = u.option(config_n.Button, "_runtime_restart", _("Restart"))).modalonly = !1, m.editable = !0, m.inputtitle = _("Restart"), m.onclick = (e, o)=>window.portweaverRestart(o), (m = u.option(config_n.Flag, "enabled", _("Enabled"))).modalonly = !1, m.default = "1", m.editable = !0, (m = u.option(config_n.DummyValue, "_preview", _("Overview"))).modalonly = !1, m.textvalue = (t)=>{
+        let l = config_i.get("portweaver", t, "protocol") || "tcp", a = config_i.get("portweaver", t, "family") || "any", r = config_i.get("portweaver", t, "listen_port") || "", n = config_i.get("portweaver", t, "target_address") || "", s = config_i.get("portweaver", t, "target_port") || "", p = L.toArray(config_i.get("portweaver", t, "port_mapping")), d = L.toArray(config_i.get("portweaver", t, "src_zone")), c = L.toArray(config_i.get("portweaver", t, "dest_zone")), m = {
             both: _("TCP and UDP"),
             tcp: _("TCP"),
             udp: _("UDP")
@@ -2340,11 +2348,11 @@ let config_r = L.form, config_n = L.uci;
                 })
             ]
         })), d.length > 0) {
-            let o = d.map((t)=>jsx("span", {
+            let t = d.map((o)=>jsx("span", {
                     class: "zonebadge",
-                    style: fwmodel.getZoneColorStyle(t),
+                    style: fwmodel.getZoneColorStyle(o),
                     children: jsx("strong", {
-                        children: t || jsx("em", {
+                        children: o || jsx("em", {
                             children: _("any zone")
                         })
                     })
@@ -2352,7 +2360,7 @@ let config_r = L.form, config_n = L.uci;
             g.push(jsx("br", {})), g.push(jsxs("span", {
                 children: [
                     _("From "),
-                    ...o
+                    ...t
                 ]
             }));
         }
@@ -2370,12 +2378,12 @@ let config_r = L.form, config_n = L.uci;
                     _(" mapping(s)")
                 ]
             }));
-            let o = p[0];
+            let t = p[0];
             g.push(jsx("br", {})), g.push(jsxs("span", {
                 children: [
                     _("e.g. "),
                     jsx("var", {
-                        children: o
+                        children: t
                     })
                 ]
             }));
@@ -2396,22 +2404,22 @@ let config_r = L.form, config_n = L.uci;
                 _(" to ")
             ]
         })), c.length > 0) {
-            let t = c.map((t)=>jsx("span", {
+            let o = c.map((o)=>jsx("span", {
                     class: "zonebadge",
-                    style: fwmodel.getZoneColorStyle(t),
+                    style: fwmodel.getZoneColorStyle(o),
                     children: jsx("strong", {
-                        children: t || jsx("em", {
+                        children: o || jsx("em", {
                             children: _("any zone")
                         })
                     })
                 }));
-            g.push(...t), g.push(_(" "));
+            g.push(...o), g.push(_(" "));
         }
-        return i && g.push(jsxs("span", {
+        return n && g.push(jsxs("span", {
             children: [
                 _("IP "),
                 jsx("var", {
-                    children: i
+                    children: n
                 })
             ]
         })), 0 === p.length && s && g.push(jsxs("span", {
@@ -2424,79 +2432,80 @@ let config_r = L.form, config_n = L.uci;
         })), jsx("small", {
             children: g
         });
-    }, (c = m.option(config_r.Value, "remark", _("Remark"))).modalonly = !0, c.rmempty = !1, c.datatype = "string", c.validate = (e, t)=>!!t && "" !== String(t).trim() || _("This field is required"), c.placeholder = "My Project", (c = m.option(config_r.Flag, "enabled", _("Enabled"))).modalonly = !0, c.default = "1", (c = m.option(widgets.ZoneSelect, "src_zone", _("Source Zones"))).modalonly = !0, c.multiple = !0, c.nocreate = !1, c.allowlocal = !1, c.default = "wan", c.rmempty = !0, (c = m.option(widgets.ZoneSelect, "dest_zone", _("Destination Zones"))).modalonly = !0, c.multiple = !0, c.nocreate = !1, c.allowlocal = !1, c.default = "lan", c.rmempty = !0, (c = m.option(config_r.ListValue, "family", _("Address Family"))).modalonly = !0, c.value("any", _("IPv4 and IPv6")), c.value("ipv4", "IPv4"), c.value("ipv6", "IPv6"), c.default = "any", (c = m.option(config_r.Value, "target_address", _("Target Address"))).modalonly = !0, c.rmempty = !1, c.datatype = "host", c.placeholder = "192.168.1.100", c.validate = (e, t)=>!!t && "" !== String(t).trim() || _("This field is required"), (c = m.option(config_r.Flag, "use_port_mappings", _("Use Port Mappings Mode"))).modalonly = !0, c.rmempty = !0, c.default = "0", c.description = _("Enable to configure multiple port mappings or port ranges. Disable for single port mode."), (c = m.option(config_r.ListValue, "protocol", _("Protocol"))).modalonly = !0, c.value("both", _("TCP and UDP")), c.value("tcp", "TCP"), c.value("udp", "UDP"), c.default = "tcp", c.depends("use_port_mappings", "0"), (c = m.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"))).modalonly = !0, c.rmempty = !0, c.depends("use_port_mappings", "0"), (c = m.option(PortMappingEditor, "port_mapping", _("Port Mappings"))).modalonly = !0, c.depends("use_port_mappings", "1"), (c = m.option(config_r.Value, "listen_port", _("Listen Port"))).modalonly = !0, c.datatype = "port", c.placeholder = "8080", c.depends("use_port_mappings", "0"), c.validate = (e, t)=>"1" === config_n.get("portweaver", e, "use_port_mappings") || !!t && "" !== String(t).trim() || _("This field is required in single port mode"), (c = m.option(config_r.Value, "target_port", _("Target Port"))).modalonly = !0, c.datatype = "port", c.placeholder = "80", c.depends("use_port_mappings", "0"), c.validate = (e, t)=>"1" === config_n.get("portweaver", e, "use_port_mappings") || !!t && "" !== String(t).trim() || _("This field is required in single port mode"), (c = m.option(config_r.Flag, "open_firewall_port", _("Open Firewall Port"))).modalonly = !0, c.default = "1", (c = m.option(config_r.Flag, "enable_app_forward", _("Enable App Level Forward"))).modalonly = !0, c.default = "0", (c = m.option(config_r.ListValue, "app_forward_loop_mode", _("Loop Mode"), _("Controls how event loop runtimes are shared among listeners. 'per_project' (default): one runtime shared by all listeners in this project, balanced resource usage. 'per_listener': each listener gets its own dedicated runtime, highest isolation but uses more memory (one thread per listener). 'global': all projects share a single global runtime, lowest memory usage but no isolation between projects."))).modalonly = !0, c.value("per_project", _("Per Project (default) - balanced")), c.value("per_listener", _("Per Listener - highest isolation, more memory")), c.value("global", _("Global - lowest memory, no isolation")), c.default = "per_project", c.depends("enable_app_forward", "1"), (c = m.option(config_r.Flag, "reuseaddr", _("Reuse Address"))).modalonly = !0, c.default = "1", c.depends("enable_app_forward", "1"), (c = m.option(config_r.Flag, "enable_app_stats", _("Enable App Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) for application-layer forwarding using zero-cost atomic counters."))).modalonly = !0, c.default = "0", c.depends("enable_app_forward", "1"), (c = m.option(config_r.Flag, "add_firewall_forward", _("Add Firewall Forward"))).modalonly = !0, c.default = "1", c.depends({
+    }, (m = u.option(config_n.Value, "remark", _("Remark"))).modalonly = !0, m.rmempty = !1, m.datatype = "string", m.validate = (e, o)=>!!o && "" !== String(o).trim() || _("This field is required"), m.placeholder = "My Project", (m = u.option(config_n.Flag, "enabled", _("Enabled"))).modalonly = !0, m.default = "1", (m = u.option(widgets.ZoneSelect, "src_zone", _("Source Zones"))).modalonly = !0, m.multiple = !0, m.nocreate = !1, m.allowlocal = !1, m.default = "wan", m.rmempty = !0, (m = u.option(widgets.ZoneSelect, "dest_zone", _("Destination Zones"))).modalonly = !0, m.multiple = !0, m.nocreate = !1, m.allowlocal = !1, m.default = "lan", m.rmempty = !0, (m = u.option(config_n.ListValue, "family", _("Address Family"))).modalonly = !0, m.value("any", _("IPv4 and IPv6")), m.value("ipv4", "IPv4"), m.value("ipv6", "IPv6"), m.default = "any", (m = u.option(config_n.Value, "target_address", _("Target Address"))).modalonly = !0, m.rmempty = !1, m.datatype = "host", m.placeholder = "192.168.1.100", m.validate = (e, o)=>!!o && "" !== String(o).trim() || _("This field is required"), (m = u.option(config_n.Flag, "use_port_mappings", _("Use Port Mappings Mode"))).modalonly = !0, m.rmempty = !0, m.default = "0", m.description = _("Enable to configure multiple port mappings or port ranges. Disable for single port mode."), (m = u.option(config_n.ListValue, "protocol", _("Protocol"))).modalonly = !0, m.value("both", _("TCP and UDP")), m.value("tcp", "TCP"), m.value("udp", "UDP"), m.default = "tcp", m.depends("use_port_mappings", "0"), isFeatureEnabled("frpc_mode") && ((m = u.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"))).modalonly = !0, m.rmempty = !0, m.depends("use_port_mappings", "0")), (m = u.option(PortMappingEditor, "port_mapping", _("Port Mappings"))).modalonly = !0, m.depends("use_port_mappings", "1"), (m = u.option(config_n.Value, "listen_port", _("Listen Port"))).modalonly = !0, m.datatype = "port", m.placeholder = "8080", m.depends("use_port_mappings", "0"), m.validate = (e, o)=>"1" === config_i.get("portweaver", e, "use_port_mappings") || !!o && "" !== String(o).trim() || _("This field is required in single port mode"), (m = u.option(config_n.Value, "target_port", _("Target Port"))).modalonly = !0, m.datatype = "port", m.placeholder = "80", m.depends("use_port_mappings", "0"), m.validate = (e, o)=>"1" === config_i.get("portweaver", e, "use_port_mappings") || !!o && "" !== String(o).trim() || _("This field is required in single port mode"), (m = u.option(config_n.Flag, "open_firewall_port", _("Open Firewall Port"))).modalonly = !0, m.default = "1", (m = u.option(config_n.Flag, "enable_app_forward", _("Enable App Level Forward"))).modalonly = !0, m.default = "0", (m = u.option(config_n.ListValue, "app_forward_loop_mode", _("Loop Mode"), _("Controls how event loop runtimes are shared among listeners. 'per_project' (default): one runtime shared by all listeners in this project, balanced resource usage. 'per_listener': each listener gets its own dedicated runtime, highest isolation but uses more memory (one thread per listener). 'global': all projects share a single global runtime, lowest memory usage but no isolation between projects."))).modalonly = !0, m.value("per_project", _("Per Project (default) - balanced")), m.value("per_listener", _("Per Listener - highest isolation, more memory")), m.value("global", _("Global - lowest memory, no isolation")), m.default = "per_project", m.depends("enable_app_forward", "1"), (m = u.option(config_n.Flag, "reuseaddr", _("Reuse Address"))).modalonly = !0, m.default = "1", m.depends("enable_app_forward", "1"), (m = u.option(config_n.Flag, "enable_app_stats", _("Enable App Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) for application-layer forwarding using zero-cost atomic counters."))).modalonly = !0, m.default = "0", m.depends("enable_app_forward", "1"), (m = u.option(config_n.Flag, "add_firewall_forward", _("Add Firewall Forward"))).modalonly = !0, m.default = "1", m.depends({
         enable_app_forward: "0"
-    }), c.depends({
+    }), m.depends({
         enable_app_forward: "1"
-    }), (c = m.option(config_r.Flag, "enable_firewall_stats", _("Enable Firewall Statistics"), _("Collect traffic statistics using nftables kernel counters (extremely low overhead). Requires nftables backend."))).modalonly = !0, c.default = "0", c.depends("add_firewall_forward", "1"), (c = m.option(config_r.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Add NAT rules, preserving the source IP address. \nNote: Only effective when 'Add Firewall Forward' is enabled."))).modalonly = !0, c.default = "0", c.depends("add_firewall_forward", "1"), (c = m.option(config_r.Flag, "enable_wol", _("Enable Wake-on-LAN"), _("Send a magic packet to wake remote machines when the first packet is detected."))).modalonly = !0, c.default = "0", c.rmempty = !0, (c = m.option(config_r.DynamicList, "detect_protocols", _("Detect Protocols"), _("Protocol signatures that trigger WoL. Select from the list or type custom values."))).modalonly = !0, c.rmempty = !0, c.depends("enable_wol", "1"), c.value("ssh", "SSH"), c.value("rdp", "RDP"), c.value("http", "HTTP"), c.value("tls", "TLS/SSL"), c.value("vnc", "VNC/RFB"), c.value("socks5", "SOCKS5"), c.value("postgresql", "PostgreSQL"), c.value("telnet", "Telnet"), c.value("minecraft", "Minecraft (Java Edition)"), c.value("mqtt", "MQTT"), c.value("smb", "SMB/CIFS"), (c = m.option(config_r.DynamicList, "wol_mac_addresses", _("MAC Addresses"), _("MAC addresses of machines to wake (e.g. AA:BB:CC:DD:EE:FF)."))).modalonly = !0, c.rmempty = !0, c.depends("enable_wol", "1"), c.datatype = "macaddr", (c = m.option(config_r.Value, "wol_cooldown_ms", _("WoL Cooldown (ms)"), _("Minimum interval between successive WoL packets in milliseconds (1000\u2013300000)."))).modalonly = !0, c.rmempty = !0, c.default = "30000", c.datatype = "uinteger", c.placeholder = "30000", c.depends("enable_wol", "1"), (c = m.option(config_r.Button, "_wol_wake", _("Wake Now"))).modalonly = !0, c.editable = !0, c.inputtitle = _("Wake Now"), c.depends("enable_wol", "1"), c.onclick = (e, t)=>{
-        rpcClient.wolWake(t).then((e)=>{
+    }), (m = u.option(config_n.Flag, "enable_firewall_stats", _("Enable Firewall Statistics"), _("Collect traffic statistics using nftables kernel counters (extremely low overhead). Requires nftables backend."))).modalonly = !0, m.default = "0", m.depends("add_firewall_forward", "1"), (m = u.option(config_n.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Add NAT rules, preserving the source IP address. \nNote: Only effective when 'Add Firewall Forward' is enabled."))).modalonly = !0, m.default = "0", m.depends("add_firewall_forward", "1"), isFeatureEnabled("wol_mode") && ((m = u.option(config_n.Flag, "enable_wol", _("Enable Wake-on-LAN"), _("Send a magic packet to wake remote machines when the first packet is detected."))).modalonly = !0, m.default = "0", m.rmempty = !0, (m = u.option(config_n.DynamicList, "detect_protocols", _("Detect Protocols"), _("Protocol signatures that trigger WoL. Select from the list or type custom values."))).modalonly = !0, m.rmempty = !0, m.depends("enable_wol", "1"), m.value("ssh", "SSH"), m.value("rdp", "RDP"), m.value("http", "HTTP"), m.value("tls", "TLS/SSL"), m.value("vnc", "VNC/RFB"), m.value("socks5", "SOCKS5"), m.value("postgresql", "PostgreSQL"), m.value("telnet", "Telnet"), m.value("minecraft", "Minecraft (Java Edition)"), m.value("mqtt", "MQTT"), m.value("smb", "SMB/CIFS"), (m = u.option(config_n.DynamicList, "wol_mac_addresses", _("MAC Addresses"), _("MAC addresses of machines to wake (e.g. AA:BB:CC:DD:EE:FF)."))).modalonly = !0, m.rmempty = !0, m.depends("enable_wol", "1"), m.datatype = "macaddr", (m = u.option(config_n.Value, "wol_cooldown_ms", _("WoL Cooldown (ms)"), _("Minimum interval between successive WoL packets in milliseconds (1000\u2013300000)."))).modalonly = !0, m.rmempty = !0, m.default = "30000", m.datatype = "uinteger", m.placeholder = "30000", m.depends("enable_wol", "1"), (m = u.option(config_n.Button, "_wol_wake", _("Wake Now"))).modalonly = !0, m.editable = !0, m.inputtitle = _("Wake Now"), m.depends("enable_wol", "1"), m.onclick = (e, o)=>{
+        rpcClient.wolWake(o).then((e)=>{
             e.success ? alert(_("WoL packets sent to ".concat(e.sent_count, " device(s)."))) : alert(_("WoL failed \u2014 check configuration."));
         }).catch((e)=>{
             alert(_("WoL error: ".concat(String(e))));
         });
-    }, (c = m.option(config_r.Flag, "enable_protocol_filter", _("Enable Protocol Filter"), _("Reject connections whose detected application-layer protocol is not in the allowed list."))).modalonly = !0, c.default = "0", c.rmempty = !0, (c = m.option(config_r.DynamicList, "allowed_protocols", _("Allowed Protocols"), _("Only connections matching these protocol signatures will be forwarded."))).modalonly = !0, c.rmempty = !0, c.depends("enable_protocol_filter", "1"), c.value("ssh", "SSH"), c.value("rdp", "RDP"), c.value("http", "HTTP"), c.value("tls", "TLS/SSL"), c.value("vnc", "VNC/RFB"), c.value("socks5", "SOCKS5"), c.value("postgresql", "PostgreSQL"), c.value("telnet", "Telnet"), c.value("minecraft", "Minecraft (Java Edition)"), c.value("mqtt", "MQTT"), c.value("smb", "SMB/CIFS"), (c = m.option(config_r.DynamicList, "tls_allowed_snis", _("Allowed TLS SNIs"), _("Only TLS connections matching these server names will be forwarded. Supports wildcards (e.g. *.example.com). Only effective when TLS is in the allowed protocols list."))).modalonly = !0, c.rmempty = !0, c.depends("enable_protocol_filter", "1"), c.placeholder = "*.example.com";
+    }), (m = u.option(config_n.Flag, "enable_protocol_filter", _("Enable Protocol Filter"), _("Reject connections whose detected application-layer protocol is not in the allowed list."))).modalonly = !0, m.default = "0", m.rmempty = !0, (m = u.option(config_n.DynamicList, "allowed_protocols", _("Allowed Protocols"), _("Only connections matching these protocol signatures will be forwarded."))).modalonly = !0, m.rmempty = !0, m.depends("enable_protocol_filter", "1"), m.value("ssh", "SSH"), m.value("rdp", "RDP"), m.value("http", "HTTP"), m.value("tls", "TLS/SSL"), m.value("vnc", "VNC/RFB"), m.value("socks5", "SOCKS5"), m.value("postgresql", "PostgreSQL"), m.value("telnet", "Telnet"), m.value("minecraft", "Minecraft (Java Edition)"), m.value("mqtt", "MQTT"), m.value("smb", "SMB/CIFS"), (m = u.option(config_n.DynamicList, "tls_allowed_snis", _("Allowed TLS SNIs"), _("Only TLS connections matching these server names will be forwarded. Supports wildcards (e.g. *.example.com). Only effective when TLS is in the allowed protocols list."))).modalonly = !0, m.rmempty = !0, m.depends("enable_protocol_filter", "1"), m.placeholder = "*.example.com";
 }
 
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
 
 
 
+
 class StatusPanel {
-    render(t, n, l, d, a) {
-        let c, h, f, p, v, m, g, u, E, y, b, z, x, w, S, j, P, R, I, D, V, L, k, A, O, T, H, C = {
+    render(t, d, l, a, c) {
+        let h, f, p, v, m, g, u, E, y, b, z, x, w, S, j, P, R, I, D, V, L, k, A, O, T, H, C, F = {
             running: "#28a745",
             stopped: "#dc3545",
             degraded: "#ffc107"
-        }[t.status || ""] || "#6c757d", F = (null == l ? void 0 : l.filter((t)=>t.enabled)) || [], N = F.filter((t)=>"running" === t.status), G = F.length > 0;
+        }[t.status || ""] || "#6c757d", N = (null == l ? void 0 : l.filter((t)=>t.enabled)) || [], G = N.filter((t)=>"running" === t.status), M = N.length > 0;
         return jsxs("div", {
             children: [
                 jsxs("div", {
                     style: "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 0.5em;",
                     children: [
-                        (c = jsx("strong", {
-                            style: "color: ".concat(C, "; font-size: 1.1em; font-weight: 600;"),
+                        (h = jsx("strong", {
+                            style: "color: ".concat(F, "; font-size: 1.1em; font-weight: 600;"),
                             id: "status-value",
                             children: translateStatus(t.status) || "-"
-                        }), this.statusValueEl = c, this.card(_("Status"), c)),
-                        (h = jsx("strong", {
+                        }), this.statusValueEl = h, this.card(_("Status"), h)),
+                        (f = jsx("strong", {
                             style: "font-size: 1.1em; font-weight: 600;",
                             id: "total-projects-value",
                             children: t.total_projects || 0
-                        }), this.totalProjectsEl = h, this.card(_("Total Projects"), h)),
-                        (f = jsx("strong", {
+                        }), this.totalProjectsEl = f, this.card(_("Total Projects"), f)),
+                        (p = jsx("strong", {
                             style: "font-size: 1.1em; font-weight: 600;",
                             id: "active-ports-value",
                             children: t.active_ports || 0
-                        }), this.activePortsEl = f, this.card(_("Active Ports"), f)),
-                        (p = jsx("strong", {
+                        }), this.activePortsEl = p, this.card(_("Active Ports"), p)),
+                        (v = jsx("strong", {
                             style: "font-size: 1.1em; font-weight: 600;",
                             id: "active-sessions-value",
                             children: t.active_sessions || 0
-                        }), this.activeSessionsEl = p, this.card(_("Active Sessions"), p)),
-                        (v = jsx("strong", {
+                        }), this.activeSessionsEl = v, this.card(_("Active Sessions"), v)),
+                        (m = jsx("strong", {
                             style: "font-size: 1.1em; font-weight: 600;",
                             id: "uptime-value",
                             children: formatUptime(t.uptime || 0)
-                        }), this.uptimeEl = v, this.card(_("Uptime"), v)),
-                        (m = jsx("strong", {
+                        }), this.uptimeEl = m, this.card(_("Uptime"), m)),
+                        (g = jsx("strong", {
                             style: "font-size: 1.1em; font-weight: 600;",
                             id: "traffic-in-value",
                             children: formatBytes(t.total_bytes_in || 0)
-                        }), this.trafficInEl = m, this.card(_("Traffic In"), m)),
-                        (g = jsx("strong", {
+                        }), this.trafficInEl = g, this.card(_("Traffic In"), g)),
+                        (u = jsx("strong", {
                             style: "font-size: 1.1em; font-weight: 600;",
                             id: "traffic-out-value",
                             children: formatBytes(t.total_bytes_out || 0)
-                        }), this.trafficOutEl = g, this.card(_("Traffic Out"), g)),
-                        G && this.card(_("Project Health"), jsxs("div", {
+                        }), this.trafficOutEl = u, this.card(_("Traffic Out"), u)),
+                        M && this.card(_("Project Health"), jsxs("div", {
                             id: "project-health-value",
                             children: [
                                 jsxs("strong", {
-                                    style: "font-size: 1.1em; font-weight: 600; color: ".concat(N.length === F.length ? "#28a745" : N.length > 0 ? "#ffc107" : "#dc3545", ";"),
+                                    style: "font-size: 1.1em; font-weight: 600; color: ".concat(G.length === N.length ? "#28a745" : G.length > 0 ? "#ffc107" : "#dc3545", ";"),
                                     children: [
-                                        N.length,
+                                        G.length,
                                         " / ",
-                                        F.length
+                                        N.length
                                     ]
                                 }),
                                 jsx("div", {
@@ -2505,117 +2514,117 @@ class StatusPanel {
                                 })
                             ]
                         })),
-                        n && (u = (n.frpc || {
+                        isFeatureEnabled("frpc_mode") && d && (E = (d.frpc || {
                             enabled: !1
-                        }).enabled, E = jsx("strong", {
-                            style: "font-size: 1.1em; font-weight: 600; color: ".concat(u ? "#28a745" : "#6c757d", ";"),
+                        }).enabled, y = jsx("strong", {
+                            style: "font-size: 1.1em; font-weight: 600; color: ".concat(E ? "#28a745" : "#6c757d", ";"),
                             id: "frpc-enabled-value",
-                            children: u ? _("Enabled") : _("Disabled")
-                        }), this.frpcEnabledEl = E, y = jsx("div", {
+                            children: E ? _("Enabled") : _("Disabled")
+                        }), this.frpcEnabledEl = y, b = jsx("div", {
                             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
                             id: "frpc-version-value",
-                            children: u && n.frp_version ? n.frp_version : ""
-                        }), this.frpcVersionEl = y, b = jsx("div", {
+                            children: E && d.frp_version ? d.frp_version : ""
+                        }), this.frpcVersionEl = b, z = jsx("div", {
                             style: "font-size: 0.85em; margin-top: 0.2em;",
                             id: "frpc-status-value"
-                        }), this.frpcStatusEl = b, z = jsx("div", {
+                        }), this.frpcStatusEl = z, x = jsx("div", {
                             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
                             id: "frpc-info-value"
-                        }), this.frpcInfoEl = z, x = jsx("div", {
+                        }), this.frpcInfoEl = x, w = jsx("div", {
                             style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
                             id: "frpc-error-value"
-                        }), this.frpcErrorEl = x, this.card("FRPC", jsxs("div", {
+                        }), this.frpcErrorEl = w, this.card("FRPC", jsxs("div", {
                             children: [
-                                E,
                                 y,
                                 b,
                                 z,
-                                x
+                                x,
+                                w
                             ]
                         }))),
-                        n && (w = (n.frps || {
+                        isFeatureEnabled("frps_mode") && d && (S = (d.frps || {
                             enabled: !1
-                        }).enabled, S = jsx("strong", {
-                            style: "font-size: 1.1em; font-weight: 600; color: ".concat(w ? "#28a745" : "#6c757d", ";"),
+                        }).enabled, j = jsx("strong", {
+                            style: "font-size: 1.1em; font-weight: 600; color: ".concat(S ? "#28a745" : "#6c757d", ";"),
                             id: "frps-enabled-value",
-                            children: w ? _("Enabled") : _("Disabled")
-                        }), this.frpsEnabledEl = S, j = jsx("div", {
+                            children: S ? _("Enabled") : _("Disabled")
+                        }), this.frpsEnabledEl = j, P = jsx("div", {
                             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
                             id: "frps-version-value",
-                            children: w && n.frp_version ? n.frp_version : ""
-                        }), this.frpsVersionEl = j, P = jsx("div", {
+                            children: S && d.frp_version ? d.frp_version : ""
+                        }), this.frpsVersionEl = P, R = jsx("div", {
                             style: "font-size: 0.85em; margin-top: 0.2em;",
                             id: "frps-status-value"
-                        }), this.frpsStatusEl = P, R = jsx("div", {
+                        }), this.frpsStatusEl = R, I = jsx("div", {
                             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.2em;",
                             id: "frps-info-value"
-                        }), this.frpsInfoEl = R, I = jsx("div", {
+                        }), this.frpsInfoEl = I, D = jsx("div", {
                             style: "cursor: help; font-size: 0.85em; color: #dc3545; margin-top: 0.2em; display: none;",
                             id: "frps-error-value"
-                        }), this.frpsErrorEl = I, this.card("FRPS", jsxs("div", {
+                        }), this.frpsErrorEl = D, this.card("FRPS", jsxs("div", {
                             children: [
-                                S,
                                 j,
                                 P,
                                 R,
-                                I
+                                I,
+                                D
                             ]
                         }))),
-                        a && (D = jsx("strong", {
-                            style: "font-size: 1.1em; font-weight: 600; color: ".concat(a.ddns_enabled ? "#28a745" : "#6c757d", ";"),
+                        isFeatureEnabled("ddns_mode") && c && (V = jsx("strong", {
+                            style: "font-size: 1.1em; font-weight: 600; color: ".concat(c.ddns_enabled ? "#28a745" : "#6c757d", ";"),
                             id: "ddns-enabled-value",
-                            children: a.ddns_enabled ? _("Enabled") : _("Disabled")
-                        }), this.ddnsEnabledEl = D, (V = a.ddns_version ? jsx("div", {
+                            children: c.ddns_enabled ? _("Enabled") : _("Disabled")
+                        }), this.ddnsEnabledEl = V, (L = c.ddns_version ? jsx("div", {
                             style: "font-size: 0.85em; color: #6c757d; margin-top: 0.3em;",
                             id: "ddns-version-value",
-                            children: a.ddns_version
-                        }) : null) && (this.ddnsVersionEl = V), this.card(_("DDNS-GO"), jsxs("div", {
+                            children: c.ddns_version
+                        }) : null) && (this.ddnsVersionEl = L), this.card(_("DDNS-GO"), jsxs("div", {
                             children: [
-                                D,
-                                V
+                                V,
+                                L
                             ]
                         }))),
-                        (L = jsx("span", {
+                        (k = jsx("span", {
                             children: _("calculating")
-                        }), k = jsx("span", {
+                        }), A = jsx("span", {
                             children: _("calculating")
-                        }), this.trafficRateInEl = L, this.trafficRateOutEl = k, this.card(_("Traffic Rate"), jsxs("div", {
+                        }), this.trafficRateInEl = k, this.trafficRateOutEl = A, this.card(_("Traffic Rate"), jsxs("div", {
                             children: [
                                 jsxs("div", {
                                     style: "font-size: 0.85em;",
                                     children: [
                                         "\u2193 ",
-                                        L
+                                        k
                                     ]
                                 }),
                                 jsxs("div", {
                                     style: "font-size: 0.85em;",
                                     children: [
                                         "\u2191 ",
-                                        k
+                                        A
                                     ]
                                 })
                             ]
                         }))),
-                        (A = jsx("span", {
-                            style: "color: #6c757d;",
-                            children: _("loading")
-                        }), this.projectListEl = A, this.card(_("Project List"), A)),
                         (O = jsx("span", {
                             style: "color: #6c757d;",
                             children: _("loading")
-                        }), this.frpcProxiesEl = O, this.card(_("FRPC Proxies"), O)),
-                        (T = jsx("span", {
+                        }), this.projectListEl = O, this.card(_("Project List"), O)),
+                        isFeatureEnabled("frpc_mode") && (T = jsx("span", {
                             style: "color: #6c757d;",
                             children: _("loading")
-                        }), this.frpsProxiesEl = T, this.card(_("FRPS Active Proxies"), T)),
-                        (H = jsx("span", {
+                        }), this.frpcProxiesEl = T, this.card(_("FRPC Proxies"), T)),
+                        isFeatureEnabled("frps_mode") && (H = jsx("span", {
                             style: "color: #6c757d;",
                             children: _("loading")
-                        }), this.ddnsHealthEl = H, this.card(_("DDNS Entries"), H))
+                        }), this.frpsProxiesEl = H, this.card(_("FRPS Active Proxies"), H)),
+                        isFeatureEnabled("ddns_mode") && (C = jsx("span", {
+                            style: "color: #6c757d;",
+                            children: _("loading")
+                        }), this.ddnsHealthEl = C, this.card(_("DDNS Entries"), C))
                     ]
                 }),
-                d && d.length > 0 && this.renderActivityLog(d)
+                a && a.length > 0 && this.renderActivityLog(a)
             ]
         });
     }
@@ -2699,13 +2708,14 @@ class StatusPanel {
 
 
 
-let header_o = L.form;
-/* export default */ function header(r, s, l, i) {
-    let n;
-    (n = s.taboption(i, header_o.Flag, "enabled", _("Enable PortWeaver"))).default = "1", n.rmempty = !1, (n = s.taboption(i, header_o.Flag, "use_nftables", _("Use nftables"))).default = "0", n.rmempty = !1, n.description = _("Use nftables instead of OpenWrt firewall (fw4). Requires nftables package installed."), n.default = "1", n.rmempty = !1, (n = s.taboption(i, header_o.DummyValue, "_runtime_status", _("Runtime Status"))).rawhtml = !0, n.cfgvalue = ()=>{
+
+let header_r = L.form;
+/* export default */ function header(s, l, i, n) {
+    let u;
+    (u = l.taboption(n, header_r.Flag, "enabled", _("Enable PortWeaver"))).default = "1", u.rmempty = !1, isFeatureEnabled("nftables_mode") && ((u = l.taboption(n, header_r.Flag, "use_nftables", _("Use nftables"))).default = "0", u.rmempty = !1, u.description = _("Use nftables instead of OpenWrt firewall (fw4). Requires nftables package installed."), u.default = "1", u.rmempty = !1), (u = l.taboption(n, header_r.DummyValue, "_runtime_status", _("Runtime Status"))).rawhtml = !0, u.cfgvalue = ()=>{
         let t = new StatusPanel();
-        return l.statusPanel = t, t.render(l.globalStatus, l.frpStatus, l.projectStatuses, l.events, l.ddnsGlobalStatus);
-    }, (n = s.taboption(i, header_o.Button, "_reload_config", _("Reload Config"))).modalonly = !1, n.editable = !0, n.inputtitle = _("Reload"), n.onclick = async ()=>{
+        return i.statusPanel = t, t.render(i.globalStatus, i.frpStatus, i.projectStatuses, i.events, i.ddnsGlobalStatus);
+    }, (u = l.taboption(n, header_r.Button, "_reload_config", _("Reload Config"))).modalonly = !1, u.editable = !0, u.inputtitle = _("Reload"), u.onclick = async ()=>{
         try {
             let e = await rpcClient.reloadConfig();
             L.ui.addNotification(null, jsx("p", {
@@ -2717,25 +2727,25 @@ let header_o = L.form;
             }), "error");
         }
     };
-    let u = async (e)=>{
-        let o = l.getProjectIndex(e);
+    let d = async (e)=>{
+        let o = i.getProjectIndex(e);
         if (o < 0) return L.ui.addNotification(null, jsx("p", {
             children: _("Could not determine project index")
         }), "error"), Promise.resolve();
-        let r = l.getProjectStatus(e), s = !(null == r ? void 0 : r.enabled);
+        let r = i.getProjectStatus(e), s = !(null == r ? void 0 : r.enabled);
         try {
             await rpcClient.setEnabled(o, !!s), L.ui.addNotification(null, jsx("p", {
                 children: _("Runtime state updated to: %s").format(s ? _("enabled") : _("disabled"))
             }), "info");
             let e = await rpcClient.getFullStatus();
-            e && (l.globalStatus = {
+            e && (i.globalStatus = {
                 status: e.status,
                 total_projects: e.total_projects,
                 active_ports: e.active_ports,
                 uptime: e.uptime,
                 total_bytes_in: e.total_bytes_in,
                 total_bytes_out: e.total_bytes_out
-            }, l.projectStatuses = (e.projects || []).map((t)=>({
+            }, i.projectStatuses = (e.projects || []).map((t)=>({
                     enabled: t.enabled,
                     status: t.status,
                     startup_status: t.startup_status,
@@ -2751,9 +2761,9 @@ let header_o = L.form;
             }), "error");
         }
     };
-    window.portweaverToggle = u;
-    let d = async (e)=>{
-        let o = l.getProjectIndex(e);
+    window.portweaverToggle = d;
+    let c = async (e)=>{
+        let o = i.getProjectIndex(e);
         if (o < 0) return L.ui.addNotification(null, jsx("p", {
             children: _("Could not determine project index")
         }), "error"), Promise.resolve();
@@ -2762,14 +2772,14 @@ let header_o = L.form;
                 children: _("Project restarted successfully")
             }), "info");
             let e = await rpcClient.getFullStatus();
-            e && (l.globalStatus = {
+            e && (i.globalStatus = {
                 status: e.status,
                 total_projects: e.total_projects,
                 active_ports: e.active_ports,
                 uptime: e.uptime,
                 total_bytes_in: e.total_bytes_in,
                 total_bytes_out: e.total_bytes_out
-            }, l.projectStatuses = (e.projects || []).map((t)=>({
+            }, i.projectStatuses = (e.projects || []).map((t)=>({
                     enabled: t.enabled,
                     status: t.status,
                     startup_status: t.startup_status,
@@ -2785,7 +2795,7 @@ let header_o = L.form;
             }), "error");
         }
     };
-    window.portweaverRestart = d;
+    window.portweaverRestart = c;
 }
 
 ;// CONCATENATED MODULE: ./modules/logs.tsx
@@ -3702,21 +3712,33 @@ let about_t = L.form;
 
 
 
-let main_d = L.form, main_u = L.uci;
+
+let main_u = L.form, main_p = L.uci;
 class main extends L.view {
     async load() {
         return Promise.all([
-            main_u.load("portweaver"),
-            main_u.load("firewall"),
+            main_p.load("portweaver"),
+            main_p.load("firewall"),
             rpcClient.getFullStatus().then((e)=>e || {}).catch((e)=>(console.warn("ubus get_full_status failed:", e), {})),
-            rpcClient.getVersion().then((e)=>e || null).catch((e)=>(console.warn("ubus get_version failed:", e), null))
+            L.fs.exec("/usr/bin/portweaver", [
+                "version",
+                "--json"
+            ]).then((e)=>{
+                if (e && 0 === e.code && e.stdout) try {
+                    let o = JSON.parse(e.stdout);
+                    return setVersionInfo(o), o;
+                } catch (e) {
+                    console.warn("Failed to parse portweaver version JSON:", e);
+                }
+                return null;
+            }).catch((e)=>(console.warn("exec portweaver version failed:", e), null))
         ]);
     }
-    render(i) {
-        let u = new main_d.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration")), f = u.section(main_d.NamedSection, "global", "portweaver");
-        f.anonymous = !0, f.addremove = !1, f.tab("settings", _("Global Settings")), f.tab("projects", _("Port Forwarding")), f.tab("ddns", _("DDNS")), f.tab("frpc", _("FRP Tunnels")), f.tab("frps", _("FRP Server")), f.tab("nftables", _("nftables")), f.tab("logs", _("System Logs")), f.tab("about", _("About"));
-        let p = i[2], c = i[3], b = new Client(p);
-        return header(u, f, b, "settings"), config(u, f, b, "projects"), ddns(u, f, "ddns"), frpc(u, f, "frpc"), frps(u, f, "frps"), nftables(u, f, "nftables"), logs(u, f, "logs"), about(u, f, "about", c), u.render();
+    render(m) {
+        let f = new main_u.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration")), p = f.section(main_u.NamedSection, "global", "portweaver");
+        p.anonymous = !0, p.addremove = !1, p.tab("settings", _("Global Settings")), p.tab("projects", _("Port Forwarding")), isFeatureEnabled("ddns_mode") && p.tab("ddns", _("DDNS")), isFeatureEnabled("frpc_mode") && p.tab("frpc", _("FRP Tunnels")), isFeatureEnabled("frps_mode") && p.tab("frps", _("FRP Server")), isFeatureEnabled("nftables_mode") && p.tab("nftables", _("nftables")), p.tab("logs", _("System Logs")), p.tab("about", _("About"));
+        let c = m[2], b = m[3], w = new Client(c);
+        return header(f, p, w, "settings"), config(f, p, w, "projects"), isFeatureEnabled("ddns_mode") && ddns(f, p, "ddns"), isFeatureEnabled("frpc_mode") && frpc(f, p, "frpc"), isFeatureEnabled("frps_mode") && frps(f, p, "frps"), isFeatureEnabled("nftables_mode") && nftables(f, p, "nftables"), logs(f, p, "logs"), about(f, p, "about", b), f.render();
     }
 }
 

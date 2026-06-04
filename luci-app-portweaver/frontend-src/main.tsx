@@ -9,6 +9,7 @@ import ddns from "./modules/ddns";
 import nftables from "./modules/nftables";
 import about from "./modules/about";
 import { rpcClient } from "./utils/rpc-client";
+import { setVersionInfo, isFeatureEnabled } from "./utils/feature";
 
 const form = L.form;
 const uci = L.uci;
@@ -25,11 +26,22 @@ export class main extends L.view {
           console.warn("ubus get_full_status failed:", err);
           return {} as FullStatusResponse;
         }),
-      rpcClient
-        .getVersion()
-        .then((res) => res || null)
+      L.fs
+        .exec("/usr/bin/portweaver", ["version", "--json"])
+        .then((res) => {
+          if (res && res.code === 0 && res.stdout) {
+            try {
+              const info = JSON.parse(res.stdout) as VersionResponse;
+              setVersionInfo(info);
+              return info;
+            } catch (e) {
+              console.warn("Failed to parse portweaver version JSON:", e);
+            }
+          }
+          return null;
+        })
         .catch((err: any) => {
-          console.warn("ubus get_version failed:", err);
+          console.warn("exec portweaver version failed:", err);
           return null;
         }),
     ]);
@@ -48,10 +60,18 @@ export class main extends L.view {
 
     s.tab("settings", _("Global Settings"));
     s.tab("projects", _("Port Forwarding"));
-    s.tab("ddns", _("DDNS"));
-    s.tab("frpc", _("FRP Tunnels"));
-    s.tab("frps", _("FRP Server"));
-    s.tab("nftables", _("nftables"));
+    if (isFeatureEnabled("ddns_mode")) {
+      s.tab("ddns", _("DDNS"));
+    }
+    if (isFeatureEnabled("frpc_mode")) {
+      s.tab("frpc", _("FRP Tunnels"));
+    }
+    if (isFeatureEnabled("frps_mode")) {
+      s.tab("frps", _("FRP Server"));
+    }
+    if (isFeatureEnabled("nftables_mode")) {
+      s.tab("nftables", _("nftables"));
+    }
     s.tab("logs", _("System Logs"));
     s.tab("about", _("About"));
 
@@ -61,10 +81,18 @@ export class main extends L.view {
 
     header(m, s, client, "settings");
     config(m, s, client, "projects");
-    ddns(m, s, "ddns");
-    frpc(m, s, "frpc");
-    frps(m, s, "frps");
-    nftables(m, s, "nftables");
+    if (isFeatureEnabled("ddns_mode")) {
+      ddns(m, s, "ddns");
+    }
+    if (isFeatureEnabled("frpc_mode")) {
+      frpc(m, s, "frpc");
+    }
+    if (isFeatureEnabled("frps_mode")) {
+      frps(m, s, "frps");
+    }
+    if (isFeatureEnabled("nftables_mode")) {
+      nftables(m, s, "nftables");
+    }
     logs(m, s, "logs");
     about(m, s, "about", versionInfo);
 

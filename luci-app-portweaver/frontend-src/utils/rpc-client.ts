@@ -76,10 +76,6 @@ export function createRpcClient(rpc: typeof L.rpc) {
     object: "portweaver",
     method: "get_full_status",
   });
-  const getVersion = rpc.declare<VersionResponse>({
-    object: "portweaver",
-    method: "get_version",
-  });
 
   const getNftablesRules = rpc.declare<{ rules: string }>({
     object: "portweaver",
@@ -140,7 +136,6 @@ export function createRpcClient(rpc: typeof L.rpc) {
     clearFrpsLogs,
     getFrpsProxyStats,
     getFullStatus,
-    getVersion,
     getNftablesRules,
     reloadConfig,
     restartProject,
