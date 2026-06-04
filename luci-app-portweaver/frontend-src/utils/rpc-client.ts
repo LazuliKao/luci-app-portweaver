@@ -123,6 +123,12 @@ export function createRpcClient(rpc: typeof L.rpc) {
     params: ["project", "target"],
   });
 
+  const uciCommit = rpc.declare<void, [config: string]>({
+    object: "uci",
+    method: "commit",
+    params: ["config"],
+  });
+
   return {
     listProjects,
     setEnabled,
@@ -141,6 +147,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
     restartProject,
     wolWake,
     wolStatus,
+    uciCommit,
   };
 }
 export type RpcClient = ReturnType<typeof createRpcClient>;

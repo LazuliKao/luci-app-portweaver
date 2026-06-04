@@ -10199,16 +10199,6 @@ var __webpack_exports__ = {};
 
 // UNUSED EXPORTS: main
 
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.promise.js
-var es_promise = __webpack_require__(4501);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.iterator.js
-var es_array_iterator = __webpack_require__(5453);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/web.dom-collections.iterator.js
-var web_dom_collections_iterator = __webpack_require__(2694);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.regexp.exec.js
-var es_regexp_exec = __webpack_require__(8628);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/esnext.json.parse.js
-var esnext_json_parse = __webpack_require__(2862);
 ;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_define_property.js
 function _define_property(obj, key, value) {
     if (key in obj) {
@@ -10219,6 +10209,18 @@ function _define_property(obj, key, value) {
 }
 
 
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.promise.js
+var es_promise = __webpack_require__(4501);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.iterator.js
+var es_array_iterator = __webpack_require__(5453);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/web.dom-collections.iterator.js
+var web_dom_collections_iterator = __webpack_require__(2694);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.regexp.exec.js
+var es_regexp_exec = __webpack_require__(8628);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/esnext.json.parse.js
+var esnext_json_parse = __webpack_require__(2862);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.regexp.to-string.js
+var es_regexp_to_string = __webpack_require__(9468);
 ;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread.js
 
 
@@ -10274,26 +10276,6 @@ function _object_spread_props(target, source) {
 }
 
 
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.constructor.js
-var es_iterator_constructor = __webpack_require__(4178);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.map.js
-var es_iterator_map = __webpack_require__(4792);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.reduce.js
-var es_array_reduce = __webpack_require__(9241);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.reduce.js
-var es_iterator_reduce = __webpack_require__(5382);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.filter.js
-var es_iterator_filter = __webpack_require__(9342);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.some.js
-var es_iterator_some = __webpack_require__(3380);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.find.js
-var es_iterator_find = __webpack_require__(8471);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.push.js
-var es_array_push = __webpack_require__(4755);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.reverse.js
-var es_array_reverse = __webpack_require__(9129);
-// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.regexp.to-string.js
-var es_regexp_to_string = __webpack_require__(9468);
 ;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
 function _object_without_properties_loose(source, excluded) {
     if (source == null) return {};
@@ -10347,6 +10329,8 @@ function _object_without_properties(source, excluded) {
 
 // EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.symbol.description.js
 var es_symbol_description = __webpack_require__(274);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.push.js
+var es_array_push = __webpack_require__(4755);
 // EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.string.starts-with.js
 var es_string_starts_with = __webpack_require__(8897);
 ;// CONCATENATED MODULE: ../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
@@ -10398,6 +10382,22 @@ function jsxDEV(e, t) {
 ;// CONCATENATED MODULE: ../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.constructor.js
+var es_iterator_constructor = __webpack_require__(4178);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.map.js
+var es_iterator_map = __webpack_require__(4792);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.reduce.js
+var es_array_reduce = __webpack_require__(9241);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.reduce.js
+var es_iterator_reduce = __webpack_require__(5382);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.filter.js
+var es_iterator_filter = __webpack_require__(9342);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.some.js
+var es_iterator_some = __webpack_require__(3380);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.iterator.find.js
+var es_iterator_find = __webpack_require__(8471);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.array.reverse.js
+var es_array_reverse = __webpack_require__(9129);
 // EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.parse-float.js
 var es_parse_float = __webpack_require__(5340);
 // EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.number.to-fixed.js
@@ -10477,13 +10477,13 @@ function createRpcClient(e) {
         params: [
             "name"
         ]
-    }), l = e.declare({
+    }), s = e.declare({
         object: "portweaver",
         method: "clear_ddns_logs",
         params: [
             "name"
         ]
-    }), s = e.declare({
+    }), l = e.declare({
         object: "portweaver",
         method: "get_frps_info",
         params: [
@@ -10501,7 +10501,7 @@ function createRpcClient(e) {
         params: [
             "id"
         ]
-    }), w = e.declare({
+    }), i = e.declare({
         object: "portweaver",
         method: "get_full_status"
     }), j = e.declare({
@@ -10510,11 +10510,18 @@ function createRpcClient(e) {
     }), b = e.declare({
         object: "portweaver",
         method: "reload_config"
-    }), n = e.declare({
+    }), w = e.declare({
         object: "portweaver",
         method: "restart_project",
         params: [
             "id"
+        ]
+    }), n = e.declare({
+        object: "portweaver",
+        method: "wol_wake",
+        params: [
+            "project",
+            "target"
         ]
     });
     return {
@@ -10525,28 +10532,28 @@ function createRpcClient(e) {
         clearFrpcLogs: o,
         getDdnsStatus: d,
         getDdnsInfo: p,
-        clearDdnsLogs: l,
-        getFrpsInfo: s,
+        clearDdnsLogs: s,
+        getFrpsInfo: l,
         clearFrpsLogs: m,
         getFrpsProxyStats: _,
-        getFullStatus: w,
+        getFullStatus: i,
         getNftablesRules: j,
         reloadConfig: b,
-        restartProject: n,
-        wolWake: e.declare({
-            object: "portweaver",
-            method: "wol_wake",
-            params: [
-                "project",
-                "target"
-            ]
-        }),
+        restartProject: w,
+        wolWake: n,
         wolStatus: e.declare({
             object: "portweaver",
             method: "wol_status",
             params: [
                 "project",
                 "target"
+            ]
+        }),
+        uciCommit: e.declare({
+            object: "uci",
+            method: "commit",
+            params: [
+                "config"
             ]
         })
     };
@@ -13262,13 +13269,14 @@ class StatusPanel {
 
 
 let header_r = L.form;
-/* export default */ function header(s, l, i, n) {
+/* export default */ function header(s, i, l, n) {
     let u;
-    (u = l.taboption(n, header_r.Flag, "enabled", _("Enable PortWeaver"))).default = "1", u.rmempty = !1, isFeatureEnabled("nftables_mode") && ((u = l.taboption(n, header_r.Flag, "use_nftables", _("Use nftables"))).default = "0", u.rmempty = !1, u.description = _("Use nftables instead of OpenWrt firewall (fw4). Requires nftables package installed."), u.default = "1", u.rmempty = !1), (u = l.taboption(n, header_r.DummyValue, "_runtime_status", _("Runtime Status"))).rawhtml = !0, u.cfgvalue = ()=>{
+    (u = i.taboption(n, header_r.Flag, "enabled", _("Enable PortWeaver"))).default = "1", u.rmempty = !1, isFeatureEnabled("nftables_mode") && ((u = i.taboption(n, header_r.Flag, "use_nftables", _("Use nftables"))).default = "0", u.rmempty = !1, u.description = _("Use nftables instead of OpenWrt firewall (fw4). Requires nftables package installed."), u.default = "1", u.rmempty = !1), (u = i.taboption(n, header_r.DummyValue, "_runtime_status", _("Runtime Status"))).rawhtml = !0, u.cfgvalue = ()=>{
         let t = new StatusPanel();
-        return i.statusPanel = t, t.render(i.globalStatus, i.frpStatus, i.projectStatuses, i.events, i.ddnsGlobalStatus);
-    }, (u = l.taboption(n, header_r.Button, "_reload_config", _("Reload Config"))).modalonly = !1, u.editable = !0, u.inputtitle = _("Reload"), u.onclick = async ()=>{
+        return l.statusPanel = t, t.render(l.globalStatus, l.frpStatus, l.projectStatuses, l.events, l.ddnsGlobalStatus);
+    }, (u = i.taboption(n, header_r.Button, "_reload_config", _("Reload Config"))).modalonly = !1, u.editable = !0, u.inputtitle = _("Reload"), u.onclick = async ()=>{
         try {
+            await s.save(), await L.uci.save(), await rpcClient.uciCommit("portweaver");
             let e = await rpcClient.reloadConfig();
             L.ui.addNotification(null, jsx("p", {
                 children: _("Config reloaded: %d project(s) restarted").format(e.changes)
@@ -13280,24 +13288,24 @@ let header_r = L.form;
         }
     };
     let d = async (e)=>{
-        let a = i.getProjectIndex(e);
+        let a = l.getProjectIndex(e);
         if (a < 0) return L.ui.addNotification(null, jsx("p", {
             children: _("Could not determine project index")
         }), "error"), Promise.resolve();
-        let r = i.getProjectStatus(e), s = !(null == r ? void 0 : r.enabled);
+        let r = l.getProjectStatus(e), s = !(null == r ? void 0 : r.enabled);
         try {
             await rpcClient.setEnabled(a, !!s), L.ui.addNotification(null, jsx("p", {
                 children: _("Runtime state updated to: %s").format(s ? _("enabled") : _("disabled"))
             }), "info");
             let e = await rpcClient.getFullStatus();
-            e && (i.globalStatus = {
+            e && (l.globalStatus = {
                 status: e.status,
                 total_projects: e.total_projects,
                 active_ports: e.active_ports,
                 uptime: e.uptime,
                 total_bytes_in: e.total_bytes_in,
                 total_bytes_out: e.total_bytes_out
-            }, i.projectStatuses = (e.projects || []).map((t)=>({
+            }, l.projectStatuses = (e.projects || []).map((t)=>({
                     enabled: t.enabled,
                     status: t.status,
                     startup_status: t.startup_status,
@@ -13315,7 +13323,7 @@ let header_r = L.form;
     };
     window.portweaverToggle = d;
     let c = async (e)=>{
-        let a = i.getProjectIndex(e);
+        let a = l.getProjectIndex(e);
         if (a < 0) return L.ui.addNotification(null, jsx("p", {
             children: _("Could not determine project index")
         }), "error"), Promise.resolve();
@@ -13324,14 +13332,14 @@ let header_r = L.form;
                 children: _("Project restarted successfully")
             }), "info");
             let e = await rpcClient.getFullStatus();
-            e && (i.globalStatus = {
+            e && (l.globalStatus = {
                 status: e.status,
                 total_projects: e.total_projects,
                 active_ports: e.active_ports,
                 uptime: e.uptime,
                 total_bytes_in: e.total_bytes_in,
                 total_bytes_out: e.total_bytes_out
-            }, i.projectStatuses = (e.projects || []).map((t)=>({
+            }, l.projectStatuses = (e.projects || []).map((t)=>({
                     enabled: t.enabled,
                     status: t.status,
                     startup_status: t.startup_status,
@@ -14232,7 +14240,7 @@ let about_t = L.form;
                                 jsxs("div", {
                                     children: [
                                         jsx("a", {
-                                            href: "https://github.com/sdlzm/go-ddns",
+                                            href: "https://github.com/jeessy2/ddns-go",
                                             target: "_blank",
                                             rel: "noopener noreferrer",
                                             style: t,
@@ -14333,20 +14341,23 @@ let wol_o = L.form;
 
 
 
-let main_f = L.form, main_c = L.uci;
+
+
+
+let main_h = L.form, main_v = L.uci;
 class main extends L.view {
     async load() {
         return Promise.all([
-            main_c.load("portweaver"),
-            main_c.load("firewall"),
+            main_v.load("portweaver"),
+            main_v.load("firewall"),
             rpcClient.getFullStatus().then((e)=>e || {}).catch((e)=>(console.warn("ubus get_full_status failed:", e), {})),
             L.fs.exec("/usr/bin/portweaver", [
                 "version",
                 "--json"
             ]).then((e)=>{
                 if (e && 0 === e.code && e.stdout) try {
-                    let o = JSON.parse(e.stdout);
-                    return setVersionInfo(o), o;
+                    let t = JSON.parse(e.stdout);
+                    return setVersionInfo(t), t;
                 } catch (e) {
                     console.warn("Failed to parse portweaver version JSON:", e);
                 }
@@ -14354,11 +14365,77 @@ class main extends L.view {
             }).catch((e)=>(console.warn("exec portweaver version failed:", e), null))
         ]);
     }
-    render(i) {
-        let p = new main_f.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration")), c = p.section(main_f.NamedSection, "global", "portweaver");
-        c.anonymous = !0, c.addremove = !1, c.tab("settings", _("Global Settings")), c.tab("projects", _("Port Forwarding")), isFeatureEnabled("wol_mode") && c.tab("wol", _("Wake-on-LAN")), isFeatureEnabled("ddns_mode") && c.tab("ddns", _("DDNS")), isFeatureEnabled("frpc_mode") && c.tab("frpc", _("FRP Tunnels")), isFeatureEnabled("frps_mode") && c.tab("frps", _("FRP Server")), isFeatureEnabled("nftables_mode") && c.tab("nftables", _("nftables")), c.tab("logs", _("System Logs")), c.tab("about", _("About"));
-        let b = i[2], w = i[3], g = new Client(b);
-        return header(p, c, g, "settings"), config(p, c, g, "projects"), isFeatureEnabled("wol_mode") && wol(p, c, "wol"), isFeatureEnabled("ddns_mode") && ddns(p, c, "ddns"), isFeatureEnabled("frpc_mode") && frpc(p, c, "frpc"), isFeatureEnabled("frps_mode") && frps(p, c, "frps"), isFeatureEnabled("nftables_mode") && nftables(p, c, "nftables"), logs(p, c, "logs"), about(p, c, "about", w), p.render();
+    render(e) {
+        let t = new main_h.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration"));
+        this.mapInstance = t;
+        let o = t.section(main_h.NamedSection, "global", "portweaver");
+        o.anonymous = !0, o.addremove = !1, o.tab("settings", _("Global Settings")), o.tab("projects", _("Port Forwarding")), isFeatureEnabled("wol_mode") && o.tab("wol", _("Wake-on-LAN")), isFeatureEnabled("ddns_mode") && o.tab("ddns", _("DDNS")), isFeatureEnabled("frpc_mode") && o.tab("frpc", _("FRP Tunnels")), isFeatureEnabled("frps_mode") && o.tab("frps", _("FRP Server")), isFeatureEnabled("nftables_mode") && o.tab("nftables", _("nftables")), o.tab("logs", _("System Logs")), o.tab("about", _("About"));
+        let u = e[2], f = e[3], v = new Client(u);
+        return header(t, o, v, "settings"), config(t, o, v, "projects"), isFeatureEnabled("wol_mode") && wol(t, o, "wol"), isFeatureEnabled("ddns_mode") && ddns(t, o, "ddns"), isFeatureEnabled("frpc_mode") && frpc(t, o, "frpc"), isFeatureEnabled("frps_mode") && frps(t, o, "frps"), isFeatureEnabled("nftables_mode") && nftables(t, o, "nftables"), logs(t, o, "logs"), about(t, o, "about", f), t.render();
+    }
+    async handleSave() {
+        this.mapInstance && await this.mapInstance.save();
+    }
+    async handleReset() {
+        this.mapInstance && await this.mapInstance.reset();
+    }
+    async handleSaveReload() {
+        try {
+            await this.handleSave(), await L.uci.save(), await rpcClient.uciCommit("portweaver");
+            let e = await rpcClient.reloadConfig();
+            L.ui.addNotification(null, E("p", _("Config reloaded: %d project(s) restarted").format(e.changes)), "info"), location.reload();
+        } catch (e) {
+            L.ui.addNotification(null, E("p", _("Failed to reload config: %s").format(e.toString())), "error");
+        }
+    }
+    async handleSaveRestart() {
+        await this.handleSave();
+        let e = L.ui.changes;
+        return (e && "function" == typeof e.apply ? e.apply(!0) : L.uci.apply()).then(()=>L.fs.exec("/etc/init.d/portweaver", [
+                "restart"
+            ]).then(()=>{
+                L.ui.addNotification(null, E("p", _("Service restarted successfully")), "info");
+            }).catch((e)=>{
+                L.ui.addNotification(null, E("p", _("Failed to restart service: %s").format(e.toString())), "error");
+            }));
+    }
+    addFooter() {
+        let e = document.createDocumentFragment(), a = jsxs("div", {
+            class: "cbi-page-actions",
+            children: [
+                jsx("button", {
+                    type: "button",
+                    class: "cbi-button cbi-button-apply",
+                    onclick: ()=>this.handleSaveReload(),
+                    children: _("Save & Reload")
+                }),
+                jsx("button", {
+                    type: "button",
+                    class: "cbi-button cbi-button-apply",
+                    style: "margin-left: 8px; background-color: var(--cbi-button-action-background, #1a73e8); color: white;",
+                    onclick: ()=>this.handleSaveRestart(),
+                    children: _("Save & Restart")
+                }),
+                jsx("button", {
+                    type: "button",
+                    class: "cbi-button cbi-button-save",
+                    style: "margin-left: 8px;",
+                    onclick: ()=>this.handleSave(),
+                    children: _("Save")
+                }),
+                jsx("button", {
+                    type: "button",
+                    class: "cbi-button cbi-button-reset",
+                    style: "margin-left: 8px;",
+                    onclick: ()=>this.handleReset(),
+                    children: _("Reset")
+                })
+            ]
+        });
+        return e.appendChild(a), e;
+    }
+    constructor(...t){
+        super(...t), _define_property(this, "mapInstance", void 0), _define_property(this, "handleSaveApply", null);
     }
 }
 

@@ -52,6 +52,9 @@ export default function (
   o.inputtitle = _("Reload");
   o.onclick = async () => {
     try {
+      await _m.save();
+      await L.uci.save();
+      await rpcClient.uciCommit("portweaver");
       const result = await rpcClient.reloadConfig();
       L.ui.addNotification(
         null,

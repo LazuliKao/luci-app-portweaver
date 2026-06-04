@@ -41,6 +41,9 @@
 				"portweaver"
 			],
 			"ubus": {
+				"uci": [
+					"commit"
+				],
 				"portweaver": [
 					"set_enabled",
 					"clear_frpc_logs",

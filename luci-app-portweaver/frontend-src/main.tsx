@@ -16,6 +16,8 @@ const form = L.form;
 const uci = L.uci;
 type UnwrapPromise<T> = T extends Promise<infer R> ? R : T;
 export class main extends L.view {
+  private mapInstance?: LuCI.form.CBIMap;
+
   override async load() {
     return Promise.all([
       uci.load("portweaver"),
@@ -29,7 +31,7 @@ export class main extends L.view {
         }),
       L.fs
         .exec("/usr/bin/portweaver", ["version", "--json"])
-        .then((res) => {
+        .then((res: any) => {
           if (res && res.code === 0 && res.stdout) {
             try {
               const info = JSON.parse(res.stdout) as VersionResponse;
@@ -54,6 +56,7 @@ export class main extends L.view {
       _("PortWeaver"),
       _("Port forwarding and NAT traversal configuration"),
     );
+    this.mapInstance = m;
 
     const s = m.section(form.NamedSection, "global", "portweaver");
     s.anonymous = true;
@@ -104,5 +107,120 @@ export class main extends L.view {
     about(m, s, "about", versionInfo);
 
     return m.render();
+  }
+
+  override async handleSave() {
+    if (this.mapInstance) {
+      await this.mapInstance.save();
+    }
+  }
+
+  override async handleReset() {
+    if (this.mapInstance) {
+      await this.mapInstance.reset();
+    }
+  }
+
+  override handleSaveApply = null as any;
+
+  async handleSaveReload() {
+    try {
+      await this.handleSave();
+      await L.uci.save();
+      await rpcClient.uciCommit("portweaver");
+      const result = await rpcClient.reloadConfig();
+      L.ui.addNotification(
+        null,
+        E(
+          "p",
+          _("Config reloaded: %d project(s) restarted").format(result.changes),
+        ),
+        "info",
+      );
+      location.reload();
+    } catch (err: any) {
+      L.ui.addNotification(
+        null,
+        E(
+          "p",
+          _("Failed to reload config: %s").format(err.toString()),
+        ),
+        "error",
+      );
+    }
+  }
+
+  async handleSaveRestart() {
+    await this.handleSave();
+    const uiChanges = (L as any).ui.changes;
+    const applyPromise =
+      uiChanges && typeof uiChanges.apply === "function"
+        ? uiChanges.apply(true)
+        : L.uci.apply();
+
+    return applyPromise.then(() => {
+      return L.fs
+        .exec("/etc/init.d/portweaver", ["restart"])
+        .then(() => {
+          L.ui.addNotification(
+            null,
+            E("p", _("Service restarted successfully")),
+            "info",
+          );
+        })
+        .catch((err: any) => {
+          L.ui.addNotification(
+            null,
+            E(
+              "p",
+              _("Failed to restart service: %s").format(err.toString()),
+            ),
+            "error",
+          );
+        });
+    });
+  }
+
+  addFooter(): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+
+    const pageActions = (
+      <div class="cbi-page-actions">
+        <button
+          type="button"
+          class="cbi-button cbi-button-apply"
+          onclick={() => this.handleSaveReload()}
+        >
+          {_("Save & Reload")}
+        </button>
+        <button
+          type="button"
+          class="cbi-button cbi-button-apply"
+          style="margin-left: 8px; background-color: var(--cbi-button-action-background, #1a73e8); color: white;"
+          onclick={() => this.handleSaveRestart()}
+        >
+          {_("Save & Restart")}
+        </button>
+        <button
+          type="button"
+          class="cbi-button cbi-button-save"
+          style="margin-left: 8px;"
+          onclick={() => this.handleSave()}
+        >
+          {_("Save")}
+        </button>
+        <button
+          type="button"
+          class="cbi-button cbi-button-reset"
+          style="margin-left: 8px;"
+          onclick={() => this.handleReset()}
+        >
+          {_("Reset")}
+        </button>
+      </div>
+    );
+
+    fragment.appendChild(pageActions);
+    return fragment;
   }
 }
