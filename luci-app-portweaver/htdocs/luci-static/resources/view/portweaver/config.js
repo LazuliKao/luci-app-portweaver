@@ -6840,6 +6840,237 @@ $({ target: 'Promise', stat: true, forced: IS_PURE || FORCED_PROMISE_CONSTRUCTOR
 
 
 },
+4781(__unused_rspack_module, __unused_rspack_exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(8073);
+var globalThis = __webpack_require__(1513);
+var uncurryThis = __webpack_require__(7453);
+var isForced = __webpack_require__(781);
+var inheritIfRequired = __webpack_require__(1522);
+var createNonEnumerableProperty = __webpack_require__(2868);
+var create = __webpack_require__(5213);
+var getOwnPropertyNames = (__webpack_require__(7521)/* .f */.f);
+var isPrototypeOf = __webpack_require__(4574);
+var isRegExp = __webpack_require__(9861);
+var toString = __webpack_require__(2406);
+var getRegExpFlags = __webpack_require__(9845);
+var stickyHelpers = __webpack_require__(7068);
+var proxyAccessor = __webpack_require__(827);
+var defineBuiltIn = __webpack_require__(6425);
+var fails = __webpack_require__(1902);
+var hasOwn = __webpack_require__(5990);
+var enforceInternalState = (__webpack_require__(3546)/* .enforce */.enforce);
+var setSpecies = __webpack_require__(6512);
+var wellKnownSymbol = __webpack_require__(7102);
+var UNSUPPORTED_DOT_ALL = __webpack_require__(24);
+var UNSUPPORTED_NCG = __webpack_require__(4965);
+
+var MATCH = wellKnownSymbol('match');
+var NativeRegExp = globalThis.RegExp;
+var RegExpPrototype = NativeRegExp.prototype;
+var SyntaxError = globalThis.SyntaxError;
+var exec = uncurryThis(RegExpPrototype.exec);
+var charAt = uncurryThis(''.charAt);
+var replace = uncurryThis(''.replace);
+var stringIndexOf = uncurryThis(''.indexOf);
+var stringSlice = uncurryThis(''.slice);
+// TODO: Use only proper RegExpIdentifierName
+var IS_NCG = /^\?<[^\s\d!#%&*+<=>@^][^\s!#%&*+<=>@^]*>/;
+var re1 = /a/g;
+var re2 = /a/g;
+
+// "new" should create a new object, old webkit bug
+var CORRECT_NEW = new NativeRegExp(re1) !== re1;
+
+var MISSED_STICKY = stickyHelpers.MISSED_STICKY;
+var UNSUPPORTED_Y = stickyHelpers.UNSUPPORTED_Y;
+
+var BASE_FORCED = DESCRIPTORS &&
+  (!CORRECT_NEW || MISSED_STICKY || UNSUPPORTED_DOT_ALL || UNSUPPORTED_NCG || fails(function () {
+    re2[MATCH] = false;
+    // RegExp constructor can alter flags and IsRegExp works correct with @@match
+    // eslint-disable-next-line sonarjs/inconsistent-function-call -- required for testing
+    return NativeRegExp(re1) !== re1 || NativeRegExp(re2) === re2 || String(NativeRegExp(re1, 'i')) !== '/a/i';
+  }));
+
+var handleDotAll = function (string) {
+  var length = string.length;
+  var index = 0;
+  var result = '';
+  var brackets = false;
+  var chr;
+  for (; index <= length; index++) {
+    chr = charAt(string, index);
+    if (chr === '\\') {
+      result += chr + charAt(string, ++index);
+      continue;
+    }
+    if (!brackets && chr === '.') {
+      result += '[\\s\\S]';
+    } else {
+      if (chr === '[') {
+        brackets = true;
+      } else if (chr === ']') {
+        brackets = false;
+      } result += chr;
+    }
+  } return result;
+};
+
+var handleNCG = function (string) {
+  var length = string.length;
+  var index = 0;
+  var result = '';
+  var named = [];
+  var names = create(null);
+  var brackets = false;
+  var ncg = false;
+  var groupid = 0;
+  var groupname = '';
+  var chr;
+  for (; index <= length; index++) {
+    chr = charAt(string, index);
+    if (chr === '\\') {
+      chr += charAt(string, ++index);
+    } else if (chr === ']') {
+      brackets = false;
+    } else if (!brackets) switch (true) {
+      case chr === '[':
+        brackets = true;
+        break;
+      case chr === '(':
+        result += chr;
+        // ignore non-capturing groups
+        if (stringSlice(string, index + 1, index + 3) === '?:') {
+          continue;
+        }
+        if (exec(IS_NCG, stringSlice(string, index + 1))) {
+          index += 2;
+          ncg = true;
+        }
+        groupid++;
+        continue;
+      case chr === '>' && ncg:
+        if (groupname === '' || hasOwn(names, groupname)) {
+          throw new SyntaxError('Invalid capture group name');
+        }
+        names[groupname] = true;
+        named[named.length] = [groupname, groupid];
+        ncg = false;
+        groupname = '';
+        continue;
+    }
+    if (ncg) groupname += chr;
+    else result += chr;
+  } return [result, named];
+};
+
+// `RegExp` constructor
+// https://tc39.es/ecma262/#sec-regexp-constructor
+if (isForced('RegExp', BASE_FORCED)) {
+  var RegExpWrapper = function RegExp(pattern, flags) {
+    var thisIsRegExp = isPrototypeOf(RegExpPrototype, this);
+    var patternIsRegExp = isRegExp(pattern);
+    var flagsAreUndefined = flags === undefined;
+    var groups = [];
+    var rawPattern = pattern;
+    var rawFlags, dotAll, sticky, handled, result, state;
+
+    if (!thisIsRegExp && patternIsRegExp && flagsAreUndefined && pattern.constructor === RegExpWrapper) {
+      return pattern;
+    }
+
+    if (patternIsRegExp || isPrototypeOf(RegExpPrototype, pattern)) {
+      pattern = pattern.source;
+      if (flagsAreUndefined) flags = getRegExpFlags(rawPattern);
+    }
+
+    pattern = pattern === undefined ? '' : toString(pattern);
+    flags = flags === undefined ? '' : toString(flags);
+    rawPattern = pattern;
+
+    if (UNSUPPORTED_DOT_ALL && 'dotAll' in re1) {
+      dotAll = !!flags && stringIndexOf(flags, 's') > -1;
+      if (dotAll) flags = replace(flags, /s/g, '');
+    }
+
+    rawFlags = flags;
+
+    if (MISSED_STICKY && 'sticky' in re1) {
+      sticky = !!flags && stringIndexOf(flags, 'y') > -1;
+      if (sticky && UNSUPPORTED_Y) flags = replace(flags, /y/g, '');
+    }
+
+    if (UNSUPPORTED_NCG) {
+      handled = handleNCG(pattern);
+      pattern = handled[0];
+      groups = handled[1];
+    }
+
+    result = inheritIfRequired(NativeRegExp(pattern, flags), thisIsRegExp ? this : RegExpPrototype, RegExpWrapper);
+
+    if (dotAll || sticky || groups.length) {
+      state = enforceInternalState(result);
+      if (dotAll) {
+        state.dotAll = true;
+        state.raw = RegExpWrapper(handleDotAll(pattern), rawFlags);
+      }
+      if (sticky) state.sticky = true;
+      if (groups.length) state.groups = groups;
+    }
+
+    if (pattern !== rawPattern) try {
+      // fails in old engines, but we have no alternatives for unsupported regex syntax
+      createNonEnumerableProperty(result, 'source', rawPattern === '' ? '(?:)' : rawPattern);
+    } catch (error) { /* empty */ }
+
+    return result;
+  };
+
+  for (var keys = getOwnPropertyNames(NativeRegExp), index = 0; keys.length > index;) {
+    proxyAccessor(RegExpWrapper, NativeRegExp, keys[index++]);
+  }
+
+  RegExpPrototype.constructor = RegExpWrapper;
+  RegExpWrapper.prototype = RegExpPrototype;
+  defineBuiltIn(globalThis, 'RegExp', RegExpWrapper, { constructor: true });
+}
+
+// https://tc39.es/ecma262/#sec-get-regexp-@@species
+setSpecies('RegExp');
+
+
+},
+2724(__unused_rspack_module, __unused_rspack_exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(8073);
+var UNSUPPORTED_DOT_ALL = __webpack_require__(24);
+var classof = __webpack_require__(8549);
+var defineBuiltInAccessor = __webpack_require__(8233);
+var getInternalState = (__webpack_require__(3546)/* .get */.get);
+
+var RegExpPrototype = RegExp.prototype;
+var $TypeError = TypeError;
+
+// `RegExp.prototype.dotAll` getter
+// https://tc39.es/ecma262/#sec-get-regexp.prototype.dotall
+if (DESCRIPTORS && UNSUPPORTED_DOT_ALL) {
+  defineBuiltInAccessor(RegExpPrototype, 'dotAll', {
+    configurable: true,
+    get: function dotAll() {
+      if (this === RegExpPrototype) return;
+      // We can't use InternalStateModule.getterFor because
+      // we don't add metadata for regexps created by a literal.
+      if (classof(this) === 'RegExp') {
+        return !!getInternalState(this).dotAll;
+      }
+      throw new $TypeError('Incompatible receiver, RegExp required');
+    }
+  });
+}
+
+
+},
 8628(__unused_rspack_module, __unused_rspack_exports, __webpack_require__) {
 
 var $ = __webpack_require__(7081);
@@ -13891,7 +14122,39 @@ let ddns_r = [
     }), h(), L.Poll.add(h, 5);
 }
 
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.regexp.constructor.js
+var es_regexp_constructor = __webpack_require__(4781);
+// EXTERNAL MODULE: ../node_modules/.pnpm/core-js@3.47.0/node_modules/core-js/modules/es.regexp.dot-all.js
+var es_regexp_dot_all = __webpack_require__(2724);
 ;// CONCATENATED MODULE: ./components/NftablesRulesViewer.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -13905,7 +14168,7 @@ class NftablesRulesViewer {
             style: "color: #666;",
             children: "Loading..."
         }), this.rulesContainer = jsx("pre", {
-            style: "\n          background: #1e1e1e;\n          color: #d4d4d4;\n          padding: 16px;\n          border-radius: 8px;\n          overflow-x: auto;\n          font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n          font-size: 13px;\n          line-height: 1.5;\n          max-height: 600px;\n          overflow-y: auto;\n          margin: 0;\n        ",
+            style: "\n          background: #1e1e1e;\n          color: #d4d4d4;\n          padding: 16px;\n          border-radius: 8px;\n          overflow-x: auto;\n          white-space: pre !important;\n          word-break: normal !important;\n          word-wrap: normal !important;\n          font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n          font-size: 13px;\n          line-height: 1.5;\n          max-height: 600px;\n          overflow-y: auto;\n          margin: 0;\n        ",
             children: "Loading nftables rules..."
         }), this.refreshBtn = jsx("button", {
             type: "button",
@@ -13942,13 +14205,13 @@ class NftablesRulesViewer {
             this.loading = !0, this.statusSpan && (this.statusSpan.textContent = "Loading...", this.statusSpan.style.color = "#666"), this.refreshBtn && this.refreshBtn.setAttribute("disabled", "true");
             try {
                 var e;
-                let t = null == (e = window.L) ? void 0 : e.rpc;
-                if (!t) throw Error("RPC not available");
-                let s = await t.declare({
+                let s = null == (e = window.L) ? void 0 : e.rpc;
+                if (!s) throw Error("RPC not available");
+                let t = await s.declare({
                     object: "portweaver",
                     method: "get_nftables_rules"
                 }).call();
-                (null == s ? void 0 : s.rules) ? (this.rules = s.rules, this.updateDisplay(), this.statusSpan && (this.statusSpan.textContent = "Rules loaded", this.statusSpan.style.color = "#4caf50")) : (this.statusSpan && (this.statusSpan.textContent = "No rules found or nftables not available", this.statusSpan.style.color = "#ff9800"), this.rulesContainer && (this.rulesContainer.textContent = "No nftables rules found. Make sure nftables is enabled and the portweaver table exists."));
+                (null == t ? void 0 : t.rules) ? (this.rules = t.rules, this.updateDisplay(), this.statusSpan && (this.statusSpan.textContent = "Rules loaded", this.statusSpan.style.color = "#4caf50")) : (this.statusSpan && (this.statusSpan.textContent = "No rules found or nftables not available", this.statusSpan.style.color = "#ff9800"), this.rulesContainer && (this.rulesContainer.textContent = "No nftables rules found. Make sure nftables is enabled and the portweaver table exists."));
             } catch (e) {
                 console.error("Failed to load nftables rules:", e), this.statusSpan && (this.statusSpan.textContent = "Error: ".concat((null == e ? void 0 : e.message) || String(e)), this.statusSpan.style.color = "#f44336"), this.rulesContainer && (this.rulesContainer.textContent = "Failed to load nftables rules: ".concat((null == e ? void 0 : e.message) || String(e)));
             } finally{
@@ -13966,8 +14229,71 @@ class NftablesRulesViewer {
         this.rulesContainer.innerHTML = e;
     }
     highlightSyntax(e) {
-        let t = e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        return (t = (t = (t = (t = (t = (t = (t = t.replace(/\b(table|chain|rule|set|map|element|flush|add|delete|list|type|hook|priority|policy|accept|drop|reject|queue|jump|goto|return|comment)\b/g, '<span style="color: #569cd6;">$1</span>')).replace(/\b(filter|nat|route|inet|ip|ip6|arp|bridge|ingress|prerouting|input|forward|output|postrouting)\b/g, '<span style="color: #4ec9b0;">$1</span>')).replace(/\b(tcp|udp|icmp|icmpv6|esp|ah|sctp)\b/g, '<span style="color: #c586c0;">$1</span>')).replace(/\b(\d+)\b/g, '<span style="color: #b5cea8;">$1</span>')).replace(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?)\b/g, '<span style="color: #ce9178;">$1</span>')).replace(/"([^"]*)"/g, '<span style="color: #ce9178;">"$1"</span>')).replace(/(#[^\n]*)/g, '<span style="color: #6a9955;">$1</span>')).replace(/(PORTWEAVER_\w+)/g, '<span style="color: #dcdcaa; font-weight: bold;">$1</span>');
+        let s = (e)=>e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), t = RegExp('(#[^\\n]*)|("[^"\\n]*")|(PORTWEAVER_\\w+)|(\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:\\/\\d{1,2})?\\b)|(\\b(?:[a-fA-F0-9]{1,4}:){1,7}(?:[a-fA-F0-9]{1,4}|:)(?:\\/\\d{1,3})?\\b)|(\\b\\d+\\b)|([a-zA-Z_][a-zA-Z0-9_-]*)|([^\\s\\w])|(\\s+)', "g");
+        return e.replace(t, (e, t, r, o, n, i, l, a, c, p)=>{
+            if (t) return '<span style="color: #6a9955;">'.concat(s(t), "</span>");
+            if (r) return '<span style="color: #ce9178;">'.concat(s(r), "</span>");
+            if (o) return '<span style="color: #dcdcaa; font-weight: bold;">' + s(o) + "</span>";
+            if (n) return '<span style="color: #ce9178;">'.concat(s(n), "</span>");
+            if (i) return '<span style="color: #ce9178;">'.concat(s(i), "</span>");
+            if (l) return '<span style="color: #b5cea8;">'.concat(s(l), "</span>");
+            if (a) {
+                let e = new Set([
+                    "table",
+                    "chain",
+                    "rule",
+                    "set",
+                    "map",
+                    "element",
+                    "flush",
+                    "add",
+                    "delete",
+                    "list",
+                    "type",
+                    "hook",
+                    "priority",
+                    "policy",
+                    "accept",
+                    "drop",
+                    "reject",
+                    "queue",
+                    "jump",
+                    "goto",
+                    "return",
+                    "comment",
+                    "counter",
+                    "name"
+                ]), t = new Set([
+                    "filter",
+                    "nat",
+                    "route",
+                    "inet",
+                    "ip",
+                    "ip6",
+                    "arp",
+                    "bridge",
+                    "ingress",
+                    "prerouting",
+                    "input",
+                    "forward",
+                    "output",
+                    "postrouting",
+                    "srcnat",
+                    "dstnat",
+                    "dnat"
+                ]), r = new Set([
+                    "tcp",
+                    "udp",
+                    "icmp",
+                    "icmpv6",
+                    "esp",
+                    "ah",
+                    "sctp"
+                ]);
+                return e.has(a) ? '<span style="color: #569cd6;">'.concat(s(a), "</span>") : t.has(a) ? '<span style="color: #4ec9b0;">'.concat(s(a), "</span>") : r.has(a) ? '<span style="color: #c586c0;">'.concat(s(a), "</span>") : s(a);
+            }
+            return c ? s(c) : p ? s(p) : s(e);
+        });
     }
     constructor(){
         _define_property(this, "rulesContainer", null), _define_property(this, "statusSpan", null), _define_property(this, "refreshBtn", null), _define_property(this, "rules", ""), _define_property(this, "loading", !1);
@@ -13977,9 +14303,8 @@ class NftablesRulesViewer {
 ;// CONCATENATED MODULE: ./modules/nftables.tsx
 
 let nftables_t = L.form;
-/* export default */ function nftables(l, n, o) {
-    let r = n.taboption(o, nftables_t.DummyValue, "_nftables_rules", _("nftables Rules"));
-    r.rawhtml = !0, r.cfgvalue = ()=>new NftablesRulesViewer().render();
+/* export default */ function nftables(n, r, l) {
+    r.taboption(l, nftables_t.DummyValue, "_nftables_rules", _("nftables Rules")).render = ()=>new NftablesRulesViewer().render();
 }
 
 ;// CONCATENATED MODULE: ./modules/about.tsx

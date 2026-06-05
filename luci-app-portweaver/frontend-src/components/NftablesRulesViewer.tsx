@@ -21,6 +21,9 @@ export class NftablesRulesViewer {
           padding: 16px;
           border-radius: 8px;
           overflow-x: auto;
+          white-space: pre !important;
+          word-break: normal !important;
+          word-wrap: normal !important;
           font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
           font-size: 13px;
           line-height: 1.5;
@@ -137,60 +140,117 @@ export class NftablesRulesViewer {
   }
 
   private highlightSyntax(rules: string): string {
-    // Escape HTML
-    let html = rules
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    const escapeHtml = (text: string) =>
+      text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    // Highlight keywords
-    html = html.replace(
-      /\b(table|chain|rule|set|map|element|flush|add|delete|list|type|hook|priority|policy|accept|drop|reject|queue|jump|goto|return|comment)\b/g,
-      '<span style="color: #569cd6;">$1</span>',
+    const tokenRegex = new RegExp(
+      "(" +
+        "#[^\\n]*" + // Group 1: Comment
+        ")|(" +
+        '"[^"\\n]*"' + // Group 2: String in quotes
+        ")|(" +
+        "PORTWEAVER_\\w+" + // Group 3: Portweaver comment
+        ")|(" +
+        "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:\\/\\d{1,2})?\\b" + // Group 4: IPv4
+        ")|(" +
+        "\\b(?:[a-fA-F0-9]{1,4}:){1,7}(?:[a-fA-F0-9]{1,4}|:)(?:\\/\\d{1,3})?\\b" + // Group 5: IPv6
+        ")|(" +
+        "\\b\\d+\\b" + // Group 6: Numbers/Ports
+        ")|(" +
+        "[a-zA-Z_][a-zA-Z0-9_-]*" + // Group 7: Words
+        ")|(" +
+        "[^\\s\\w]" + // Group 8: Single non-word, non-space character (symbols/punctuation)
+        ")|(" +
+        "\\s+" + // Group 9: Whitespace
+        ")",
+      "g",
     );
 
-    // Highlight types
-    html = html.replace(
-      /\b(filter|nat|route|inet|ip|ip6|arp|bridge|ingress|prerouting|input|forward|output|postrouting)\b/g,
-      '<span style="color: #4ec9b0;">$1</span>',
-    );
+    return rules.replace(
+      tokenRegex,
+      (match, g1, g2, g3, g4, g5, g6, g7, g8, g9) => {
+        if (g1) return `<span style="color: #6a9955;">${escapeHtml(g1)}</span>`;
+        if (g2) return `<span style="color: #ce9178;">${escapeHtml(g2)}</span>`;
+        if (g3)
+          return (
+            '<span style="color: #dcdcaa; font-weight: bold;">' +
+            escapeHtml(g3) +
+            "</span>"
+          );
+        if (g4) return `<span style="color: #ce9178;">${escapeHtml(g4)}</span>`;
+        if (g5) return `<span style="color: #ce9178;">${escapeHtml(g5)}</span>`;
+        if (g6) return `<span style="color: #b5cea8;">${escapeHtml(g6)}</span>`;
+        if (g7) {
+          const word = g7;
+          const keywords = new Set([
+            "table",
+            "chain",
+            "rule",
+            "set",
+            "map",
+            "element",
+            "flush",
+            "add",
+            "delete",
+            "list",
+            "type",
+            "hook",
+            "priority",
+            "policy",
+            "accept",
+            "drop",
+            "reject",
+            "queue",
+            "jump",
+            "goto",
+            "return",
+            "comment",
+            "counter",
+            "name",
+          ]);
+          const types = new Set([
+            "filter",
+            "nat",
+            "route",
+            "inet",
+            "ip",
+            "ip6",
+            "arp",
+            "bridge",
+            "ingress",
+            "prerouting",
+            "input",
+            "forward",
+            "output",
+            "postrouting",
+            "srcnat",
+            "dstnat",
+            "dnat",
+          ]);
+          const protocols = new Set([
+            "tcp",
+            "udp",
+            "icmp",
+            "icmpv6",
+            "esp",
+            "ah",
+            "sctp",
+          ]);
 
-    // Highlight protocols
-    html = html.replace(
-      /\b(tcp|udp|icmp|icmpv6|esp|ah|sctp)\b/g,
-      '<span style="color: #c586c0;">$1</span>',
+          if (keywords.has(word)) {
+            return `<span style="color: #569cd6;">${escapeHtml(word)}</span>`;
+          } else if (types.has(word)) {
+            return `<span style="color: #4ec9b0;">${escapeHtml(word)}</span>`;
+          } else if (protocols.has(word)) {
+            return `<span style="color: #c586c0;">${escapeHtml(word)}</span>`;
+          } else {
+            return escapeHtml(word);
+          }
+        }
+        if (g8) return escapeHtml(g8);
+        if (g9) return escapeHtml(g9);
+        return escapeHtml(match);
+      },
     );
-
-    // Highlight numbers and ports
-    html = html.replace(
-      /\b(\d+)\b/g,
-      '<span style="color: #b5cea8;">$1</span>',
-    );
-
-    // Highlight IP addresses
-    html = html.replace(
-      /\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?)\b/g,
-      '<span style="color: #ce9178;">$1</span>',
-    );
-
-    // Highlight strings in quotes
-    html = html.replace(
-      /"([^"]*)"/g,
-      '<span style="color: #ce9178;">"$1"</span>',
-    );
-
-    // Highlight comments
-    html = html.replace(
-      /(#[^\n]*)/g,
-      '<span style="color: #6a9955;">$1</span>',
-    );
-
-    // Highlight PORTWEAVER comments
-    html = html.replace(
-      /(PORTWEAVER_\w+)/g,
-      '<span style="color: #dcdcaa; font-weight: bold;">$1</span>',
-    );
-
-    return html;
   }
 }
