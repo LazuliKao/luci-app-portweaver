@@ -4,6 +4,8 @@
  * Shows the current nftables rules managed by PortWeaver in a syntax-highlighted view.
  */
 
+import { getThemeColors } from "../utils/theme-utils";
+
 export class NftablesRulesViewer {
   private rulesContainer: HTMLElement | null = null;
   private statusSpan: HTMLElement | null = null;
@@ -12,12 +14,25 @@ export class NftablesRulesViewer {
   private loading: boolean = false;
 
   render(): HTMLElement {
-    this.statusSpan = <span style="color: #666;">Loading...</span>;
+    const colors = getThemeColors();
+    const isDark = colors.isDark;
+    const preBg = isDark ? "#1e1e1e" : "#f8f9fa";
+    const preText = isDark ? "#d4d4d4" : "#333333";
+    const preBorder = isDark
+      ? "rgba(255, 255, 255, 0.08)"
+      : "rgba(0, 0, 0, 0.08)";
+
+    this.statusSpan = (
+      <span style="color: #666; font-size: 12px; margin-left: 8px;">
+        Loading...
+      </span>
+    );
     this.rulesContainer = (
       <pre
-        style="
-          background: #1e1e1e;
-          color: #d4d4d4;
+        style={`
+          background: ${preBg};
+          color: ${preText};
+          border: 1px solid ${preBorder};
           padding: 16px;
           border-radius: 8px;
           overflow-x: auto;
@@ -30,33 +45,82 @@ export class NftablesRulesViewer {
           max-height: 600px;
           overflow-y: auto;
           margin: 0;
-        "
+        `}
       >
         Loading nftables rules...
       </pre>
     ) as HTMLElement;
 
+    const btnBg = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
+    const btnBgHover = isDark
+      ? "rgba(255, 255, 255, 0.15)"
+      : "rgba(0, 0, 0, 0.08)";
+    const btnTextColor = isDark ? "#cccccc" : "#555555";
+    const btnBorder = isDark
+      ? "rgba(255, 255, 255, 0.12)"
+      : "rgba(0, 0, 0, 0.08)";
+
+    const styleBlock = (
+      <style>
+        {`
+          .nft-refresh-btn {
+            background: ${btnBg};
+            color: ${btnTextColor};
+            border: 1px solid ${btnBorder};
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+          }
+          .nft-refresh-btn:hover:not([disabled]) {
+            background: ${btnBgHover};
+            color: ${isDark ? "#ffffff" : "#111111"};
+            border-color: ${isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.16)"};
+          }
+          .nft-refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        `}
+      </style>
+    );
+
     this.refreshBtn = (
       <button
         type="button"
-        class="btn cbi-button-action"
-        style="margin-bottom: 12px;"
+        class="nft-refresh-btn"
         onclick={() => this.loadRules()}
       >
+        <span style="font-size: 11px; line-height: 1;">↻</span>
         Refresh
       </button>
     ) as HTMLElement;
 
     const container = (
       <div>
-        <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-          {this.refreshBtn}
+        {styleBlock}
+        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+          <div style="color: #666; font-size: 12px; font-weight: 500;">
+            Table:{" "}
+            <code
+              style={`background: ${isDark ? "#2d2d2d" : "#eaeaea"}; padding: 2px 6px; border-radius: 4px; color: ${isDark ? "#4ec9b0" : "#267f99"};`}
+            >
+              inet portweaver
+            </code>
+          </div>
           {this.statusSpan}
         </div>
-        <div style="margin-bottom: 8px; color: #666; font-size: 12px;">
-          Table: <code>inet portweaver</code>
+        <div style="position: relative;">
+          {this.rulesContainer}
+          <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+            {this.refreshBtn}
+          </div>
         </div>
-        {this.rulesContainer}
       </div>
     ) as HTMLElement;
 
@@ -140,8 +204,21 @@ export class NftablesRulesViewer {
   }
 
   private highlightSyntax(rules: string): string {
+    const colors = getThemeColors();
+    const isDark = colors.isDark;
+
     const escapeHtml = (text: string) =>
       text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // Colors
+    const c_comment = isDark ? "#6a9955" : "#008000";
+    const c_string = isDark ? "#ce9178" : "#a31515";
+    const c_remark = isDark ? "#dcdcaa" : "#795e26";
+    const c_ip = isDark ? "#ce9178" : "#098658";
+    const c_number = isDark ? "#b5cea8" : "#098658";
+    const c_keyword = isDark ? "#569cd6" : "#0000ff";
+    const c_type = isDark ? "#4ec9b0" : "#267f99";
+    const c_protocol = isDark ? "#c586c0" : "#af00db";
 
     const tokenRegex = new RegExp(
       "(" +
@@ -169,17 +246,20 @@ export class NftablesRulesViewer {
     return rules.replace(
       tokenRegex,
       (match, g1, g2, g3, g4, g5, g6, g7, g8, g9) => {
-        if (g1) return `<span style="color: #6a9955;">${escapeHtml(g1)}</span>`;
-        if (g2) return `<span style="color: #ce9178;">${escapeHtml(g2)}</span>`;
+        if (g1)
+          return `<span style="color: ${c_comment};">${escapeHtml(g1)}</span>`;
+        if (g2)
+          return `<span style="color: ${c_string};">${escapeHtml(g2)}</span>`;
         if (g3)
           return (
-            '<span style="color: #dcdcaa; font-weight: bold;">' +
+            `<span style="color: ${c_remark}; font-weight: bold;">` +
             escapeHtml(g3) +
             "</span>"
           );
-        if (g4) return `<span style="color: #ce9178;">${escapeHtml(g4)}</span>`;
-        if (g5) return `<span style="color: #ce9178;">${escapeHtml(g5)}</span>`;
-        if (g6) return `<span style="color: #b5cea8;">${escapeHtml(g6)}</span>`;
+        if (g4) return `<span style="color: ${c_ip};">${escapeHtml(g4)}</span>`;
+        if (g5) return `<span style="color: ${c_ip};">${escapeHtml(g5)}</span>`;
+        if (g6)
+          return `<span style="color: ${c_number};">${escapeHtml(g6)}</span>`;
         if (g7) {
           const word = g7;
           const keywords = new Set([
@@ -238,11 +318,11 @@ export class NftablesRulesViewer {
           ]);
 
           if (keywords.has(word)) {
-            return `<span style="color: #569cd6;">${escapeHtml(word)}</span>`;
+            return `<span style="color: ${c_keyword};">${escapeHtml(word)}</span>`;
           } else if (types.has(word)) {
-            return `<span style="color: #4ec9b0;">${escapeHtml(word)}</span>`;
+            return `<span style="color: ${c_type};">${escapeHtml(word)}</span>`;
           } else if (protocols.has(word)) {
-            return `<span style="color: #c586c0;">${escapeHtml(word)}</span>`;
+            return `<span style="color: ${c_protocol};">${escapeHtml(word)}</span>`;
           } else {
             return escapeHtml(word);
           }

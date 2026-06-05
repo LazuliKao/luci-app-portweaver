@@ -14162,56 +14162,78 @@ var es_regexp_dot_all = __webpack_require__(2724);
 
 
 
+
 class NftablesRulesViewer {
     render() {
+        let e = getThemeColors().isDark;
         this.statusSpan = jsx("span", {
-            style: "color: #666;",
+            style: "color: #666; font-size: 12px; margin-left: 8px;",
             children: "Loading..."
         }), this.rulesContainer = jsx("pre", {
-            style: "\n          background: #1e1e1e;\n          color: #d4d4d4;\n          padding: 16px;\n          border-radius: 8px;\n          overflow-x: auto;\n          white-space: pre !important;\n          word-break: normal !important;\n          word-wrap: normal !important;\n          font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n          font-size: 13px;\n          line-height: 1.5;\n          max-height: 600px;\n          overflow-y: auto;\n          margin: 0;\n        ",
+            style: "\n          background: ".concat(e ? "#1e1e1e" : "#f8f9fa", ";\n          color: ").concat(e ? "#d4d4d4" : "#333333", ";\n          border: 1px solid ").concat(e ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)", ";\n          padding: 16px;\n          border-radius: 8px;\n          overflow-x: auto;\n          white-space: pre !important;\n          word-break: normal !important;\n          word-wrap: normal !important;\n          font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n          font-size: 13px;\n          line-height: 1.5;\n          max-height: 600px;\n          overflow-y: auto;\n          margin: 0;\n        "),
             children: "Loading nftables rules..."
-        }), this.refreshBtn = jsx("button", {
-            type: "button",
-            class: "btn cbi-button-action",
-            style: "margin-bottom: 12px;",
-            onclick: ()=>this.loadRules(),
-            children: "Refresh"
         });
-        let e = jsxs("div", {
+        let o = jsx("style", {
+            children: "\n          .nft-refresh-btn {\n            background: ".concat(e ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)", ";\n            color: ").concat(e ? "#cccccc" : "#555555", ";\n            border: 1px solid ").concat(e ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)", ";\n            border-radius: 4px;\n            padding: 4px 8px;\n            font-size: 11px;\n            font-weight: 500;\n            cursor: pointer;\n            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;\n            display: flex;\n            align-items: center;\n            gap: 4px;\n          }\n          .nft-refresh-btn:hover:not([disabled]) {\n            background: ").concat(e ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.08)", ";\n            color: ").concat(e ? "#ffffff" : "#111111", ";\n            border-color: ").concat(e ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.16)", ";\n          }\n          .nft-refresh-btn:disabled {\n            opacity: 0.5;\n            cursor: not-allowed;\n          }\n        ")
+        });
+        this.refreshBtn = jsxs("button", {
+            type: "button",
+            class: "nft-refresh-btn",
+            onclick: ()=>this.loadRules(),
             children: [
+                jsx("span", {
+                    style: "font-size: 11px; line-height: 1;",
+                    children: "\u21BB"
+                }),
+                "Refresh"
+            ]
+        });
+        let n = jsxs("div", {
+            children: [
+                o,
                 jsxs("div", {
-                    style: "margin-bottom: 12px; display: flex; align-items: center; gap: 12px;",
+                    style: "margin-bottom: 8px; display: flex; align-items: center; gap: 8px;",
                     children: [
-                        this.refreshBtn,
+                        jsxs("div", {
+                            style: "color: #666; font-size: 12px; font-weight: 500;",
+                            children: [
+                                "Table:",
+                                " ",
+                                jsx("code", {
+                                    style: "background: ".concat(e ? "#2d2d2d" : "#eaeaea", "; padding: 2px 6px; border-radius: 4px; color: ").concat(e ? "#4ec9b0" : "#267f99", ";"),
+                                    children: "inet portweaver"
+                                })
+                            ]
+                        }),
                         this.statusSpan
                     ]
                 }),
                 jsxs("div", {
-                    style: "margin-bottom: 8px; color: #666; font-size: 12px;",
+                    style: "position: relative;",
                     children: [
-                        "Table: ",
-                        jsx("code", {
-                            children: "inet portweaver"
+                        this.rulesContainer,
+                        jsx("div", {
+                            style: "position: absolute; top: 8px; right: 8px; z-index: 10;",
+                            children: this.refreshBtn
                         })
                     ]
-                }),
-                this.rulesContainer
+                })
             ]
         });
-        return this.loadRules(), e;
+        return this.loadRules(), n;
     }
     async loadRules() {
         if (!this.loading) {
             this.loading = !0, this.statusSpan && (this.statusSpan.textContent = "Loading...", this.statusSpan.style.color = "#666"), this.refreshBtn && this.refreshBtn.setAttribute("disabled", "true");
             try {
                 var e;
-                let s = null == (e = window.L) ? void 0 : e.rpc;
-                if (!s) throw Error("RPC not available");
-                let t = await s.declare({
+                let t = null == (e = window.L) ? void 0 : e.rpc;
+                if (!t) throw Error("RPC not available");
+                let s = await t.declare({
                     object: "portweaver",
                     method: "get_nftables_rules"
                 }).call();
-                (null == t ? void 0 : t.rules) ? (this.rules = t.rules, this.updateDisplay(), this.statusSpan && (this.statusSpan.textContent = "Rules loaded", this.statusSpan.style.color = "#4caf50")) : (this.statusSpan && (this.statusSpan.textContent = "No rules found or nftables not available", this.statusSpan.style.color = "#ff9800"), this.rulesContainer && (this.rulesContainer.textContent = "No nftables rules found. Make sure nftables is enabled and the portweaver table exists."));
+                (null == s ? void 0 : s.rules) ? (this.rules = s.rules, this.updateDisplay(), this.statusSpan && (this.statusSpan.textContent = "Rules loaded", this.statusSpan.style.color = "#4caf50")) : (this.statusSpan && (this.statusSpan.textContent = "No rules found or nftables not available", this.statusSpan.style.color = "#ff9800"), this.rulesContainer && (this.rulesContainer.textContent = "No nftables rules found. Make sure nftables is enabled and the portweaver table exists."));
             } catch (e) {
                 console.error("Failed to load nftables rules:", e), this.statusSpan && (this.statusSpan.textContent = "Error: ".concat((null == e ? void 0 : e.message) || String(e)), this.statusSpan.style.color = "#f44336"), this.rulesContainer && (this.rulesContainer.textContent = "Failed to load nftables rules: ".concat((null == e ? void 0 : e.message) || String(e)));
             } finally{
@@ -14229,15 +14251,15 @@ class NftablesRulesViewer {
         this.rulesContainer.innerHTML = e;
     }
     highlightSyntax(e) {
-        let s = (e)=>e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), t = RegExp('(#[^\\n]*)|("[^"\\n]*")|(PORTWEAVER_\\w+)|(\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:\\/\\d{1,2})?\\b)|(\\b(?:[a-fA-F0-9]{1,4}:){1,7}(?:[a-fA-F0-9]{1,4}|:)(?:\\/\\d{1,3})?\\b)|(\\b\\d+\\b)|([a-zA-Z_][a-zA-Z0-9_-]*)|([^\\s\\w])|(\\s+)', "g");
-        return e.replace(t, (e, t, r, o, n, i, l, a, c, p)=>{
-            if (t) return '<span style="color: #6a9955;">'.concat(s(t), "</span>");
-            if (r) return '<span style="color: #ce9178;">'.concat(s(r), "</span>");
-            if (o) return '<span style="color: #dcdcaa; font-weight: bold;">' + s(o) + "</span>";
-            if (n) return '<span style="color: #ce9178;">'.concat(s(n), "</span>");
-            if (i) return '<span style="color: #ce9178;">'.concat(s(i), "</span>");
-            if (l) return '<span style="color: #b5cea8;">'.concat(s(l), "</span>");
-            if (a) {
+        let t = getThemeColors().isDark, s = (e)=>e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), o = t ? "#6a9955" : "#008000", n = t ? "#ce9178" : "#a31515", i = t ? "#dcdcaa" : "#795e26", a = t ? "#ce9178" : "#098658", l = t ? "#b5cea8" : "#098658", c = t ? "#569cd6" : "#0000ff", p = t ? "#4ec9b0" : "#267f99", d = t ? "#c586c0" : "#af00db", u = RegExp('(#[^\\n]*)|("[^"\\n]*")|(PORTWEAVER_\\w+)|(\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:\\/\\d{1,2})?\\b)|(\\b(?:[a-fA-F0-9]{1,4}:){1,7}(?:[a-fA-F0-9]{1,4}|:)(?:\\/\\d{1,3})?\\b)|(\\b\\d+\\b)|([a-zA-Z_][a-zA-Z0-9_-]*)|([^\\s\\w])|(\\s+)', "g");
+        return e.replace(u, (e, t, r, u, m, h, f, j, b, g)=>{
+            if (t) return '<span style="color: '.concat(o, ';">').concat(s(t), "</span>");
+            if (r) return '<span style="color: '.concat(n, ';">').concat(s(r), "</span>");
+            if (u) return '<span style="color: '.concat(i, '; font-weight: bold;">') + s(u) + "</span>";
+            if (m) return '<span style="color: '.concat(a, ';">').concat(s(m), "</span>");
+            if (h) return '<span style="color: '.concat(a, ';">').concat(s(h), "</span>");
+            if (f) return '<span style="color: '.concat(l, ';">').concat(s(f), "</span>");
+            if (j) {
                 let e = new Set([
                     "table",
                     "chain",
@@ -14290,9 +14312,9 @@ class NftablesRulesViewer {
                     "ah",
                     "sctp"
                 ]);
-                return e.has(a) ? '<span style="color: #569cd6;">'.concat(s(a), "</span>") : t.has(a) ? '<span style="color: #4ec9b0;">'.concat(s(a), "</span>") : r.has(a) ? '<span style="color: #c586c0;">'.concat(s(a), "</span>") : s(a);
+                return e.has(j) ? '<span style="color: '.concat(c, ';">').concat(s(j), "</span>") : t.has(j) ? '<span style="color: '.concat(p, ';">').concat(s(j), "</span>") : r.has(j) ? '<span style="color: '.concat(d, ';">').concat(s(j), "</span>") : s(j);
             }
-            return c ? s(c) : p ? s(p) : s(e);
+            return b ? s(b) : g ? s(g) : s(e);
         });
     }
     constructor(){

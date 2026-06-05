@@ -6,7 +6,7 @@ export default function (
   _m: LuCI.form.CBIMap,
   s: LuCI.form.CBIAbstractSection,
   tab_id: string,
-) { 
+) {
   const o = s.taboption(
     tab_id,
     form.DummyValue,
@@ -16,5 +16,5 @@ export default function (
   o.render = () => {
     const viewer = new NftablesRulesViewer();
     return viewer.render();
-  }
+  };
 }
