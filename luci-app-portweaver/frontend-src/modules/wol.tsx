@@ -2,8 +2,8 @@ import { rpcClient } from "@/utils/rpc-client";
 const form = L.form;
 
 export default function (
-  _m: LuCI.form.CBIMap,
-  s: LuCI.form.CBIAbstractSection,
+  _m: LuCI.form.Map,
+  s: LuCI.form.AbstractSection,
   tab_id: string,
 ) {
   let o: LuCI.form.CBIAbstractSectionValue;

@@ -119,13 +119,11 @@ const ddnsStatuses: Record<string, DdnsStatus> = {};
 const statusElements: Record<string, HTMLElement> = {};
 
 export default function (
-  _m: LuCI.form.CBIMap,
-  s: LuCI.form.CBIAbstractSection,
+  _m: LuCI.form.Map,
+  s: LuCI.form.NamedSection,
   tab_id: string,
 ) {
-  let o: LuCI.form.CBIAbstractSectionValue;
-
-  o = s.taboption(
+  let o= s.taboption(
     tab_id,
     form.SectionValue,
     "_ddns_configs",

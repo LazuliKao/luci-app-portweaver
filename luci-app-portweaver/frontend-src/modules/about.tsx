@@ -8,9 +8,11 @@ export default function (
   tab_id: string,
   versionInfo: VersionResponse | null,
 ) {
-  let o: LuCI.form.CBIAbstractValue;
-
-  o = s.taboption(tab_id, form.DummyValue, "_about");
+  const o: LuCI.form.CBIAbstractValue = s.taboption(
+    tab_id,
+    form.DummyValue,
+    "_about",
+  );
   o.rawhtml = true;
   o.cfgvalue = () => {
     const linkStyle =
