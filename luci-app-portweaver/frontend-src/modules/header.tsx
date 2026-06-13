@@ -120,16 +120,18 @@ export default function (
           total_bytes_in: fullStatus.total_bytes_in,
           total_bytes_out: fullStatus.total_bytes_out,
         };
-        client.projectStatuses = (fullStatus.projects || []).map((p) => ({
-          enabled: p.enabled,
-          status: p.status,
-          startup_status: p.startup_status,
-          error_code: p.error_code,
-          active_ports: p.active_ports,
-          bytes_in: p.bytes_in,
-          bytes_out: p.bytes_out,
-          forwarders: p.forwarders,
-        }));
+        client.projectStatuses = (fullStatus.projects || []).map(
+          (p: import("@/types/portweaver").FullStatusProject) => ({
+            enabled: p.enabled,
+            status: p.status,
+            startup_status: p.startup_status,
+            error_code: p.error_code,
+            active_ports: p.active_ports,
+            bytes_in: p.bytes_in,
+            bytes_out: p.bytes_out,
+            forwarders: p.forwarders,
+          }),
+        );
       }
       location.reload();
     } catch (err) {
@@ -172,16 +174,18 @@ export default function (
           total_bytes_in: fullStatus.total_bytes_in,
           total_bytes_out: fullStatus.total_bytes_out,
         };
-        client.projectStatuses = (fullStatus.projects || []).map((p) => ({
-          enabled: p.enabled,
-          status: p.status,
-          startup_status: p.startup_status,
-          error_code: p.error_code,
-          active_ports: p.active_ports,
-          bytes_in: p.bytes_in,
-          bytes_out: p.bytes_out,
-          forwarders: p.forwarders,
-        }));
+        client.projectStatuses = (fullStatus.projects || []).map(
+          (p: import("@/types/portweaver").FullStatusProject) => ({
+            enabled: p.enabled,
+            status: p.status,
+            startup_status: p.startup_status,
+            error_code: p.error_code,
+            active_ports: p.active_ports,
+            bytes_in: p.bytes_in,
+            bytes_out: p.bytes_out,
+            forwarders: p.forwarders,
+          }),
+        );
       }
       location.reload();
     } catch (err) {
