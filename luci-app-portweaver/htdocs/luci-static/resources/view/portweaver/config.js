@@ -988,7 +988,6 @@ class LogViewerCore {
             ]
         }), this.footer = jsxs("div", {
             class: "button-row",
-            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;",
             children: [
                 i,
                 l,
@@ -1199,23 +1198,22 @@ class LogViewerDialog {
                     children: "\xd7"
                 })
             ]
-        }), n = this.core.getSearchBar(), l = this.core.getLogContainer(), a = this.core.getFooter(), d = jsx("button", {
+        }), n = this.core.getSearchBar(), l = this.core.getLogContainer(), a = this.core.getFooter(), h = jsx("button", {
             type: "button",
             class: "cbi-button",
             onclick: ()=>this.close(),
             children: _("Close")
-        }), h = jsxs("div", {
+        }), d = jsxs("div", {
             class: "button-row",
-            style: "padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;",
             children: [
                 jsx("span", {
-                    children: a ? Array.from(a.children) : null
+                    children: h
                 }),
                 jsx("span", {
-                    children: d
+                    children: a ? Array.from(a.children) : null
                 })
             ]
-        }), p = jsxs("div", {
+        }), c = jsxs("div", {
             class: "modal cbi-modal cbi-section-node",
             role: "dialog",
             "aria-modal": "true",
@@ -1237,17 +1235,17 @@ class LogViewerDialog {
                 jsxs("div", {
                     children: [
                         " ",
-                        h
+                        d
                     ]
                 })
             ]
         });
         return this.modal = jsx("div", {
-            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;",
+            style: "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;",
             onclick: (t)=>{
                 t.target === t.currentTarget && this.close();
             },
-            children: p
+            children: c
         }), this.modal;
     }
     open() {

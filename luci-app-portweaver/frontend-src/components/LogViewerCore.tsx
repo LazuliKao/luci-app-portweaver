@@ -353,7 +353,6 @@ export class LogViewerCore {
     this.footer = (
       <div
         class="button-row"
-        style="padding: 1em; display: flex; gap: 0.5em; justify-content: flex-end; flex-wrap: wrap; min-height: 2.5em;"
       >
         {copyButton}
         {copySelectedButton}
