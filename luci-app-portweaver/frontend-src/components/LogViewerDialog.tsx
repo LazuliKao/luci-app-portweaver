@@ -78,9 +78,7 @@ export class LogViewerDialog {
     );
 
     const dialogFooter = (
-      <div
-        class="button-row"
-      >
+      <div class="button-row">
         <span>{closeFooterButton}</span>
         <span>{footer ? Array.from(footer.children) : null}</span>
       </div>

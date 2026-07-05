@@ -180,7 +180,9 @@ export class Client {
             for (let i = 0; i < projectSections.length; i++) {
               const sec = projectSections[i];
               const name = (sec.name as string) || sec[".name"] || `#${i + 1}`;
-              const ps = this.projectStatuses.find(p => p.section_name === sec[".name"]);
+              const ps = this.projectStatuses.find(
+                (p) => p.section_name === sec[".name"],
+              );
               const color =
                 ps?.status === "running"
                   ? "#28a745"
@@ -367,7 +369,9 @@ export class Client {
 
     const merged = projects.map((project) => {
       const existing = project.section_name
-        ? this.projectStatuses.find(p => p.section_name === project.section_name)
+        ? this.projectStatuses.find(
+            (p) => p.section_name === project.section_name,
+          )
         : undefined;
       return {
         section_name: project.section_name ?? existing?.section_name,
@@ -463,7 +467,9 @@ export class Client {
     return -1;
   }
   getProjectStatus(section_id: string): ProjectStatus | null {
-    return this.projectStatuses?.find(p => p.section_name === section_id) || null;
+    return (
+      this.projectStatuses?.find((p) => p.section_name === section_id) || null
+    );
   }
   renderStatusElements(status: ProjectStatus | null, _section_id: string) {
     if (!status) {
