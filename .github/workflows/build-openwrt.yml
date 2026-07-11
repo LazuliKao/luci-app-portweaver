@@ -40,15 +40,15 @@ jobs:
             echo "ERROR: Failed to extract valid SHA256 hash" >&2
             exit 1
           fi
-          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver/Makefile"
-          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver/Makefile
+          echo "Updating PKG_HASH to $CORRECT_HASH in portweaver/Makefile"
+          sed -i -E "s/PKG_HASH:=[a-f0-9]{64}/PKG_HASH:=$CORRECT_HASH/" portweaver/Makefile
           if git diff --quiet --exit-code portweaver/Makefile; then
             echo "No change in portweaver/Makefile; skipping commit."
           else
             git add portweaver/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: update portweaver PKG_MIRROR_HASH to $CORRECT_HASH"
+            git commit -m "chore: update portweaver PKG_HASH to $CORRECT_HASH"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -94,15 +94,15 @@ jobs:
             echo "ERROR: Failed to extract valid SHA256 hash" >&2
             exit 1
           fi
-          echo "Updating PKG_MIRROR_HASH to $CORRECT_HASH in portweaver-lite/Makefile"
-          sed -i -E "s/PKG_MIRROR_HASH:=[a-f0-9]{64}/PKG_MIRROR_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
+          echo "Updating PKG_HASH to $CORRECT_HASH in portweaver-lite/Makefile"
+          sed -i -E "s/PKG_HASH:=[a-f0-9]{64}/PKG_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
           if git diff --quiet --exit-code portweaver-lite/Makefile; then
             echo "No change in portweaver-lite/Makefile; skipping commit."
           else
             git add portweaver-lite/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: update portweaver-lite PKG_MIRROR_HASH to $CORRECT_HASH"
+            git commit -m "chore: update portweaver-lite PKG_HASH to $CORRECT_HASH"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
