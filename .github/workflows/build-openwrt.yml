@@ -24,7 +24,7 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
-          ARCH: x86_64-24.10.5
+          ARCH: x86_64-24.10.7
       - name: Update Hash if build failed
         if: ${{ steps.build_openwrt.outcome == 'failure' }}
         continue-on-error: true
@@ -58,7 +58,7 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver luci-app-portweaver
-          ARCH: x86_64-24.10.5
+          ARCH: x86_64-24.10.7
           V: ${{ runner.debug == '1' && 's' || '' }}
 
   pre-build-lite:
@@ -78,7 +78,7 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver-lite luci-app-portweaver
-          ARCH: x86_64-24.10.5
+          ARCH: x86_64-24.10.7
       - name: Update Hash if build failed
         if: ${{ steps.build_openwrt.outcome == 'failure' }}
         continue-on-error: true
@@ -112,7 +112,7 @@ jobs:
         env:
           FEEDNAME: custom
           PACKAGES: portweaver-lite luci-app-portweaver
-          ARCH: x86_64-24.10.5
+          ARCH: x86_64-24.10.7
           V: ${{ runner.debug == '1' && 's' || '' }}
 
   build:
@@ -139,63 +139,63 @@ jobs:
           - arm_cortex-a9_vfpv3-d16
           - arm_cortex-a15_neon-vfpv4
         openwrt_version:
-          - "24.10.5"
-          - "25.12.0"
+          - "24.10.7"
+          - "25.12.5"
         include:
           - {
               pkg: portweaver-lite,
               arch: mips_24kc,
-              openwrt_version: "24.10.5",
+              openwrt_version: "24.10.7",
             }
           - {
               pkg: portweaver-lite,
               arch: mips_24kc,
-              openwrt_version: "25.12.0",
+              openwrt_version: "25.12.5",
             }
           - {
               pkg: portweaver-lite,
               arch: mips_4kec,
-              openwrt_version: "24.10.5",
+              openwrt_version: "24.10.7",
             }
           - {
               pkg: portweaver-lite,
               arch: mips_mips32,
-              openwrt_version: "24.10.5",
+              openwrt_version: "24.10.7",
             }
           - {
               pkg: portweaver-lite,
               arch: mips_mips32,
-              openwrt_version: "25.12.0",
+              openwrt_version: "25.12.5",
             }
           - {
               pkg: portweaver-lite,
               arch: mipsel_24kc,
-              openwrt_version: "24.10.5",
+              openwrt_version: "24.10.7",
             }
           - {
               pkg: portweaver-lite,
               arch: mipsel_24kc,
-              openwrt_version: "25.12.0",
+              openwrt_version: "25.12.5",
             }
           - {
               pkg: portweaver-lite,
               arch: mipsel_74kc,
-              openwrt_version: "24.10.5",
+              openwrt_version: "24.10.7",
             }
           - {
               pkg: portweaver-lite,
               arch: mipsel_74kc,
-              openwrt_version: "25.12.0",
+              openwrt_version: "25.12.5",
             }
           - {
               pkg: portweaver-lite,
               arch: mipsel_mips32,
-              openwrt_version: "24.10.5",
+              openwrt_version: "24.10.7",
             }
           - {
               pkg: portweaver-lite,
               arch: mipsel_mips32,
-              openwrt_version: "25.12.0",
+              openwrt_version: "25.12.5",
             }
     steps:
       - name: Checkout
@@ -259,7 +259,7 @@ jobs:
           for artifact_dir in all-artifacts/portweaver-*; do
             if [ -d "$artifact_dir" ]; then
               # Extract pkg, arch and version from directory name
-              # e.g., portweaver-x86_64-24.10.5 or portweaver-lite-x86_64-24.10.5
+              # e.g., portweaver-x86_64-24.10.7 or portweaver-lite-x86_64-24.10.7
               dirname=$(basename "$artifact_dir")
               # Strip leading "portweaver-" or "portweaver-lite-" prefix to get arch_version
               if [[ "$dirname" == portweaver-lite-* ]]; then
@@ -324,7 +324,7 @@ jobs:
           body: |
             ## PortWeaver OpenWrt Packages
 
-            Built with OpenWrt SDK (24.10.5 and 25.12.0)
+            Built with OpenWrt SDK (24.10.7 and 25.12.5)
 
             ### Installation
 
