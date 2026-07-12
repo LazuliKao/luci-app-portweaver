@@ -9,7 +9,6 @@ PKG_SOURCE_VERSION:=eb54eaea830da746c33ba06840f719559f6fec94
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/LazuliKao/portweaver/tar.gz/$(PKG_SOURCE_VERSION)?
 PKG_HASH:=a931ecbd4b63f22c2029a2433c78bb87e1116e28848c4ca84721d1e97d609ffb
-PKG_UNPACK:=$(STAGING_DIR_HOST)/bin/libdeflate-gzip -dc $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR) --strip-components=1 -xf -
 
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=LICENSE
