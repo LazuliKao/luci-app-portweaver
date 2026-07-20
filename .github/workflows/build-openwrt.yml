@@ -8,117 +8,36 @@ permissions:
   contents: write
   actions: read
 jobs:
-  pre-build-full:
-    name: Pre-build (portweaver full)
+  update-hash:
+    name: Update PKG_HASH
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Build with OpenWrt SDK
-        id: build_openwrt
-        uses: LazuliKao/gh-action-sdk@main
-        continue-on-error: true
+      - name: Run update_hash.sh
+        run: bash .github/workflows/update_hash.sh
         env:
-          FEEDNAME: custom
-          PACKAGES: portweaver luci-app-portweaver
-          ARCH: x86_64-24.10.7
-      - name: Update Hash if build failed
-        if: ${{ steps.build_openwrt.outcome == 'failure' }}
-        continue-on-error: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit and push if changed
         run: |
-          if [ -f "portweaver.correct_hash" ]; then
-            echo "Found portweaver.correct_hash file."
+          if git diff --quiet --exit-code portweaver/Makefile portweaver-lite/Makefile; then
+            echo "No changes to Makefiles; skipping commit."
           else
-            echo "ERROR: portweaver.correct_hash file not found!" >&2
-            exit 1
-          fi
-          CORRECT_HASH=$(cat portweaver.correct_hash)
-          if [[ ! "$CORRECT_HASH" =~ ^[a-f0-9]{64}$ ]]; then
-            echo "ERROR: Failed to extract valid SHA256 hash" >&2
-            exit 1
-          fi
-          echo "Updating PKG_HASH to $CORRECT_HASH in portweaver/Makefile"
-          sed -i -E "s/PKG_HASH:=[a-f0-9]{64}/PKG_HASH:=$CORRECT_HASH/" portweaver/Makefile
-          if git diff --quiet --exit-code portweaver/Makefile; then
-            echo "No change in portweaver/Makefile; skipping commit."
-          else
-            git add portweaver/Makefile
+            git add portweaver/Makefile portweaver-lite/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: update portweaver PKG_HASH to $CORRECT_HASH"
+            git commit -m "chore: auto-update PKG_SOURCE_VERSION and PKG_HASH [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
-      - name: Re-run Build with OpenWrt SDK
-        if: ${{ steps.build_openwrt.outcome == 'failure' }}
-        uses: openwrt/gh-action-sdk@main
-        env:
-          FEEDNAME: custom
-          PACKAGES: portweaver luci-app-portweaver
-          ARCH: x86_64-24.10.7
-          V: ${{ runner.debug == '1' && 's' || '' }}
-
-  pre-build-lite:
-    name: Pre-build (portweaver-lite)
-    runs-on: ubuntu-latest
-    needs: pre-build-full
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Build with OpenWrt SDK
-        id: build_openwrt
-        uses: LazuliKao/gh-action-sdk@main
-        continue-on-error: true
-        env:
-          FEEDNAME: custom
-          PACKAGES: portweaver-lite luci-app-portweaver
-          ARCH: x86_64-24.10.7
-      - name: Update Hash if build failed
-        if: ${{ steps.build_openwrt.outcome == 'failure' }}
-        continue-on-error: true
-        run: |
-          if [ -f "portweaver-lite.correct_hash" ]; then
-            echo "Found portweaver-lite.correct_hash file."
-          else
-            echo "ERROR: portweaver-lite.correct_hash file not found!" >&2
-            exit 1
-          fi
-          CORRECT_HASH=$(cat portweaver-lite.correct_hash)
-          if [[ ! "$CORRECT_HASH" =~ ^[a-f0-9]{64}$ ]]; then
-            echo "ERROR: Failed to extract valid SHA256 hash" >&2
-            exit 1
-          fi
-          echo "Updating PKG_HASH to $CORRECT_HASH in portweaver-lite/Makefile"
-          sed -i -E "s/PKG_HASH:=[a-f0-9]{64}/PKG_HASH:=$CORRECT_HASH/" portweaver-lite/Makefile
-          if git diff --quiet --exit-code portweaver-lite/Makefile; then
-            echo "No change in portweaver-lite/Makefile; skipping commit."
-          else
-            git add portweaver-lite/Makefile
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: update portweaver-lite PKG_HASH to $CORRECT_HASH"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
-      - name: Re-run Build with OpenWrt SDK
-        if: ${{ steps.build_openwrt.outcome == 'failure' }}
-        uses: openwrt/gh-action-sdk@main
-        env:
-          FEEDNAME: custom
-          PACKAGES: portweaver-lite luci-app-portweaver
-          ARCH: x86_64-24.10.7
-          V: ${{ runner.debug == '1' && 's' || '' }}
 
   build:
     name: ${{ matrix.pkg }} / ${{ matrix.arch }} (${{ matrix.openwrt_version }})
     runs-on: ubuntu-latest
-    needs: [pre-build-full, pre-build-lite]
+    needs: [update-hash]
     strategy:
       fail-fast: false
       matrix:
