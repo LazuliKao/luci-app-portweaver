@@ -2406,8 +2406,8 @@ class PortMappingEditor_l extends L.form.Value {
 
 
 let config_n = L.form, config_i = L.uci;
-/* export default */ function config(s, p, d, c) {
-    let u = p.taboption(c, config_n.SectionValue, "_projects", config_n.GridSection, "project").subsection;
+/* export default */ function config(s, d, p, c) {
+    let u = d.taboption(c, config_n.SectionValue, "_projects", config_n.GridSection, "project").subsection;
     u.anonymous = !0, u.addremove = !0, u.sortable = !0, u.cloneable = !0, u.sectiontitle = (e)=>{
         var t;
         return (null == (t = config_i.get("portweaver", e, "remark")) ? void 0 : t.toString()) || _("Unnamed project");
@@ -2415,16 +2415,16 @@ let config_n = L.form, config_i = L.uci;
     {
         let t = u.option(config_n.DummyValue, "_runtime_status", _("Status"));
         t.modalonly = !1, t.textvalue = (t)=>{
-            let o = d.getProjectStatus(t), l = jsx("div", {
-                children: d.renderStatusElements(o, t)
+            let o = p.getProjectStatus(t), l = jsx("div", {
+                children: p.renderStatusElements(o, t)
             });
-            return d.projectContainers = d.projectContainers || {}, d.projectContainers[t] = l, l;
+            return p.projectContainers = p.projectContainers || {}, p.projectContainers[t] = l, l;
         };
     }
     {
         let e = u.option(config_n.Button, "_runtime_toggle", _("Toggle"));
         e.modalonly = !1, e.editable = !0, e.inputtitle = (e)=>{
-            let t = d.getProjectStatus(e);
+            let t = p.getProjectStatus(e);
             return (null == t ? void 0 : t.enabled) ? _("Disable") : _("Enable");
         }, e.onclick = (e, t)=>window.portweaverToggle(t);
     }
@@ -2440,24 +2440,24 @@ let config_n = L.form, config_i = L.uci;
         let o = u.option(config_n.DummyValue, "_preview", _("Overview"));
         o.modalonly = !1, o.textvalue = (o)=>{
             var l, a, r, n, s;
-            let p = (null == (l = config_i.get("portweaver", o, "protocol")) ? void 0 : l.toString()) || "tcp", d = (null == (a = config_i.get("portweaver", o, "family")) ? void 0 : a.toString()) || "any", c = (null == (r = config_i.get("portweaver", o, "listen_port")) ? void 0 : r.toString()) || "", u = (null == (n = config_i.get("portweaver", o, "target_address")) ? void 0 : n.toString()) || "", m = (null == (s = config_i.get("portweaver", o, "target_port")) ? void 0 : s.toString()) || "", g = L.toArray(config_i.get("portweaver", o, "port_mapping")), v = L.toArray(config_i.get("portweaver", o, "src_zone")), f = L.toArray(config_i.get("portweaver", o, "dest_zone")), h = {
+            let d = (null == (l = config_i.get("portweaver", o, "protocol")) ? void 0 : l.toString()) || "tcp", p = (null == (a = config_i.get("portweaver", o, "family")) ? void 0 : a.toString()) || "any", c = (null == (r = config_i.get("portweaver", o, "listen_port")) ? void 0 : r.toString()) || "", u = (null == (n = config_i.get("portweaver", o, "target_address")) ? void 0 : n.toString()) || "", m = (null == (s = config_i.get("portweaver", o, "target_port")) ? void 0 : s.toString()) || "", g = L.toArray(config_i.get("portweaver", o, "port_mapping")), v = L.toArray(config_i.get("portweaver", o, "src_zone")), b = L.toArray(config_i.get("portweaver", o, "dest_zone")), f = {
                 both: _("TCP and UDP"),
                 tcp: _("TCP"),
                 udp: _("UDP")
-            }[p] || String(p).toUpperCase(), y = {
+            }[d] || String(d).toUpperCase(), h = {
                 any: _("IPv4 and IPv6"),
                 ipv4: _("IPv4"),
                 ipv6: _("IPv6")
-            }[d] || d, w = [];
+            }[p] || p, w = [];
             if (w.push(jsxs("span", {
                 children: [
                     _("Incoming "),
                     jsx("var", {
-                        children: y
+                        children: h
                     }),
                     _(" protocol "),
                     jsx("var", {
-                        children: h
+                        children: f
                     })
                 ]
             })), v.length > 0) {
@@ -2516,8 +2516,8 @@ let config_n = L.form, config_i = L.uci;
                     }),
                     _(" to ")
                 ]
-            })), f.length > 0) {
-                let t = f.map((t)=>jsx("span", {
+            })), b.length > 0) {
+                let t = b.map((t)=>jsx("span", {
                         class: "zonebadge",
                         style: fwmodel.getZoneColorStyle(t),
                         children: jsx("strong", {
@@ -2547,129 +2547,128 @@ let config_n = L.form, config_i = L.uci;
             });
         };
     }
-    {
-        let e = u.option(config_n.Value, "remark", _("Remark"));
-        e.modalonly = !0, e.rmempty = !1, e.datatype = "string", e.validate = (e, t)=>!!t && "" !== String(t).trim() || _("This field is required"), e.placeholder = "My Project";
-    }
-    {
-        let e = u.option(config_n.Flag, "enabled", _("Enabled"));
-        e.modalonly = !0, e.default = "1";
-    }
-    {
-        let e = u.option(widgets.ZoneSelect, "src_zone", _("Source Zones"));
-        e.modalonly = !0, e.multiple = !0, e.nocreate = !1, e.allowlocal = !1, e.default = "wan", e.rmempty = !0;
-    }
-    {
-        let e = u.option(widgets.ZoneSelect, "dest_zone", _("Destination Zones"));
-        e.modalonly = !0, e.multiple = !0, e.nocreate = !1, e.allowlocal = !1, e.default = "lan", e.rmempty = !0;
-    }
-    {
-        let e = u.option(config_n.ListValue, "family", _("Address Family"));
-        e.modalonly = !0, e.value("any", _("IPv4 and IPv6")), e.value("ipv4", "IPv4"), e.value("ipv6", "IPv6"), e.default = "any";
-    }
-    {
-        let e = u.option(config_n.Value, "target_address", _("Target Address"));
-        e.modalonly = !0, e.rmempty = !1, e.datatype = "host", e.placeholder = "192.168.1.100", e.validate = (e, t)=>!!t && "" !== String(t).trim() || _("This field is required");
-    }
-    {
-        let e = u.option(config_n.Flag, "use_port_mappings", _("Use Port Mappings Mode"));
-        e.modalonly = !0, e.rmempty = !0, e.default = "0", e.description = _("Enable to configure multiple port mappings or port ranges. Disable for single port mode.");
-    }
-    {
-        let e = u.option(config_n.ListValue, "protocol", _("Protocol"));
-        e.modalonly = !0, e.value("both", _("TCP and UDP")), e.value("tcp", "TCP"), e.value("udp", "UDP"), e.default = "tcp", e.depends("use_port_mappings", "0");
-    }
-    if (isFeatureEnabled("frpc_mode")) {
-        let e = u.option(FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
-        e.modalonly = !0, e.rmempty = !0, e.depends("use_port_mappings", "0");
-    }
-    {
-        let e = u.option(PortMappingEditor, "port_mapping", _("Port Mappings"));
-        e.modalonly = !0, e.depends("use_port_mappings", "1");
-    }
-    {
-        let e = u.option(config_n.Value, "listen_port", _("Listen Port"));
-        e.modalonly = !0, e.datatype = "port", e.placeholder = "8080", e.depends("use_port_mappings", "0"), e.validate = (e, t)=>"1" === config_i.get("portweaver", e, "use_port_mappings") || !!t && "" !== String(t).trim() || _("This field is required in single port mode");
-    }
-    {
-        let e = u.option(config_n.Value, "target_port", _("Target Port"));
-        e.modalonly = !0, e.datatype = "port", e.placeholder = "80", e.depends("use_port_mappings", "0"), e.validate = (e, t)=>"1" === config_i.get("portweaver", e, "use_port_mappings") || !!t && "" !== String(t).trim() || _("This field is required in single port mode");
-    }
-    {
-        let e = u.option(config_n.Flag, "open_firewall_port", _("Open Firewall Port"));
-        e.modalonly = !0, e.default = "1";
-    }
-    {
-        let e = u.option(config_n.Flag, "enable_app_forward", _("Enable App Level Forward"));
-        e.modalonly = !0, e.default = "0";
-    }
-    {
-        let e = u.option(config_n.ListValue, "app_forward_loop_mode", _("Loop Mode"), _("Controls how event loop runtimes are shared among listeners. 'per_project' (default): one runtime shared by all listeners in this project, balanced resource usage. 'per_listener': each listener gets its own dedicated runtime, highest isolation but uses more memory (one thread per listener). 'global': all projects share a single global runtime, lowest memory usage but no isolation between projects."));
-        e.modalonly = !0, e.value("per_project", _("Per Project (default) - balanced")), e.value("per_listener", _("Per Listener - highest isolation, more memory")), e.value("global", _("Global - lowest memory, no isolation")), e.default = "per_project", e.depends("enable_app_forward", "1");
-    }
-    {
-        let e = u.option(config_n.Flag, "reuseaddr", _("Reuse Address"));
-        e.modalonly = !0, e.default = "1", e.depends("enable_app_forward", "1");
-    }
-    {
-        let e = u.option(config_n.Flag, "enable_app_stats", _("Enable App Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) for application-layer forwarding using zero-cost atomic counters."));
-        e.modalonly = !0, e.default = "0", e.depends("enable_app_forward", "1");
-    }
-    {
-        let e = u.option(config_n.Flag, "add_firewall_forward", _("Add Firewall Forward"));
-        e.modalonly = !0, e.default = "1", e.depends({
-            enable_app_forward: "0"
-        }), e.depends({
-            enable_app_forward: "1"
-        });
-    }
-    {
-        let e = "1" === config_i.get("portweaver", "global", "use_nftables"), t = u.option(config_n.Flag, "enable_firewall_stats", _("Enable Firewall Statistics"), e ? _("Collect traffic statistics using nftables kernel counters (extremely low overhead). Requires nftables backend.") : _("Collect traffic statistics using nftables kernel counters (extremely low overhead). <strong style=\"color: #e74c3c;\">(Disabled: requires nftables backend enabled in Global Settings)</strong>"));
-        t.modalonly = !0, t.default = "0", t.depends("add_firewall_forward", "1"), e || (t.readonly = !0);
-    }
-    {
-        let e = u.option(config_n.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Add NAT rules, preserving the source IP address. \nNote: Only effective when 'Add Firewall Forward' is enabled."));
-        e.modalonly = !0, e.default = "0", e.depends("add_firewall_forward", "1");
-    }
-    if (isFeatureEnabled("wol_mode")) {
+    u.addModalOptions = (e)=>{
+        e.tab("general", _("General Settings")), e.tab("advanced", _("Advanced Settings")), isFeatureEnabled("wol_mode") && e.tab("project_wol", _("Wake-on-LAN")), e.tab("protocol_filter", _("Protocol Filter"));
         {
-            let e = u.option(config_n.Flag, "enable_wol", _("Enable Wake-on-LAN"), _("Send a magic packet to wake remote machines when the first packet is detected."));
-            e.modalonly = !0, e.default = "0", e.rmempty = !0;
+            let t = e.taboption("general", config_n.Value, "remark", _("Remark"));
+            t.modalonly = !0, t.rmempty = !1, t.datatype = "string", t.validate = (e, t)=>!!t && "" !== String(t).trim() || _("This field is required"), t.placeholder = "My Project";
         }
         {
-            let e = u.option(config_n.DynamicList, "detect_protocols", _("Detect Protocols"), _("Protocol signatures that trigger WoL. Select from the list or type custom values."));
-            e.modalonly = !0, e.rmempty = !0, e.depends("enable_wol", "1"), e.value("ssh", "SSH"), e.value("rdp", "RDP"), e.value("http", "HTTP"), e.value("tls", "TLS/SSL"), e.value("vnc", "VNC/RFB"), e.value("socks5", "SOCKS5"), e.value("postgresql", "PostgreSQL"), e.value("telnet", "Telnet"), e.value("minecraft", "Minecraft (Java Edition)"), e.value("mqtt", "MQTT"), e.value("smb", "SMB/CIFS");
+            let t = e.taboption("general", widgets.ZoneSelect, "src_zone", _("Source Zones"));
+            t.modalonly = !0, t.multiple = !0, t.nocreate = !1, t.allowlocal = !1, t.default = "wan", t.rmempty = !0;
         }
         {
-            let e = u.option(config_n.ListValue, "wol_target", _("WoL Target"), _("Select the global Wake-on-LAN target configuration for this project."));
-            for (let t of (e.modalonly = !0, e.rmempty = !0, e.depends("enable_wol", "1"), e.value("", _("-- Select Target --")), L.uci.sections("portweaver", "wol_target") || [])){
-                let o = t.name || t[".name"];
-                o && e.value(String(o), String(o));
+            let t = e.taboption("general", widgets.ZoneSelect, "dest_zone", _("Destination Zones"));
+            t.modalonly = !0, t.multiple = !0, t.nocreate = !1, t.allowlocal = !1, t.default = "lan", t.rmempty = !0;
+        }
+        {
+            let t = e.taboption("general", config_n.ListValue, "family", _("Address Family"));
+            t.modalonly = !0, t.value("any", _("IPv4 and IPv6")), t.value("ipv4", "IPv4"), t.value("ipv6", "IPv6"), t.default = "any";
+        }
+        {
+            let t = e.taboption("general", config_n.Value, "target_address", _("Target Address"));
+            t.modalonly = !0, t.rmempty = !1, t.datatype = "host", t.placeholder = "192.168.1.100", t.validate = (e, t)=>!!t && "" !== String(t).trim() || _("This field is required");
+        }
+        {
+            let t = e.taboption("general", config_n.Flag, "use_port_mappings", _("Use Port Mappings Mode"));
+            t.modalonly = !0, t.rmempty = !0, t.default = "0", t.description = _("Enable to configure multiple port mappings or port ranges. Disable for single port mode.");
+        }
+        {
+            let t = e.taboption("general", config_n.ListValue, "protocol", _("Protocol"));
+            t.modalonly = !0, t.value("both", _("TCP and UDP")), t.value("tcp", "TCP"), t.value("udp", "UDP"), t.default = "tcp", t.depends("use_port_mappings", "0");
+        }
+        if (isFeatureEnabled("frpc_mode")) {
+            let t = e.taboption("general", FrpNodeSelector, "frp_nodes", _("FRP Tunnels"));
+            t.modalonly = !0, t.rmempty = !0, t.depends("use_port_mappings", "0");
+        }
+        {
+            let t = e.taboption("general", PortMappingEditor, "port_mapping", _("Port Mappings"));
+            t.modalonly = !0, t.depends("use_port_mappings", "1");
+        }
+        {
+            let t = e.taboption("general", config_n.Value, "listen_port", _("Listen Port"));
+            t.modalonly = !0, t.datatype = "port", t.placeholder = "8080", t.depends("use_port_mappings", "0"), t.validate = (e, t)=>"1" === config_i.get("portweaver", e, "use_port_mappings") || !!t && "" !== String(t).trim() || _("This field is required in single port mode");
+        }
+        {
+            let t = e.taboption("general", config_n.Value, "target_port", _("Target Port"));
+            t.modalonly = !0, t.datatype = "port", t.placeholder = "80", t.depends("use_port_mappings", "0"), t.validate = (e, t)=>"1" === config_i.get("portweaver", e, "use_port_mappings") || !!t && "" !== String(t).trim() || _("This field is required in single port mode");
+        }
+        {
+            let t = e.taboption("advanced", config_n.Flag, "open_firewall_port", _("Open Firewall Port"));
+            t.modalonly = !0, t.default = "1";
+        }
+        {
+            let t = e.taboption("advanced", config_n.Flag, "enable_app_forward", _("Enable App Level Forward"));
+            t.modalonly = !0, t.default = "0";
+        }
+        {
+            let t = e.taboption("advanced", config_n.ListValue, "app_forward_loop_mode", _("Loop Mode"), _("Controls how event loop runtimes are shared among listeners. 'per_project' (default): one runtime shared by all listeners in this project, balanced resource usage. 'per_listener': each listener gets its own dedicated runtime, highest isolation but uses more memory (one thread per listener). 'global': all projects share a single global runtime, lowest memory usage but no isolation between projects."));
+            t.modalonly = !0, t.value("per_project", _("Per Project (default) - balanced")), t.value("per_listener", _("Per Listener - highest isolation, more memory")), t.value("global", _("Global - lowest memory, no isolation")), t.default = "per_project", t.depends("enable_app_forward", "1");
+        }
+        {
+            let t = e.taboption("advanced", config_n.Flag, "reuseaddr", _("Reuse Address"));
+            t.modalonly = !0, t.default = "1", t.depends("enable_app_forward", "1");
+        }
+        {
+            let t = e.taboption("advanced", config_n.Flag, "enable_app_stats", _("Enable App Statistics"), _("Collect traffic statistics (bytes_in/bytes_out) for application-layer forwarding using zero-cost atomic counters."));
+            t.modalonly = !0, t.default = "0", t.depends("enable_app_forward", "1");
+        }
+        {
+            let t = e.taboption("advanced", config_n.Flag, "add_firewall_forward", _("Add Firewall Forward"));
+            t.modalonly = !0, t.default = "1", t.depends({
+                enable_app_forward: "0"
+            }), t.depends({
+                enable_app_forward: "1"
+            });
+        }
+        {
+            let t = "1" === config_i.get("portweaver", "global", "use_nftables"), o = e.taboption("advanced", config_n.Flag, "enable_firewall_stats", _("Enable Firewall Statistics"), t ? _("Collect traffic statistics using nftables kernel counters (extremely low overhead). Requires nftables backend.") : _('Collect traffic statistics using nftables kernel counters (extremely low overhead). <strong style="color: #e74c3c;">(Disabled: requires nftables backend enabled in Global Settings)</strong>'));
+            o.modalonly = !0, o.default = "0", o.depends("add_firewall_forward", "1"), t || (o.readonly = !0);
+        }
+        {
+            let t = e.taboption("advanced", config_n.Flag, "preserve_source_ip", _("Preserve Source IP"), _("Add NAT rules, preserving the source IP address. \nNote: Only effective when 'Add Firewall Forward' is enabled."));
+            t.modalonly = !0, t.default = "0", t.depends("add_firewall_forward", "1");
+        }
+        if (isFeatureEnabled("wol_mode")) {
+            {
+                let t = e.taboption("project_wol", config_n.Flag, "enable_wol", _("Enable Wake-on-LAN"), _("Send a magic packet to wake remote machines when the first packet is detected."));
+                t.modalonly = !0, t.default = "0", t.rmempty = !0;
+            }
+            {
+                let t = e.taboption("project_wol", config_n.DynamicList, "detect_protocols", _("Detect Protocols"), _("Protocol signatures that trigger WoL. Select from the list or type custom values."));
+                t.modalonly = !0, t.rmempty = !0, t.depends("enable_wol", "1"), t.value("ssh", "SSH"), t.value("rdp", "RDP"), t.value("http", "HTTP"), t.value("tls", "TLS/SSL"), t.value("vnc", "VNC/RFB"), t.value("socks5", "SOCKS5"), t.value("postgresql", "PostgreSQL"), t.value("telnet", "Telnet"), t.value("minecraft", "Minecraft (Java Edition)"), t.value("mqtt", "MQTT"), t.value("smb", "SMB/CIFS");
+            }
+            {
+                let t = e.taboption("project_wol", config_n.ListValue, "wol_target", _("WoL Target"), _("Select the global Wake-on-LAN target configuration for this project."));
+                for (let e of (t.modalonly = !0, t.rmempty = !0, t.depends("enable_wol", "1"), t.value("", _("-- Select Target --")), L.uci.sections("portweaver", "wol_target") || [])){
+                    let o = e.name || e[".name"];
+                    o && t.value(String(o), String(o));
+                }
+            }
+            {
+                let t = e.taboption("project_wol", config_n.Button, "_wol_wake", _("Wake Now"));
+                t.modalonly = !0, t.editable = !0, t.inputtitle = _("Wake Now"), t.depends("enable_wol", "1"), t.onclick = (e, t)=>{
+                    rpcClient.wolWake(t).then((e)=>{
+                        e.success ? alert(_("WoL packets sent to ".concat(e.sent_count, " device(s)."))) : alert(_("WoL failed \u2014 check configuration."));
+                    }).catch((e)=>{
+                        alert(_("WoL error: ".concat(String(e))));
+                    });
+                };
             }
         }
         {
-            let e = u.option(config_n.Button, "_wol_wake", _("Wake Now"));
-            e.modalonly = !0, e.editable = !0, e.inputtitle = _("Wake Now"), e.depends("enable_wol", "1"), e.onclick = (e, t)=>{
-                rpcClient.wolWake(t).then((e)=>{
-                    e.success ? alert(_("WoL packets sent to ".concat(e.sent_count, " device(s)."))) : alert(_("WoL failed \u2014 check configuration."));
-                }).catch((e)=>{
-                    alert(_("WoL error: ".concat(String(e))));
-                });
-            };
+            let t = e.taboption("protocol_filter", config_n.Flag, "enable_protocol_filter", _("Enable Protocol Filter"), _("Reject connections whose detected application-layer protocol is not in the allowed list."));
+            t.modalonly = !0, t.default = "0", t.rmempty = !0;
         }
-    }
-    {
-        let e = u.option(config_n.Flag, "enable_protocol_filter", _("Enable Protocol Filter"), _("Reject connections whose detected application-layer protocol is not in the allowed list."));
-        e.modalonly = !0, e.default = "0", e.rmempty = !0;
-    }
-    {
-        let e = u.option(config_n.DynamicList, "allowed_protocols", _("Allowed Protocols"), _("Only connections matching these protocol signatures will be forwarded."));
-        e.modalonly = !0, e.rmempty = !0, e.depends("enable_protocol_filter", "1"), e.value("ssh", "SSH"), e.value("rdp", "RDP"), e.value("http", "HTTP"), e.value("tls", "TLS/SSL"), e.value("vnc", "VNC/RFB"), e.value("socks5", "SOCKS5"), e.value("postgresql", "PostgreSQL"), e.value("telnet", "Telnet"), e.value("minecraft", "Minecraft (Java Edition)"), e.value("mqtt", "MQTT"), e.value("smb", "SMB/CIFS");
-    }
-    {
-        let e = u.option(config_n.DynamicList, "tls_allowed_snis", _("Allowed TLS SNIs"), _("Only TLS connections matching these server names will be forwarded. Supports wildcards (e.g. *.example.com). Only effective when TLS is in the allowed protocols list."));
-        e.modalonly = !0, e.rmempty = !0, e.depends("enable_protocol_filter", "1"), e.placeholder = "*.example.com";
-    }
+        {
+            let t = e.taboption("protocol_filter", config_n.DynamicList, "allowed_protocols", _("Allowed Protocols"), _("Only connections matching these protocol signatures will be forwarded."));
+            t.modalonly = !0, t.rmempty = !0, t.depends("enable_protocol_filter", "1"), t.value("ssh", "SSH"), t.value("rdp", "RDP"), t.value("http", "HTTP"), t.value("tls", "TLS/SSL"), t.value("vnc", "VNC/RFB"), t.value("socks5", "SOCKS5"), t.value("postgresql", "PostgreSQL"), t.value("telnet", "Telnet"), t.value("minecraft", "Minecraft (Java Edition)"), t.value("mqtt", "MQTT"), t.value("smb", "SMB/CIFS");
+        }
+        {
+            let t = e.taboption("protocol_filter", config_n.DynamicList, "tls_allowed_snis", _("Allowed TLS SNIs"), _("Only TLS connections matching these server names will be forwarded. Supports wildcards (e.g. *.example.com). Only effective when TLS is in the allowed protocols list."));
+            t.modalonly = !0, t.rmempty = !0, t.depends("enable_protocol_filter", "1"), t.placeholder = "*.example.com";
+        }
+    };
 }
 
 ;// CONCATENATED MODULE: ./components/StatusPanel.tsx
