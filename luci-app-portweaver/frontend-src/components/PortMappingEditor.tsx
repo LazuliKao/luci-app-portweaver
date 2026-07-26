@@ -83,7 +83,10 @@ class PortMappingEditor extends L.form.Value {
 
     const widget_id = this.cbid(section_id);
     const mappings_wrapper = (
-      <div style="display: grid; gap: 0;"></div>
+      <div style="position: relative; display: grid; gap: 8px;"></div>
+    ) as HTMLElement;
+    const dropIndicator = (
+      <div style="position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed #09c; pointer-events: none; display: none; z-index: 1;"></div>
     ) as HTMLElement;
 
     type MappingRowRef = {
@@ -123,14 +126,6 @@ class PortMappingEditor extends L.form.Value {
       if (this.hiddenInput) this.hiddenInput.value = values.join(" ");
     };
 
-    const updateRowSeparators = (): void => {
-      rowRefs.forEach((ref, index) => {
-        ref.element.style.borderTop =
-          index === 0 ? "0" : "1px dashed rgba(127, 127, 127, 0.5)";
-        ref.element.style.borderBottom = "";
-      });
-    };
-
     const refreshRowOrder = (): void => {
       const refsByElement = new Map(
         rowRefs.map((ref) => [ref.element, ref] as const),
@@ -152,29 +147,33 @@ class PortMappingEditor extends L.form.Value {
         ref.targetInput.dataset.index = dataIndex;
         ref.protocolSelect.dataset.index = dataIndex;
       });
-      updateRowSeparators();
       updateHiddenValue();
     };
 
     const clearDropIndicator = (): void => {
       dropTarget = null;
-      updateRowSeparators();
+      dropIndicator.style.display = "none";
     };
 
     const setDropTarget = (target: HTMLElement, clientY: number): void => {
-      updateRowSeparators();
       dropTarget = target;
-      const bounds = target.getBoundingClientRect();
-      dropBefore = clientY < bounds.top + bounds.height / 2;
+      const targetIndex = rowRefs.findIndex((ref) => ref.element === target);
+      const previousRow = rowRefs[targetIndex - 1]?.element;
+      const nextRow = rowRefs[targetIndex + 1]?.element;
+      const targetBounds = target.getBoundingClientRect();
+      const wrapperBounds = mappings_wrapper.getBoundingClientRect();
+      dropBefore = clientY < targetBounds.top + targetBounds.height / 2;
 
-      if (dropBefore) {
-        target.style.borderTop = "2px dashed #09c";
-        return;
-      }
+      const indicatorY = dropBefore
+        ? previousRow
+          ? (previousRow.getBoundingClientRect().bottom + targetBounds.top) / 2
+          : targetBounds.top
+        : nextRow
+          ? (targetBounds.bottom + nextRow.getBoundingClientRect().top) / 2
+          : targetBounds.bottom;
 
-      const nextRow = target.nextElementSibling as HTMLElement | null;
-      if (nextRow) nextRow.style.borderTop = "2px dashed #09c";
-      else target.style.borderBottom = "2px dashed #09c";
+      dropIndicator.style.top = `${indicatorY - wrapperBounds.top}px`;
+      dropIndicator.style.display = "block";
     };
 
     const finishDrag = (): void => {
@@ -436,7 +435,7 @@ class PortMappingEditor extends L.form.Value {
           id={row_id}
           class="portmapping-row"
           data-index={index}
-          style="padding: 10px 0; border: 0; border-radius: 0; background: transparent; transition: opacity 120ms ease, border-color 120ms ease;"
+          style="padding: 10px 12px; border: 1px solid rgba(127, 127, 127, 0.35); border-radius: 6px; background: rgba(127, 127, 127, 0.04); transition: opacity 120ms ease;"
         >
           {buttonRow}
           {titleRow}
@@ -736,6 +735,7 @@ class PortMappingEditor extends L.form.Value {
       rowRefs.push(rowData);
       mappings_wrapper.appendChild(rowData.element);
     }
+    mappings_wrapper.appendChild(dropIndicator);
     refreshRowOrder();
 
     const addBtn = (
@@ -753,7 +753,7 @@ class PortMappingEditor extends L.form.Value {
       const new_index = rowRefs.length;
       const rowData = renderMappingRow("", new_index);
       rowRefs.push(rowData);
-      mappings_wrapper.appendChild(rowData.element);
+      mappings_wrapper.insertBefore(rowData.element, dropIndicator);
       refreshRowOrder();
     };
 
