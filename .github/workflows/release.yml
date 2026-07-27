@@ -1,45 +1,74 @@
-name: Build OpenWrt Packages
+name: Release OpenWrt Packages
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+
 permissions:
   contents: write
   actions: read
+
 jobs:
-  update-hash:
-    name: Update PKG_HASH
+  prepare:
+    name: Prepare release version & update Makefiles
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Run update_hash.sh
-        run: bash .github/workflows/update_hash.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Commit and push if changed
+          ref: ${{ env.TAG }}
+
+      - id: meta
+        name: Resolve release version
         run: |
-          if git diff --quiet --exit-code portweaver/Makefile portweaver-lite/Makefile; then
-            echo "No changes to Makefiles; skipping commit."
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Using release version ${VERSION} from ${TAG}"
+
+      - name: Sync version in Makefiles
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" portweaver/Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" portweaver-lite/Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" luci-app-portweaver/Makefile
+          echo "Updated Makefiles:"
+          grep '^PKG_VERSION:=' portweaver/Makefile
+          grep '^PKG_VERSION:=' portweaver-lite/Makefile
+          grep '^PKG_VERSION:=' luci-app-portweaver/Makefile
+
+      - name: Commit version bump
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 "$TAG")
+          BRANCH=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin --contains "$TAG_COMMIT" | grep -Ev '^origin/HEAD$' | sed 's#^origin/##' | head -1)
+          BRANCH=${BRANCH:-$DEFAULT_BRANCH}
+          git checkout "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add portweaver/Makefile portweaver-lite/Makefile luci-app-portweaver/Makefile
+          if git diff --cached --quiet; then
+            echo "Version files already match ${TAG}; nothing to commit."
           else
-            git add portweaver/Makefile portweaver-lite/Makefile
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: auto-update PKG_SOURCE_VERSION and PKG_HASH [skip ci]"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            git commit -m "chore: sync release version ${TAG} [skip ci]"
+            git push origin HEAD:"$BRANCH"
           fi
 
   build:
     name: ${{ matrix.pkg }} / ${{ matrix.arch }} (${{ matrix.openwrt_version }})
+    needs: [prepare]
     runs-on: ubuntu-latest
-    needs: [update-hash]
     strategy:
       fail-fast: false
       matrix:
@@ -123,13 +152,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Git pull
-        run: git pull origin main
-
-      # - name: Install Zig
-      #   uses: mlugg/setup-zig@v2
-      #   with:
-      #     version: 0.16.0
+      - name: Git pull updated branch
+        run: git pull origin main || true
 
       - name: Build with OpenWrt SDK
         id: build_openwrt
@@ -149,7 +173,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.pkg }}-${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          name: release-${{ matrix.pkg }}-${{ matrix.arch }}-${{ matrix.openwrt_version }}
           path: |
             bin/packages/*/custom/*.ipk
             bin/packages/*/custom/*.apk
@@ -157,43 +181,36 @@ jobs:
             bin/targets/*/*/*.apk
           if-no-files-found: error
 
-  nightly:
-    name: Nightly Release
+  publish:
+    name: Create Tag GitHub Release
     needs: [build]
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main')
-
-
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
-      - name: Download All Artifacts
-        uses: actions/download-artifact@v8
+      - name: Download All Release Artifacts
+        uses: actions/download-artifact@v4
         with:
           path: all-artifacts
 
       - name: Organize Release Files
         run: |
           mkdir -p release
-          for artifact_dir in all-artifacts/portweaver-*; do
+          for artifact_dir in all-artifacts/release-portweaver-*; do
             if [ -d "$artifact_dir" ]; then
-              # Extract pkg, arch and version from directory name
-              # e.g., portweaver-x86_64-24.10.7 or portweaver-lite-x86_64-24.10.7
               dirname=$(basename "$artifact_dir")
-              # Strip leading "portweaver-" or "portweaver-lite-" prefix to get arch_version
-              if [[ "$dirname" == portweaver-lite-* ]]; then
-                arch_version="${dirname#portweaver-lite-}"
+              # Strip leading "release-portweaver-" or "release-portweaver-lite-" prefix
+              if [[ "$dirname" == release-portweaver-lite-* ]]; then
+                arch_version="${dirname#release-portweaver-lite-}"
               else
-                arch_version="${dirname#portweaver-}"
+                arch_version="${dirname#release-portweaver-}"
               fi
 
-              # Find and copy files with renamed names
               find "$artifact_dir" \( -name "*.ipk" -o -name "*.apk" \) | while read file; do
                 filename=$(basename "$file")
-                # Extract package name, version, and extension
                 if [[ "$filename" =~ ^(luci-(app|i18n)-portweaver[^_]*)[_-]([0-9]+(\.[0-9]+)*[^_]*)[_-].*\.(ipk|apk)$ ]]; then
                   pkgname="${BASH_REMATCH[1]}"
                   version="${BASH_REMATCH[3]}"
@@ -216,7 +233,6 @@ jobs:
                   cp "$file" "release/$newname"
                   echo "Copied: $filename -> $newname"
                 else
-                  # Fallback: just append arch_version before extension
                   if [[ "$filename" == luci-app-portweaver* ]] || [[ "$filename" == luci-i18n-portweaver* ]]; then
                     cp "$file" "release/$filename"
                     echo "Copied: $filename -> $filename"
@@ -232,23 +248,15 @@ jobs:
           cd release
           ls -lh
 
-      - name: Delete existing nightly tag
-        uses: dev-drprasad/delete-tag-and-release@v1.1
-        with:
-          delete_release: true
-          tag_name: nightly
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Nightly Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: nightly
-          name: "PortWeaver Nightly Build"
-          overwrite_files: true
+          tag_name: ${{ env.TAG }}
+          name: "PortWeaver ${{ env.TAG }}"
           body: |
-            ## PortWeaver OpenWrt Packages — Nightly Build
+            ## PortWeaver Release ${{ env.TAG }}
 
-            Automatic build from commit `${{ github.sha }}` on `main`.
+            Built with OpenWrt SDK (24.10.7 and 25.12.5)
 
             ### Installation
 
@@ -282,6 +290,8 @@ jobs:
           files: |
             release/*.ipk
             release/*.apk
-          prerelease: true
+          generate_release_notes: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
