@@ -23,7 +23,7 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ env.TAG }}
@@ -149,7 +149,7 @@ jobs:
             }
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Git pull updated branch
@@ -171,7 +171,7 @@ jobs:
           ls -lhR bin/ || true
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.pkg }}-${{ matrix.arch }}-${{ matrix.openwrt_version }}
           path: |
@@ -189,10 +189,10 @@ jobs:
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download All Release Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: all-artifacts
 
