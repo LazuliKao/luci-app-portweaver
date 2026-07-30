@@ -36,7 +36,7 @@ endef
 
 define Package/portweaver-lite/description
   PortWeaver Lite is a lightweight build of PortWeaver for OpenWrt.
-  Only UCI and ubus support are enabled; frpc, frps and ddns are excluded,
+  UCI, ubus, nftables and wol support are enabled; frpc, frps and ddns are excluded,
   resulting in a smaller binary suitable for resource-constrained devices.
 endef
 
@@ -62,12 +62,12 @@ define Build/Compile
 		tar xf zig.tar.xz; \
 		$(call BuildVariant, \
 			$(PKG_BUILD_DIR)/zig-tmp/zig-x86_64-linux-0.16.0/zig, \
-			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
+			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false -Dnftables=true -Dwol=true, \
 			$(PKG_INSTALL_DIR)); \
 	else \
 		$(call BuildVariant, \
 			$(ZIG), \
-			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false, \
+			-Duci=true -Dubus=true -Dfrpc=false -Dfrps=false -Dddns=false -Dnftables=true -Dwol=true, \
 			$(PKG_INSTALL_DIR)); \
 	fi
 endef
