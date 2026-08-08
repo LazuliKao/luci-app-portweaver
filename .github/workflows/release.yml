@@ -38,13 +38,13 @@ jobs:
       - name: Sync version in Makefiles
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
-          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" portweaver/Makefile
-          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" portweaver-lite/Makefile
-          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" luci-app-portweaver/Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" package/portweaver/Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" package/portweaver-lite/Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" package/luci-app-portweaver/Makefile
           echo "Updated Makefiles:"
-          grep '^PKG_VERSION:=' portweaver/Makefile
-          grep '^PKG_VERSION:=' portweaver-lite/Makefile
-          grep '^PKG_VERSION:=' luci-app-portweaver/Makefile
+          grep '^PKG_VERSION:=' package/portweaver/Makefile
+          grep '^PKG_VERSION:=' package/portweaver-lite/Makefile
+          grep '^PKG_VERSION:=' package/luci-app-portweaver/Makefile
 
       - name: Commit version bump
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -57,7 +57,7 @@ jobs:
           git checkout "$BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add portweaver/Makefile portweaver-lite/Makefile luci-app-portweaver/Makefile
+          git add package/portweaver/Makefile package/portweaver-lite/Makefile package/luci-app-portweaver/Makefile
           if git diff --cached --quiet; then
             echo "Version files already match ${TAG}; nothing to commit."
           else

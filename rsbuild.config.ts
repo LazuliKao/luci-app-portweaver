@@ -32,7 +32,7 @@ export default defineConfig({
       "edge >= 16",
     ],
     distPath: {
-      root: "../htdocs/luci-static/resources/view/portweaver",
+      root: "./package/luci-app-portweaver/htdocs/luci-static/resources/view/portweaver",
       js: ".",
     },
     filename: {

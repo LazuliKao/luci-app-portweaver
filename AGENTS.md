@@ -7,7 +7,7 @@ This is the LuCI web UI for PortWeaver, built with TypeScript and a custom JSX f
 
 ## Structure
 
-The `frontend-src/` directory is organized as follows:
+The project root directory (frontend source) is organized as follows:
 - `main.tsx`: Application entry point.
 - `components/`: Reusable UI components.
 - `modules/`: Business logic (e.g., RPC client).

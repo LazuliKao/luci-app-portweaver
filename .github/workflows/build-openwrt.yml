@@ -25,10 +25,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit and push if changed
         run: |
-          if git diff --quiet --exit-code portweaver/Makefile portweaver-lite/Makefile; then
+          if git diff --quiet --exit-code package/portweaver/Makefile package/portweaver-lite/Makefile; then
             echo "No changes to Makefiles; skipping commit."
           else
-            git add portweaver/Makefile portweaver-lite/Makefile
+            git add package/portweaver/Makefile package/portweaver-lite/Makefile
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "chore: auto-update PKG_SOURCE_VERSION and PKG_HASH [skip ci]"

@@ -6,7 +6,7 @@
 
 // UNUSED EXPORTS: main
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_define_property.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_define_property.js
 function _define_property(obj, key, value) {
     if (key in obj) {
         Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
@@ -16,7 +16,7 @@ function _define_property(obj, key, value) {
 }
 
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_spread.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_spread.js
 
 
 function _object_spread(target) {
@@ -41,7 +41,7 @@ function _object_spread(target) {
 }
 
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_spread_props.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_spread_props.js
 function _object_spread_props_ownKeys(object, enumerableOnly) {
     var keys = Object.keys(object);
 
@@ -71,7 +71,7 @@ function _object_spread_props(target, source) {
 }
 
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
 function _object_without_properties_loose(source, excluded) {
     if (source == null) return {};
 
@@ -87,7 +87,7 @@ function _object_without_properties_loose(source, excluded) {
 }
 
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_without_properties.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.23/node_modules/@swc/helpers/esm/_object_without_properties.js
 
 
 function _object_without_properties(source, excluded) {
@@ -122,7 +122,7 @@ function _object_without_properties(source, excluded) {
 
 
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@lazulikao+luci-types@https_88535a3db40be271076cdd18bca386af/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_56625423b437cf272eb3bb3891954a2f/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
 
 
 
@@ -163,7 +163,7 @@ function jsxDEV(e, t) {
     return jsx_factory_o(e, t);
 }
 
-;// CONCATENATED MODULE: ../node_modules/.pnpm/@lazulikao+luci-types@https_88535a3db40be271076cdd18bca386af/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_56625423b437cf272eb3bb3891954a2f/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
 ;// CONCATENATED MODULE: ./utils/formatters.ts
@@ -2016,7 +2016,7 @@ class FrpNodeSelector_n extends L.form.Value {
         super(...t), _define_property(this, "hiddenInput", void 0), _define_property(this, "selectorValidation", void 0);
     }
 }
-/* export default */ const FrpNodeSelector = (FrpNodeSelector_n);
+/* export default */ var FrpNodeSelector = (FrpNodeSelector_n);
 
 ;// CONCATENATED MODULE: ./components/PortMappingEditor.tsx
 
@@ -2526,7 +2526,7 @@ class PortMappingEditor_l extends L.form.Value {
         }), _define_property(this, "validationError", ""), _define_property(this, "isValidFlag", !0);
     }
 }
-/* export default */ const PortMappingEditor = (PortMappingEditor_l);
+/* export default */ var PortMappingEditor = (PortMappingEditor_l);
 
 ;// CONCATENATED MODULE: ./modules/config.tsx
 
@@ -4343,7 +4343,7 @@ let wol_o = L.form;
 
 
 
-let main_h = L.form, main_v = L.uci;
+let main_b = L.form, main_v = L.uci;
 class main extends L.view {
     async load() {
         return Promise.all([
@@ -4365,18 +4365,12 @@ class main extends L.view {
         ]);
     }
     render(e) {
-        let t = new main_h.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration"));
+        let t = new main_b.Map("portweaver", _("PortWeaver"), _("Port forwarding and NAT traversal configuration"));
         this.mapInstance = t;
-        let a = t.section(main_h.NamedSection, "global", "portweaver");
+        let a = t.section(main_b.NamedSection, "global", "portweaver");
         a.anonymous = !0, a.addremove = !1, a.tab("settings", _("Global Settings")), a.tab("projects", _("Port Forwarding")), isFeatureEnabled("wol_mode") && a.tab("wol", _("Wake-on-LAN")), isFeatureEnabled("ddns_mode") && a.tab("ddns", _("DDNS")), isFeatureEnabled("frpc_mode") && a.tab("frpc", _("FRP Tunnels")), isFeatureEnabled("frps_mode") && a.tab("frps", _("FRP Server")), isFeatureEnabled("nftables_mode") && a.tab("nftables", _("nftables")), a.tab("logs", _("System Logs")), a.tab("about", _("About"));
         let m = e[2], f = e[3], v = new Client(m);
         return header(t, a, v, "settings"), config(t, a, v, "projects"), isFeatureEnabled("wol_mode") && wol(t, a, "wol"), isFeatureEnabled("ddns_mode") && ddns(t, a, "ddns"), isFeatureEnabled("frpc_mode") && frpc(t, a, "frpc"), isFeatureEnabled("frps_mode") && frps(t, a, "frps"), isFeatureEnabled("nftables_mode") && nftables(t, a, "nftables"), logs(t, a, "logs"), about(t, a, "about", f), t.render();
-    }
-    async handleSave() {
-        this.mapInstance && await this.mapInstance.save();
-    }
-    async handleReset() {
-        this.mapInstance && await this.mapInstance.reset();
     }
     async handleSaveReload() {
         try {
@@ -4442,7 +4436,11 @@ class main extends L.view {
         return e.appendChild(o), e;
     }
     constructor(...t){
-        super(...t), _define_property(this, "mapInstance", void 0), _define_property(this, "handleSaveApply", null);
+        super(...t), _define_property(this, "mapInstance", void 0), _define_property(this, "handleSave", async ()=>{
+            this.mapInstance && await this.mapInstance.save();
+        }), _define_property(this, "handleReset", async ()=>{
+            this.mapInstance && await this.mapInstance.reset();
+        }), _define_property(this, "handleSaveApply", null);
     }
 }
 

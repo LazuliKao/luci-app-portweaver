@@ -172,3 +172,13 @@ export interface VersionResponse {
   ddns_version?: string;
   backend_version: string;
 }
+
+// declare global {
+//   namespace LuCI {
+//     namespace form {
+//       type Map = MapElement;
+//       // biome-ignore lint/suspicious/noShadowRestrictedNames: restore LuCI.form.Map binding
+//       const Map: typeof MapElement;
+//     }
+//   }
+// }

@@ -5,26 +5,25 @@ This directory contains the TypeScript source code for the LuCI PortWeaver UI.
 ## Structure
 
 ```
-src/
-├── types/          # TypeScript type definitions
-├── components/     # UI component modules
-├── utils/          # Utility functions
-└── main.ts         # Main entry point
+components/     # UI component modules
+modules/        # Business logic modules
+types/          # TypeScript type definitions
+utils/          # Utility functions
+main.tsx        # Main entry point
 ```
 
 ## Development
 
-This package is managed from the `luci-app-portweaver/` pnpm workspace root.
-Run dependency installation once from the workspace root:
+This package is managed from the project root directory.
+Run dependency installation in the project root:
 
 ```bash
-cd ..
 pnpm install
 ```
 
 ### Local Development
 ```bash
-pnpm --filter @portweaver/luci-ui dev
+pnpm dev
 ```
 
 ### Remote Development (Auto-upload to OpenWrt)
@@ -46,25 +45,25 @@ SSH_REMOTE_PATH=/www/luci-static/resources/view/portweaver
 
 3. Start remote development:
 ```bash
-pnpm --filter @portweaver/luci-ui dev:remote
+pnpm dev:remote
 ```
 
 This will auto-compile and upload changes to your OpenWrt device.
 
 ### Build
 ```bash
-pnpm --filter @portweaver/luci-ui build
+pnpm build
 ```
 
 ## Build Output
 
 The TypeScript code will be compiled and bundled into:
-`../htdocs/luci-static/resources/view/portweaver/config.js`
+`./package/luci-app-portweaver/htdocs/luci-static/resources/view/portweaver/config.js`
 
 This file is what gets packaged into the final IPK.
 
 ## Notes
 
-- The src/ directory is NOT included in the IPK package
-- Only the compiled output in htdocs/ is packaged
+- The source files (such as `main.tsx`, `components/`, `modules/`) are NOT included in the IPK package
+- Only the compiled output in `package/luci-app-portweaver/htdocs/` is packaged
 - Keep LuCI API compatibility when refactoring

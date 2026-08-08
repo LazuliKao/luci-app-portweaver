@@ -109,17 +109,17 @@ export class main extends L.view {
     return m.render();
   }
 
-  override async handleSave() {
+  override handleSave = async () => {
     if (this.mapInstance) {
       await this.mapInstance.save();
     }
-  }
+  };
 
-  override async handleReset() {
+  override handleReset = async () => {
     if (this.mapInstance) {
       await this.mapInstance.reset();
     }
-  }
+  };
 
   override handleSaveApply = null as any;
 

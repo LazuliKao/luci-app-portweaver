@@ -163,7 +163,7 @@ update_package() {
 }
 
 # Update the target Makefiles
-update_package "portweaver/Makefile"
-update_package "portweaver-lite/Makefile"
+update_package "package/portweaver/Makefile"
+update_package "package/portweaver-lite/Makefile"
 
 log "所有 Makefiles 更新成功！"

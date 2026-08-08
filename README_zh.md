@@ -6,8 +6,9 @@
 
 ## 软件包
 
-- **portweaver/** - 核心端口转发引擎二进制文件
-- **luci-app-portweaver/** - LuCI Web 管理界面
+- **package/portweaver/** - 核心端口转发引擎二进制文件
+- **package/portweaver-lite/** - 轻量化核心端口转发引擎二进制文件
+- **package/luci-app-portweaver/** - LuCI Web 管理界面
 
 ## 安装
 
@@ -46,9 +47,9 @@ cd openwrt-sdk-*
 
 2. 将软件包复制到 SDK：
 ```bash
-git clone https://github.com/LazuliKao/luci-app-portweaver.git
-cp -r luci-app-portweaver/openwrt-portweaver package/network/portweaver
-cp -r luci-app-portweaver/luci-app-portweaver package/luci/applications/luci-app-portweaver
+git clone https://github.com/LazuliKao/openwrt-portweaver.git
+cp -r openwrt-portweaver/package/portweaver package/network/portweaver
+cp -r openwrt-portweaver/package/luci-app-portweaver package/luci/applications/luci-app-portweaver
 ```
 
 3. 更新 feeds 并构建：
@@ -194,10 +195,9 @@ portweaver
 
 ### 前端源码
 
-前端源码位于 `luci-app-portweaver/frontend-src/`。
+前端源码位于项目根目录。
 
 ```bash
-cd luci-app-portweaver/frontend-src
 pnpm install
 pnpm build
 ```
@@ -212,26 +212,31 @@ pnpm build
 openwrt-portweaver/
 ├── .github/
 │   └── workflows/
-│       └── build-openwrt.yml
-├── openwrt-portweaver/               # 核心 PortWeaver 包
-│   ├── Makefile
-│   ├── files/
-│   │   ├── portweaver.config
-│   │   └── portweaver.init
-│   └── README.md
-└── luci-app-portweaver/              # LuCI Web 界面包
-    ├── Makefile
-    ├── htdocs/
-    │   └── luci-static/resources/view/portweaver/
-    │       └── config.js
-    ├── root/
-    │   ├── etc/uci-defaults/40_luci-portweaver
-    │   └── usr/share/
-    │       ├── luci/menu.d/luci-app-portweaver.json
-    │       └── rpcd/acl.d/luci-app-portweaver.json
-    ├── po/templates/portweaver.pot
-    ├── frontend-src/                 # TypeScript 前端源码
-    └── README.md
+│       ├── build-openwrt.yml
+│       ├── release.yml
+│       └── update_hash.sh
+├── components/                       # 前端 UI 组件
+├── modules/                          # 前端业务逻辑模块
+├── types/                            # TypeScript 类型定义
+├── utils/                            # 工具函数
+├── package/                          # OpenWrt 软件包源码
+│   ├── portweaver/                   # 核心 PortWeaver 软件包
+│   │   ├── Makefile
+│   │   └── files/
+│   ├── portweaver-lite/              # 轻量版 PortWeaver 软件包
+│   │   └── Makefile
+│   └── luci-app-portweaver/          # LuCI 界面软件包
+│       ├── Makefile
+│       ├── htdocs/
+│       │   └── luci-static/resources/view/portweaver/
+│       │       └── config.js         # 编译后的前端代码
+│       ├── po/                       # 翻译文件 (PO)
+│       └── root/                     # 菜单、权限等系统文件
+├── main.tsx                          # 前端入口文件
+├── rsbuild.config.ts                 # 前端构建配置
+├── tsconfig.json                     # TypeScript 配置
+├── package.json                      # 依赖与脚本配置
+└── README.md
 ```
 
 ## 系统要求
