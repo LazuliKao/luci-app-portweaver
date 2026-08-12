@@ -25,7 +25,7 @@ export default function (
       o.default = "0";
       o.rmempty = false;
       o.description = _(
-        "Use nftables instead of OpenWrt firewall (fw4). Requires nftables package installed.",
+        "Add nft rules directly to the nftables instead of adding uci entries to the OpenWrt firewall (fw4).",
       );
       o.default = "1";
       o.rmempty = false;

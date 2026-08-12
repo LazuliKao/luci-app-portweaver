@@ -122,7 +122,7 @@ function _object_without_properties(source, excluded) {
 
 
 
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_56625423b437cf272eb3bb3891954a2f/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_972cba166831f8ae2882f832f72ea119/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
 
 
 
@@ -163,7 +163,7 @@ function jsxDEV(e, t) {
     return jsx_factory_o(e, t);
 }
 
-;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_56625423b437cf272eb3bb3891954a2f/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_972cba166831f8ae2882f832f72ea119/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
 ;// CONCATENATED MODULE: ./utils/formatters.ts
@@ -3096,7 +3096,7 @@ let header_i = L.form;
         let t = r.taboption(d, header_i.Flag, "enabled", _("Enable PortWeaver"));
         if (t.default = "1", t.rmempty = !1, isFeatureEnabled("nftables_mode")) {
             let t = r.taboption(d, header_i.Flag, "use_nftables", _("Use nftables"));
-            t.default = "0", t.rmempty = !1, t.description = _("Use nftables instead of OpenWrt firewall (fw4). Requires nftables package installed."), t.default = "1", t.rmempty = !1;
+            t.default = "0", t.rmempty = !1, t.description = _("Add nft rules directly to the nftables instead of adding uci entries to the OpenWrt firewall (fw4)."), t.default = "1", t.rmempty = !1;
         }
     }
     {
