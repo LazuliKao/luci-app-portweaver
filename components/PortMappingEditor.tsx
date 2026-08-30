@@ -1,80 +1,9 @@
 import { createFrpNodeSelector } from "./FrpNodeSelector";
 import ValidatedInput from "./ValidatedInput";
+import * as PortMappingUtils from "../utils/port-mapping";
 class PortMappingEditor extends L.form.Value {
   private hiddenInput?: HTMLInputElement;
   private errorDivRefs: HTMLElement[] = [];
-
-  parseMapping(str: string) {
-    if (!str || typeof str !== "string") return null;
-    str = str.trim();
-    const mapping = {
-      listenPort: "",
-      targetPort: "",
-      frpNodes: [],
-      protocol: "tcp",
-    } as {
-      listenPort: string;
-      targetPort: string;
-      frpNodes: string[];
-      protocol: "tcp" | "udp" | "both";
-    };
-    const protocolMatch = str.match(/\/([a-z]+)$/);
-    if (protocolMatch) {
-      mapping.protocol = protocolMatch[1].toLowerCase() as any;
-      str = str.substring(0, protocolMatch.index);
-    }
-    let i = 0;
-    while (str[i] === "[") {
-      const end = str.indexOf("]", i);
-      if (end === -1) break;
-      const content = str.substring(i + 1, end);
-      if (content.indexOf(":") !== -1 || /[a-zA-Z_-]/.test(content)) {
-        (mapping.frpNodes as string[]).push(content);
-        i = end + 1;
-        continue;
-      }
-      if (content.match(/^\d+(?:-\d+)?$/)) {
-        mapping.listenPort = content;
-        i = end + 1;
-        break;
-      }
-      break;
-    }
-    const rest = str.substring(i);
-    if (!mapping.listenPort) {
-      const parts0 = rest.split(":");
-      if (parts0.length >= 1)
-        mapping.listenPort = parts0[0].trim().replace(/[[\]]/g, "");
-      if (parts0.length >= 2)
-        mapping.targetPort = parts0[1].trim().replace(/[[\]]/g, "");
-    } else {
-      if (rest.startsWith(":")) {
-        mapping.targetPort = rest.substring(1).trim().replace(/[[\]]/g, "");
-      }
-    }
-    return mapping;
-  }
-  buildString(mapping: {
-    listenPort: string;
-    targetPort: string;
-    frpNodes: string[];
-    protocol: string;
-  }) {
-    let result = "";
-    if (mapping.frpNodes && mapping.frpNodes.length > 0) {
-      mapping.frpNodes.forEach((node) => {
-        result += `[${node}]`;
-      });
-    }
-    if (mapping.listenPort) {
-      if (mapping.frpNodes && mapping.frpNodes.length > 0)
-        result += `[${mapping.listenPort}]`;
-      else result += mapping.listenPort;
-    }
-    if (mapping.targetPort) result += `:${mapping.targetPort}`;
-    if (mapping.protocol) result += `/${mapping.protocol}`;
-    return result;
-  }
   renderWidget(section_id: string, _option_index: number, cfgvalue: string[]) {
     void _option_index;
 
@@ -119,8 +48,10 @@ class PortMappingEditor extends L.form.Value {
           frpNodes: frpNodes,
           protocol: protocol,
         };
-        const str = this.buildString(temp);
-        if (str && listen && target) values.push(str);
+        const str = PortMappingUtils.build(temp);
+        // Keep incomplete rows in the form value so validation can report them
+        // instead of silently dropping them on the next input or blur event.
+        if (listen || target) values.push(str);
       }
 
       if (this.hiddenInput) this.hiddenInput.value = values.join(" ");
@@ -195,13 +126,15 @@ class PortMappingEditor extends L.form.Value {
       protocolSelect: HTMLSelectElement;
       getSelectedNodes: () => string[];
     } => {
-      const mapping = this.parseMapping(mapping_str) || {
+      const mapping = PortMappingUtils.parse(mapping_str) || {
         listenPort: "",
         targetPort: "",
         frpNodes: [],
         protocol: "tcp",
       };
-      const initialTextModeValue = mapping_str ? this.buildString(mapping) : "";
+      const initialTextModeValue = mapping_str
+        ? PortMappingUtils.build(mapping)
+        : "";
       const row_id = `portmapping-row-${section_id}-${index}`;
       let isTextMode = true;
 
@@ -215,7 +148,7 @@ class PortMappingEditor extends L.form.Value {
           dataAttributes={{ index: String(index), section: section_id }}
           onValidate={(value) => {
             if (!value.trim()) return false;
-            return this.validatePortOrRange(value.trim());
+            return PortMappingUtils.isPortOrRange(value.trim());
           }}
         />
       ) as HTMLInputElement;
@@ -231,7 +164,7 @@ class PortMappingEditor extends L.form.Value {
           dataAttributes={{ index: String(index), section: section_id }}
           onValidate={(value) => {
             if (!value.trim()) return false;
-            return this.validatePortOrRange(value.trim());
+            return PortMappingUtils.isPortOrRange(value.trim());
           }}
         />
       ) as HTMLInputElement;
@@ -266,8 +199,8 @@ class PortMappingEditor extends L.form.Value {
           style="flex: 1 1 120px; min-width: 100px; width: auto; margin: 0; padding: 5px; display: none;"
           validateOn="blur"
           onValidate={(value) => {
-            const parsed = this.parseMapping(value);
-            return !!parsed;
+            const parsed = PortMappingUtils.parse(value);
+            return !!parsed && !PortMappingUtils.validate(parsed);
           }}
         />
       ) as HTMLInputElement;
@@ -278,7 +211,7 @@ class PortMappingEditor extends L.form.Value {
           data-index={index}
           style="margin-top: 6px; padding: 6px; border-left: 3px solid #0088cc; font-family: monospace; font-size: 12px;"
         >
-          {_("Preview: %s").format(this.buildString(mapping))}
+          {_("Preview: %s").format(PortMappingUtils.build(mapping))}
         </div>
       ) as HTMLElement;
 
@@ -293,7 +226,7 @@ class PortMappingEditor extends L.form.Value {
           frpNodes: frpNodes,
           protocol: protocol,
         };
-        const preview_str = this.buildString(temp_mapping);
+        const preview_str = PortMappingUtils.build(temp_mapping);
         previewDiv.textContent = _("Preview: %s").format(preview_str);
         if (!isTextMode) {
           textModeInput.value = preview_str;
@@ -303,8 +236,6 @@ class PortMappingEditor extends L.form.Value {
       // 使用动态的 FRP 节点选择器组件来保证与文本模式的数据同步
       let selectorContainer: HTMLElement = null as any;
       let getSelectedNodes: () => string[] = null as any;
-      let isFrpValid: () => boolean = null as any;
-      let getFrpError: () => string = null as any;
 
       const initOrUpdateFrp = (nodes: string[]) => {
         const selector = createFrpNodeSelector({
@@ -323,8 +254,6 @@ class PortMappingEditor extends L.form.Value {
 
         selectorContainer = selector.container;
         getSelectedNodes = selector.getSelectedNodes;
-        isFrpValid = selector.isValid;
-        getFrpError = selector.getValidationError;
       };
 
       initOrUpdateFrp(mapping.frpNodes || []);
@@ -452,35 +381,17 @@ class PortMappingEditor extends L.form.Value {
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
 
-        let hasError = false;
+        const validationError = PortMappingUtils.validate({
+          listenPort: listen,
+          targetPort: target,
+          frpNodes: getSelectedNodes(),
+          protocol: protocolSelect.value,
+        });
+        const hasError = !!validationError;
 
-        if (listen && !this.validatePortOrRange(listen)) {
-          errorDiv.textContent = _("Invalid listen port format");
+        if (hasError) {
+          errorDiv.textContent = validationError;
           errorDiv.style.display = "block";
-          hasError = true;
-        }
-
-        if (!hasError && target && !this.validatePortOrRange(target)) {
-          errorDiv.textContent = _("Invalid target port format");
-          errorDiv.style.display = "block";
-          hasError = true;
-        }
-
-        if (!hasError && listen && target) {
-          const listenPorts = this.parsePortRange(listen);
-          const targetPorts = this.parsePortRange(target);
-
-          if (listenPorts.length !== targetPorts.length) {
-            errorDiv.textContent = _("Port ranges must have the same size");
-            errorDiv.style.display = "block";
-            hasError = true;
-          }
-        }
-
-        if (!hasError && !isFrpValid()) {
-          errorDiv.textContent = getFrpError();
-          errorDiv.style.display = "block";
-          hasError = true;
         }
 
         if (!hasError) {
@@ -497,7 +408,7 @@ class PortMappingEditor extends L.form.Value {
       protocolSelect.onchange = validateAndUpdate;
 
       const syncFromTextMode = () => {
-        const parsed = this.parseMapping(textModeInput.value);
+        const parsed = PortMappingUtils.parse(textModeInput.value);
         if (parsed) {
           const tempListenHandler = listenInput.oninput;
           const tempTargetHandler = targetInput.oninput;
@@ -529,15 +440,18 @@ class PortMappingEditor extends L.form.Value {
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
 
-        const parsed = this.parseMapping(inputEl.value);
-        if (parsed) {
-          const unifiedStr = this.buildString(parsed);
+        const parsed = PortMappingUtils.parse(inputEl.value);
+        const validationError = parsed
+          ? PortMappingUtils.validate(parsed)
+          : _("Invalid port mapping format");
+        if (parsed && !validationError) {
+          const unifiedStr = PortMappingUtils.build(parsed);
           if (unifiedStr && unifiedStr !== inputEl.value) {
             inputEl.value = unifiedStr;
           }
           syncFromTextMode();
         } else {
-          errorDiv.textContent = _("Invalid port mapping format");
+          errorDiv.textContent = validationError;
           errorDiv.style.display = "block";
         }
       };
@@ -568,7 +482,7 @@ class PortMappingEditor extends L.form.Value {
           const target = targetInput.value.trim();
           const protocol = protocolSelect.value;
           const frpNodes = getSelectedNodes();
-          const preview_str = this.buildString({
+          const preview_str = PortMappingUtils.build({
             listenPort: listen,
             targetPort: target,
             frpNodes: frpNodes,
@@ -726,7 +640,7 @@ class PortMappingEditor extends L.form.Value {
         listenInput,
         targetInput,
         protocolSelect,
-        getSelectedNodes,
+        getSelectedNodes: () => getSelectedNodes(),
       };
     };
 
@@ -762,6 +676,7 @@ class PortMappingEditor extends L.form.Value {
     );
 
     this.hiddenInput = hiddenInput as HTMLInputElement;
+    updateHiddenValue();
     const container = (
       <div class="cbi-value-field">
         {mappings_wrapper}
@@ -820,7 +735,7 @@ class PortMappingEditor extends L.form.Value {
     const mappings = valueStr.split(/\s+/).filter(Boolean);
 
     for (const mappingStr of mappings) {
-      const parsed = this.parseMapping(mappingStr);
+      const parsed = PortMappingUtils.parse(mappingStr);
 
       if (!parsed) {
         this.validationError = _("Invalid port mapping format");
@@ -828,83 +743,11 @@ class PortMappingEditor extends L.form.Value {
         return _("Invalid port mapping format");
       }
 
-      // 验证监听端口
-      if (!parsed.listenPort) {
-        this.validationError = _("Listen port is required");
+      const validationError = PortMappingUtils.validate(parsed);
+      if (validationError) {
+        this.validationError = validationError;
         this.isValidFlag = false;
-        return _("Listen port is required");
-      }
-
-      if (!this.validatePortOrRange(parsed.listenPort)) {
-        const msg = _(
-          "Invalid listen port format. Use port (8080) or range (8080-8090)",
-        );
-        this.validationError = msg;
-        this.isValidFlag = false;
-        return msg;
-      }
-
-      // 验证目标端口
-      if (!parsed.targetPort) {
-        this.validationError = _("Target port is required");
-        this.isValidFlag = false;
-        return _("Target port is required");
-      }
-
-      if (!this.validatePortOrRange(parsed.targetPort)) {
-        const msg = _(
-          "Invalid target port format. Use port (80) or range (80-90)",
-        );
-        this.validationError = msg;
-        this.isValidFlag = false;
-        return msg;
-      }
-
-      // 验证端口范围匹配
-      const listenPorts = this.parsePortRange(parsed.listenPort);
-      const targetPorts = this.parsePortRange(parsed.targetPort);
-
-      if (listenPorts.length !== targetPorts.length) {
-        const msg = _(
-          "Listen port range and target port range must have the same size",
-        );
-        this.validationError = msg;
-        this.isValidFlag = false;
-        return msg;
-      }
-
-      // 验证 FRP 节点
-      if (parsed.frpNodes && parsed.frpNodes.length > 0) {
-        for (const nodeStr of parsed.frpNodes) {
-          const [node, port] = nodeStr.split(":");
-
-          if (!node) {
-            this.validationError = _("Invalid FRP node format");
-            this.isValidFlag = false;
-            return _("Invalid FRP node format");
-          }
-
-          if (port) {
-            const portNum = parseInt(port, 10);
-            if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
-              const msg = _("FRP node port must be between 1 and 65535");
-              this.validationError = msg;
-              this.isValidFlag = false;
-              return msg;
-            }
-          }
-        }
-      }
-
-      // 验证协议
-      if (
-        parsed.protocol &&
-        !["tcp", "udp", "both"].includes(parsed.protocol)
-      ) {
-        const msg = _("Protocol must be `tcp`, `udp`, or `both`");
-        this.validationError = msg;
-        this.isValidFlag = false;
-        return msg;
+        return validationError;
       }
     }
 
@@ -912,45 +755,6 @@ class PortMappingEditor extends L.form.Value {
     this.isValidFlag = true;
     return true;
   };
-  private validatePortOrRange(portStr: string): boolean {
-    // 验证单个端口或端口范围
-    if (!portStr) return false;
-
-    // 单个端口
-    if (/^\d+$/.test(portStr)) {
-      const port = parseInt(portStr, 10);
-      return port >= 1 && port <= 65535;
-    }
-
-    // 端口范围
-    if (/^\d+-\d+$/.test(portStr)) {
-      const [start, end] = portStr.split("-").map((p) => parseInt(p, 10));
-      return (
-        start >= 1 && start <= 65535 && end >= 1 && end <= 65535 && start <= end
-      );
-    }
-
-    return false;
-  }
-
-  private parsePortRange(portStr: string): number[] {
-    // 解析端口或端口范围，返回端口数组
-    if (/^\d+$/.test(portStr)) {
-      return [parseInt(portStr, 10)];
-    }
-
-    if (/^\d+-\d+$/.test(portStr)) {
-      const [start, end] = portStr.split("-").map((p) => parseInt(p, 10));
-      const ports: number[] = [];
-      for (let i = start; i <= end; i++) {
-        ports.push(i);
-      }
-      return ports;
-    }
-
-    return [];
-  }
-
   isValid(section_id: string): boolean {
     for (const errorEl of this.errorDivRefs) {
       const isVisible = errorEl.style.display !== "none";
