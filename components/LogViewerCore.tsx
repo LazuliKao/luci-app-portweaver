@@ -36,6 +36,7 @@ export class LogViewerCore {
   private pauseButton: HTMLElement | null = null;
   private followButton: HTMLElement | null = null;
   private wrapButton: HTMLElement | null = null;
+  private clearButton: HTMLElement | null = null;
 
   private status: string = "unavailable";
   private logs: string[] = [];
@@ -329,7 +330,7 @@ export class LogViewerCore {
       </button>
     );
 
-    const clearButton = (
+    this.clearButton = (
       <button
         type="button"
         class="cbi-button"
@@ -355,7 +356,7 @@ export class LogViewerCore {
         {copyButton}
         {copySelectedButton}
         {exportButton}
-        {clearButton}
+        {this.clearButton}
       </div>
     );
 
@@ -401,6 +402,10 @@ export class LogViewerCore {
     return this.footer;
   }
 
+  getClearButton(): HTMLElement | null {
+    return this.clearButton;
+  }
+
   init(): void {
     this.updateDisplay();
     this.startPolling();
@@ -415,6 +420,7 @@ export class LogViewerCore {
     this.pauseButton = null;
     this.followButton = null;
     this.wrapButton = null;
+    this.clearButton = null;
     this.searchBar = null;
     this.footer = null;
     this.header = null;

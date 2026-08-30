@@ -984,14 +984,14 @@ class LogViewerCore {
             class: "cbi-button cbi-button-positive",
             onclick: ()=>this.exportAll(),
             children: _("EXPORT")
-        }), a = jsx("button", {
+        });
+        return this.clearButton = jsx("button", {
             type: "button",
             class: "cbi-button",
             onclick: async ()=>await this.clearLogs(),
             style: "background: #dc3545; color: white;",
             children: _("CLEAR")
-        });
-        return this.searchBar = jsxs("div", {
+        }), this.searchBar = jsxs("div", {
             style: "padding: 0.5em 1em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; min-height: 2.5em;",
             children: [
                 this.searchInput,
@@ -1006,7 +1006,7 @@ class LogViewerCore {
                 i,
                 l,
                 r,
-                a
+                this.clearButton
             ]
         }), this.header = jsx("div", {
             style: "padding: 1em; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;",
@@ -1048,11 +1048,14 @@ class LogViewerCore {
     getFooter() {
         return this.footer;
     }
+    getClearButton() {
+        return this.clearButton;
+    }
     init() {
         this.updateDisplay(), this.startPolling();
     }
     destroy() {
-        this.stopPolling(), this.logContainer = null, this.statusSpan = null, this.errorSpan = null, this.searchInput = null, this.pauseButton = null, this.followButton = null, this.wrapButton = null, this.searchBar = null, this.footer = null, this.header = null;
+        this.stopPolling(), this.logContainer = null, this.statusSpan = null, this.errorSpan = null, this.searchInput = null, this.pauseButton = null, this.followButton = null, this.wrapButton = null, this.clearButton = null, this.searchBar = null, this.footer = null, this.header = null;
     }
     startPolling() {
         this.fetchLogs(), this.pollInterval && clearInterval(this.pollInterval), this.pollInterval = window.setInterval(()=>{
@@ -1165,7 +1168,7 @@ class LogViewerCore {
     }
     constructor(s){
         var o;
-        _define_property(this, "props", void 0), _define_property(this, "logContainer", null), _define_property(this, "statusSpan", null), _define_property(this, "errorSpan", null), _define_property(this, "searchInput", null), _define_property(this, "pauseButton", null), _define_property(this, "followButton", null), _define_property(this, "wrapButton", null), _define_property(this, "status", "unavailable"), _define_property(this, "logs", []), _define_property(this, "lastError", ""), _define_property(this, "pollInterval", null), _define_property(this, "searchFilter", ""), _define_property(this, "filteredLogs", []), _define_property(this, "isPaused", !1), _define_property(this, "isFollowing", !0), _define_property(this, "selectedLines", new Set()), _define_property(this, "wrapText", !1), _define_property(this, "searchBar", null), _define_property(this, "footer", null), _define_property(this, "header", null), this.props = _object_spread_props(_object_spread({}, s), {
+        _define_property(this, "props", void 0), _define_property(this, "logContainer", null), _define_property(this, "statusSpan", null), _define_property(this, "errorSpan", null), _define_property(this, "searchInput", null), _define_property(this, "pauseButton", null), _define_property(this, "followButton", null), _define_property(this, "wrapButton", null), _define_property(this, "clearButton", null), _define_property(this, "status", "unavailable"), _define_property(this, "logs", []), _define_property(this, "lastError", ""), _define_property(this, "pollInterval", null), _define_property(this, "searchFilter", ""), _define_property(this, "filteredLogs", []), _define_property(this, "isPaused", !1), _define_property(this, "isFollowing", !0), _define_property(this, "selectedLines", new Set()), _define_property(this, "wrapText", !1), _define_property(this, "searchBar", null), _define_property(this, "footer", null), _define_property(this, "header", null), this.props = _object_spread_props(_object_spread({}, s), {
             showHeader: null == (o = s.showHeader) || o
         });
     }
@@ -3248,13 +3251,8 @@ let logs_o = L.form, logs_l = L.fs, logs_a = L.ui, logs_i = "/tmp/portweaver.log
                 class: "cbi-button cbi-button-apply",
                 onclick: ()=>g(),
                 children: _("Restart Service")
-            }), l = r.querySelector(".button-row");
-            if (l) {
-                var a;
-                let e = l.querySelector("button:last-child");
-                e ? null == (a = e.parentNode) || a.insertBefore(o, e) : l.appendChild(o);
-            }
-            return jsx("div", {
+            }), l = logs_n.getFooter(), a = logs_n.getClearButton();
+            return l && a ? l.insertBefore(o, a) : l && l.appendChild(o), jsx("div", {
                 style: "height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;",
                 children: r
             });

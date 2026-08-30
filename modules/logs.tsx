@@ -158,14 +158,12 @@ export default function (
         </button>
       );
 
-      const footer = coreElement.querySelector(".button-row");
-      if (footer) {
-        const clearButton = footer.querySelector("button:last-child");
-        if (clearButton) {
-          clearButton.parentNode?.insertBefore(restartButton, clearButton);
-        } else {
-          footer.appendChild(restartButton);
-        }
+      const footer = logViewerCore.getFooter();
+      const clearButton = logViewerCore.getClearButton();
+      if (footer && clearButton) {
+        footer.insertBefore(restartButton, clearButton);
+      } else if (footer) {
+        footer.appendChild(restartButton);
       }
       return (
         <div style="height: max(calc(100vh - 800px), 500px); border: 1px solid var(--cbi-border-color); border-radius: 4px; overflow: hidden;">
