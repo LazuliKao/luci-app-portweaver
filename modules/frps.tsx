@@ -2,6 +2,7 @@ import { LogViewerDialog } from "@/components/LogViewerDialog";
 import { rpcClient } from "@/utils/rpc-client";
 import { getThemeColors } from "@/utils/theme-utils";
 const form = L.form;
+const EXTERNAL_SERVER_NAME = "__external_frps__";
 
 type FrpsState =
   | "running"
@@ -48,6 +49,84 @@ export default function (
   s: LuCI.form.NamedSection,
   tab_id: string,
 ) {
+  {
+    const o = s.taboption(
+      tab_id,
+      form.ListValue,
+      "frps_config_mode",
+      _("Configuration Source"),
+    );
+    o.rmempty = false;
+    o.default = "builtin";
+    o.value("builtin", _("Built-in Nodes"));
+    o.value("external_file", _("External File"));
+    o.value("external_uci", _("UCI Configuration Text"));
+    o.description = _(
+      "External sources use the official FRPS configuration format and replace all built-in nodes.",
+    );
+    o.write = (section_id: string, formvalue: string): null => {
+      const mode = String(formvalue);
+      L.uci.set("portweaver", section_id, "frps_config_mode", mode);
+
+      if (mode === "external_file") {
+        L.uci.unset("portweaver", section_id, "frps_config_content");
+      } else if (mode === "external_uci") {
+        L.uci.unset("portweaver", section_id, "frps_config_path");
+      } else {
+        L.uci.unset("portweaver", section_id, "frps_config_path");
+        L.uci.unset("portweaver", section_id, "frps_config_content");
+      }
+      return null;
+    };
+  }
+
+  {
+    const o = s.taboption(
+      tab_id,
+      form.ListValue,
+      "frps_config_format",
+      _("Configuration Format"),
+    );
+    o.rmempty = false;
+    o.default = "toml";
+    o.value("toml", "TOML");
+    o.value("yaml", "YAML");
+    o.value("json", "JSON");
+    o.depends("frps_config_mode", "external_file");
+    o.depends("frps_config_mode", "external_uci");
+  }
+
+  {
+    const o = s.taboption(
+      tab_id,
+      form.Value,
+      "frps_config_path",
+      _("Configuration File Path"),
+    );
+    o.rmempty = false;
+    o.placeholder = "/etc/portweaver/frps.toml";
+    o.description = _(
+      "Absolute path to an official FRPS TOML, YAML, or JSON configuration file.",
+    );
+    o.depends("frps_config_mode", "external_file");
+  }
+
+  {
+    const o = s.taboption(
+      tab_id,
+      form.TextValue,
+      "frps_config_content",
+      _("FRPS Configuration"),
+    );
+    o.rmempty = false;
+    o.rows = 18;
+    o.wrap = "off";
+    o.description = _(
+      "Official FRPS TOML, YAML, or JSON configuration stored directly in UCI.",
+    );
+    o.depends("frps_config_mode", "external_uci");
+  }
+
   const o = s.taboption(
     tab_id,
     form.SectionValue,
@@ -55,12 +134,78 @@ export default function (
     form.GridSection,
     "frps_node",
   );
+  o.depends("frps_config_mode", "builtin");
 
   const ss = o.subsection as LuCI.form.GridSection;
   ss.anonymous = true;
   ss.addremove = true;
   ss.sortable = true;
   ss.cloneable = true;
+
+  {
+    const o = s.taboption(
+      tab_id,
+      form.DummyValue,
+      "_frps_external_status",
+      _("External FRPS Status"),
+    );
+    o.depends("frps_config_mode", "external_file");
+    o.depends("frps_config_mode", "external_uci");
+    o.textvalue = () => {
+      const info = nodeStatuses[EXTERNAL_SERVER_NAME] || {
+        status: "unavailable" as FrpsState,
+      };
+      const colors = getStatusColors();
+      const status = info.status || "unavailable";
+      const container = (
+        <span style="display:flex; align-items:center;">
+          <span
+            style={`display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${colors[status]}; margin-right:8px;`}
+          ></span>
+          <span>{STATUS_LABELS[status]}</span>
+        </span>
+      ) as HTMLElement;
+      statusElements[EXTERNAL_SERVER_NAME] = container;
+      return container;
+    };
+  }
+
+  {
+    const o = s.taboption(
+      tab_id,
+      form.DummyValue,
+      "_frps_external_logs",
+      _("External FRPS Logs"),
+    );
+    o.depends("frps_config_mode", "external_file");
+    o.depends("frps_config_mode", "external_uci");
+    o.textvalue = () => {
+      const isRunning =
+        (nodeStatuses[EXTERNAL_SERVER_NAME]?.status || "stopped") !== "stopped";
+      const btn = (
+        <button
+          type="button"
+          class="cbi-button cbi-button-action"
+          onclick={() => {
+            const logViewer = new LogViewerDialog({
+              name: EXTERNAL_SERVER_NAME,
+              title: _("External FRPS Logs"),
+              fetcher: async () =>
+                await rpcClient.getFrpsInfo(EXTERNAL_SERVER_NAME),
+              clearer: async () =>
+                await rpcClient.clearFrpsLogs(EXTERNAL_SERVER_NAME),
+            });
+            logViewer.open();
+          }}
+          disabled={!isRunning}
+        >
+          {_("View Logs")}
+        </button>
+      ) as HTMLButtonElement;
+      actionButtons[EXTERNAL_SERVER_NAME] = btn;
+      return btn;
+    };
+  }
 
   ss.sectiontitle = (section_id: string): string =>
     (L.uci.get("portweaver", section_id, "name") as string) ||
@@ -305,14 +450,25 @@ export default function (
 
   async function pollFrpsStatus() {
     try {
-      const sections = await L.uci.sections("portweaver", "frps_node");
-      const promises = sections.map((sec: any) => {
-        const nodeName = sec.name as string;
+      const mode =
+        (L.uci.get("portweaver", "global", "frps_config_mode") as string) ||
+        "builtin";
+      const nodes =
+        mode === "builtin"
+          ? (await L.uci.sections("portweaver", "frps_node")).map(
+              (sec: any) => ({
+                key: sec[".name"] as string,
+                name: sec.name as string,
+              }),
+            )
+          : [{ key: EXTERNAL_SERVER_NAME, name: EXTERNAL_SERVER_NAME }];
+      const promises = nodes.map((node) => {
+        const nodeName = node.name;
 
         return rpcClient
           .getFrpsInfo(nodeName)
           .then((res) => {
-            const oldStatus = nodeStatuses[sec[".name"]]?.status;
+            const oldStatus = nodeStatuses[node.key]?.status;
 
             const rawStatus = res.status ?? "unavailable";
             const newStatus: FrpsState = [
@@ -326,13 +482,13 @@ export default function (
               ? (rawStatus as FrpsState)
               : ("unavailable" as FrpsState);
 
-            nodeStatuses[sec[".name"]] = {
+            nodeStatuses[node.key] = {
               status: newStatus,
               last_error: res.last_error || "",
             };
 
             if (oldStatus !== newStatus) {
-              const container = statusElements[sec[".name"]];
+              const container = statusElements[node.key];
 
               if (container && container.childNodes.length >= 2) {
                 const indicator = container.childNodes[0] as HTMLElement;
@@ -347,7 +503,7 @@ export default function (
                 textSpan.textContent = statusText;
               }
 
-              const actionBtn = actionButtons[sec[".name"]];
+              const actionBtn = actionButtons[node.key];
               if (actionBtn) {
                 const isRunning = newStatus !== "stopped";
                 actionBtn.disabled = !isRunning;
@@ -355,12 +511,12 @@ export default function (
             }
           })
           .catch(() => {
-            nodeStatuses[sec[".name"]] = {
+            nodeStatuses[node.key] = {
               status: "error",
               last_error: "Failed to fetch status",
             };
 
-            const container = statusElements[sec[".name"]];
+            const container = statusElements[node.key];
             if (container && container.childNodes.length >= 2) {
               const indicator = container.childNodes[0] as HTMLElement;
               const textSpan = container.childNodes[1] as HTMLElement;
@@ -368,7 +524,7 @@ export default function (
               textSpan.textContent = _("Error");
             }
 
-            const actionBtn = actionButtons[sec[".name"]];
+            const actionBtn = actionButtons[node.key];
             if (actionBtn) {
               actionBtn.disabled = true;
             }
