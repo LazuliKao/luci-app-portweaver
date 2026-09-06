@@ -2,9 +2,85 @@ import type { Client } from "./client";
 import { isFeatureEnabled } from "../utils/feature";
 import FrpNodeSelector from "../components/FrpNodeSelector";
 import PortMappingEditor from "../components/PortMappingEditor";
-import { rpcClient } from "@/utils/rpc-client";
+import { rpcClient, type WolWakeResponse } from "@/utils/rpc-client";
 const form = L.form;
 const uci = L.uci;
+
+const PROTOCOLS = [
+  ["ssh", "SSH"],
+  ["rdp", "RDP"],
+  ["http", "HTTP"],
+  ["tls", "TLS/SSL"],
+  ["vnc", "VNC/RFB"],
+  ["socks5", "SOCKS5"],
+  ["postgresql", "PostgreSQL"],
+  ["telnet", "Telnet"],
+  ["minecraft", "Minecraft (Java Edition)"],
+  ["mqtt", "MQTT"],
+  ["smb", "SMB/CIFS"],
+] as const;
+
+const FILTER_PROTOCOLS = new Set(PROTOCOLS.map(([value]) => value));
+const ON_PROTOCOL_WOL_PROTOCOLS = new Set([
+  "rdp",
+  "http",
+  "tls",
+  "socks5",
+  "postgresql",
+  "minecraft",
+  "mqtt",
+  "smb",
+]);
+
+function stringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  const item = String(value || "").trim();
+  return item ? [item] : [];
+}
+
+function validateProtocolList(
+  value: unknown,
+  allowed: ReadonlySet<string>,
+  required: boolean,
+): boolean | string {
+  const values = stringList(value).map((item) => item.toLowerCase());
+  if (required && values.length === 0)
+    return _("Select at least one protocol.");
+
+  const seen = new Set<string>();
+  for (const protocol of values) {
+    if (!allowed.has(protocol)) {
+      return _("Unsupported protocol: %s").format(protocol);
+    }
+    if (seen.has(protocol)) {
+      return _("Protocol may only be selected once: %s").format(protocol);
+    }
+    seen.add(protocol);
+  }
+  return true;
+}
+
+function hasChanged(
+  options: LuCI.form.AbstractValue[],
+  sectionId: string,
+): boolean {
+  return options.some((option) => option.getUIElement(sectionId)?.isChanged());
+}
+
+function showWakeResult(result: WolWakeResponse): void {
+  const message = _("WoL queued: %d, skipped: %d, failed: %d.").format(
+    result.queued_count,
+    result.skipped_count,
+    result.failed_count,
+  );
+  L.ui.addNotification(
+    null,
+    <p>{message}</p>,
+    result.failed_count ? "error" : "info",
+  );
+}
 
 export default function (
   _m: LuCI.form.Map,
@@ -552,6 +628,7 @@ export default function (
     // ── Wake-on-LAN ──────────────────────────────────────────────
 
     if (isFeatureEnabled("wol_mode")) {
+      const wolOptions: LuCI.form.AbstractValue[] = [];
       {
         const o = modalSection.taboption(
           "project_wol",
@@ -559,12 +636,31 @@ export default function (
           "enable_wol",
           /* i18n */ _("Enable Wake-on-LAN"),
           /* i18n */ _(
-            "Send a magic packet to wake remote machines when the first packet is detected.",
+            "Wake the selected target before connecting. Choose whether to wake immediately or after a client protocol is recognized.",
           ),
         );
         o.modalonly = true;
         o.default = "0";
         o.rmempty = true;
+        wolOptions.push(o);
+      }
+      {
+        const o = modalSection.taboption(
+          "project_wol",
+          form.ListValue,
+          "wol_trigger_mode",
+          /* i18n */ _("WoL Trigger Mode"),
+          /* i18n */ _(
+            "Wake on connection supports sleeping and server-first targets. Wake on protocol waits for a client-first protocol signature before waking.",
+          ),
+        );
+        o.modalonly = true;
+        o.default = "on_connect";
+        o.rmempty = false;
+        o.depends("enable_wol", "1");
+        o.value("on_connect", _("On Connection"));
+        o.value("on_protocol", _("On Protocol"));
+        wolOptions.push(o);
       }
       {
         const o = modalSection.taboption(
@@ -573,23 +669,18 @@ export default function (
           "detect_protocols",
           /* i18n */ _("Detect Protocols"),
           /* i18n */ _(
-            "Protocol signatures that trigger WoL. Select from the list or type custom values.",
+            "Client-first protocol signatures that trigger WoL. Custom or duplicate values are not allowed.",
           ),
         );
         o.modalonly = true;
-        o.rmempty = true;
-        o.depends("enable_wol", "1");
-        o.value("ssh", "SSH");
-        o.value("rdp", "RDP");
-        o.value("http", "HTTP");
-        o.value("tls", "TLS/SSL");
-        o.value("vnc", "VNC/RFB");
-        o.value("socks5", "SOCKS5");
-        o.value("postgresql", "PostgreSQL");
-        o.value("telnet", "Telnet");
-        o.value("minecraft", "Minecraft (Java Edition)");
-        o.value("mqtt", "MQTT");
-        o.value("smb", "SMB/CIFS");
+        o.rmempty = false;
+        o.depends({ enable_wol: "1", wol_trigger_mode: "on_protocol" });
+        for (const [value, title] of PROTOCOLS) {
+          if (ON_PROTOCOL_WOL_PROTOCOLS.has(value)) o.value(value, title);
+        }
+        o.validate = (_sectionId: string, value: unknown) =>
+          validateProtocolList(value, ON_PROTOCOL_WOL_PROTOCOLS, true);
+        wolOptions.push(o);
       }
       {
         const o = modalSection.taboption(
@@ -609,10 +700,11 @@ export default function (
         const wol_sections = L.uci.sections("portweaver", "wol_target") || [];
         for (const target of wol_sections) {
           const name = target.name || target[".name"];
-          if (name) {
+          if (name && target.enabled !== "0") {
             o.value(String(name), String(name));
           }
         }
+        wolOptions.push(o);
       }
       {
         const o = modalSection.taboption(
@@ -626,19 +718,21 @@ export default function (
         o.inputtitle = /* i18n */ _("Wake Now");
         o.depends("enable_wol", "1");
         o.onclick = (_ev: any, section_id: string) => {
+          if (hasChanged(wolOptions, section_id)) {
+            L.ui.addNotification(
+              null,
+              <p>
+                {_(
+                  "Save and reload the changed WoL configuration before waking a target.",
+                )}
+              </p>,
+              "warning",
+            );
+            return;
+          }
           rpcClient
             .wolWake(section_id)
-            .then((res: { success: boolean; sent_count: number }) => {
-              if (res.success) {
-                alert(
-                  /* i18n */ _(
-                    `WoL packets sent to ${res.sent_count} device(s).`,
-                  ),
-                );
-              } else {
-                alert(/* i18n */ _("WoL failed — check configuration."));
-              }
-            })
+            .then(showWakeResult)
             .catch((err: unknown) => {
               alert(/* i18n */ _(`WoL error: ${String(err)}`));
             });
@@ -647,6 +741,7 @@ export default function (
     }
 
     // ── Protocol Filter ───────────────────────────────────────────
+    let allowedProtocols: LuCI.form.DynamicList;
     {
       const o = modalSection.taboption(
         "protocol_filter",
@@ -672,19 +767,12 @@ export default function (
         ),
       );
       o.modalonly = true;
-      o.rmempty = true;
+      o.rmempty = false;
       o.depends("enable_protocol_filter", "1");
-      o.value("ssh", "SSH");
-      o.value("rdp", "RDP");
-      o.value("http", "HTTP");
-      o.value("tls", "TLS/SSL");
-      o.value("vnc", "VNC/RFB");
-      o.value("socks5", "SOCKS5");
-      o.value("postgresql", "PostgreSQL");
-      o.value("telnet", "Telnet");
-      o.value("minecraft", "Minecraft (Java Edition)");
-      o.value("mqtt", "MQTT");
-      o.value("smb", "SMB/CIFS");
+      for (const [value, title] of PROTOCOLS) o.value(value, title);
+      o.validate = (_sectionId: string, value: unknown) =>
+        validateProtocolList(value, FILTER_PROTOCOLS, true);
+      allowedProtocols = o;
     }
     // ── TLS SNI Filter ────────────────────────────────────────────
     {
@@ -701,6 +789,29 @@ export default function (
       o.rmempty = true;
       o.depends("enable_protocol_filter", "1");
       o.placeholder = "*.example.com";
+      o.validate = (sectionId: string, value: unknown) => {
+        const snis = stringList(value);
+        if (
+          snis.length > 0 &&
+          !stringList(allowedProtocols.formvalue(sectionId))
+            .map((protocol) => protocol.toLowerCase())
+            .includes("tls")
+        ) {
+          return _(
+            "Allowed TLS SNIs require TLS in the allowed protocols list.",
+          );
+        }
+        for (const sni of snis) {
+          if (
+            !/^(?:\*\.)?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(
+              sni,
+            )
+          ) {
+            return _("Invalid TLS SNI pattern: %s").format(sni);
+          }
+        }
+        return true;
+      };
     }
   };
 }

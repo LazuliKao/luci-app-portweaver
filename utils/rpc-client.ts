@@ -4,6 +4,29 @@ import type { DdnsStatusResponse } from "@/types/portweaver/ddns";
 import type { FrpcProxyStats } from "@/types/portweaver/frpc";
 import type { FrpsProxyStats } from "@/types/portweaver/frps";
 
+export interface WolWakeResponse {
+  success: boolean;
+  /** Legacy alias for queued_count. */
+  sent_count: number;
+  queued_count: number;
+  skipped_count: number;
+  failed_count: number;
+}
+
+export interface WolStatusResponse {
+  enabled: boolean;
+  mac_count: number;
+  cooldown_ms: number;
+  detect_protocols: string[];
+  queue_depth: number;
+  active_jobs: number;
+  pending_count: number;
+  cooldown_remaining_ms: number;
+  last_attempt_ms_ago: number | null;
+  last_success_ms_ago: number | null;
+  last_error: string | null;
+}
+
 export function createRpcClient(rpc: typeof L.rpc) {
   const listProjects = rpc.declare<{ projects: ProjectStatus[] }>({
     object: "portweaver",
@@ -97,7 +120,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
   });
 
   const wolWake = rpc.declare<
-    { success: boolean; sent_count: number },
+    WolWakeResponse,
     [project?: string, target?: string]
   >({
     object: "portweaver",
@@ -106,12 +129,7 @@ export function createRpcClient(rpc: typeof L.rpc) {
   });
 
   const wolStatus = rpc.declare<
-    {
-      enabled: boolean;
-      mac_count: number;
-      cooldown_ms: number;
-      detect_protocols: string[];
-    },
+    WolStatusResponse,
     [project?: string, target?: string]
   >({
     object: "portweaver",

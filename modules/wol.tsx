@@ -1,5 +1,37 @@
-import { rpcClient } from "@/utils/rpc-client";
+import { rpcClient, type WolWakeResponse } from "@/utils/rpc-client";
 const form = L.form;
+
+function validateMilliseconds(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+): boolean | string {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < minimum || number > maximum) {
+    return _("Enter a whole number from %d to %d.").format(minimum, maximum);
+  }
+  return true;
+}
+
+function hasChanged(
+  options: LuCI.form.AbstractValue[],
+  sectionId: string,
+): boolean {
+  return options.some((option) => option.getUIElement(sectionId)?.isChanged());
+}
+
+function showWakeResult(result: WolWakeResponse): void {
+  const message = _("WoL queued: %d, skipped: %d, failed: %d.").format(
+    result.queued_count,
+    result.skipped_count,
+    result.failed_count,
+  );
+  L.ui.addNotification(
+    null,
+    <p>{message}</p>,
+    result.failed_count ? "error" : "info",
+  );
+}
 
 export default function (
   _m: LuCI.form.Map,
@@ -15,6 +47,7 @@ export default function (
   );
 
   const ss = o.subsection as LuCI.form.GridSection;
+  const targetOptions: LuCI.form.AbstractValue[] = [];
   ss.anonymous = true;
   ss.addremove = true;
   ss.sortable = true;
@@ -26,9 +59,11 @@ export default function (
     _("Unnamed target");
 
   const oFlag = ss.option(form.Flag, "enabled", _("Enable"));
-  oFlag.modalonly = true;
+  oFlag.modalonly = false;
+  oFlag.editable = true;
   oFlag.default = "1";
   oFlag.rmempty = false;
+  targetOptions.push(oFlag);
 
   const oName = ss.option(form.Value, "name", _("Target Name"));
   oName.modalonly = true;
@@ -56,11 +91,7 @@ export default function (
 
     return true;
   };
-
-  const oEnabled = ss.option(form.Flag, "enabled", _("Enabled"));
-  oEnabled.modalonly = false;
-  oEnabled.default = "1";
-  oEnabled.editable = true;
+  targetOptions.push(oName);
 
   const oMacList = ss.option(
     form.DynamicList,
@@ -71,6 +102,7 @@ export default function (
   oMacList.modalonly = true;
   oMacList.rmempty = false;
   oMacList.datatype = "macaddr";
+  targetOptions.push(oMacList);
 
   const oCooldown = ss.option(
     form.Value,
@@ -85,6 +117,93 @@ export default function (
   oCooldown.default = "30000";
   oCooldown.datatype = "uinteger";
   oCooldown.placeholder = "30000";
+  oCooldown.validate = (_sectionId: string, value: unknown) =>
+    validateMilliseconds(value, 1000, 300000);
+  targetOptions.push(oCooldown);
+
+  const oWakeDelay = ss.option(
+    form.Value,
+    "wake_delay_ms",
+    _("Wake Delay (ms)"),
+    _(
+      "Wait after queuing a wake packet before the first target connection attempt (0–300000).",
+    ),
+  );
+  oWakeDelay.modalonly = true;
+  oWakeDelay.rmempty = true;
+  oWakeDelay.default = "1000";
+  oWakeDelay.datatype = "uinteger";
+  oWakeDelay.validate = (_sectionId: string, value: unknown) =>
+    validateMilliseconds(value, 0, 300000);
+  targetOptions.push(oWakeDelay);
+
+  const oRetryInterval = ss.option(
+    form.Value,
+    "retry_interval_ms",
+    _("Retry Interval (ms)"),
+    _(
+      "Interval between target connection retries while the machine wakes (100–300000).",
+    ),
+  );
+  oRetryInterval.modalonly = true;
+  oRetryInterval.rmempty = true;
+  oRetryInterval.default = "1000";
+  oRetryInterval.datatype = "uinteger";
+  oRetryInterval.validate = (_sectionId: string, value: unknown) =>
+    validateMilliseconds(value, 100, 300000);
+  targetOptions.push(oRetryInterval);
+
+  const oRetryWindow = ss.option(
+    form.Value,
+    "retry_window_ms",
+    _("Retry Window (ms)"),
+    _("Maximum time to retry target connections after waking (1–300000)."),
+  );
+  oRetryWindow.modalonly = true;
+  oRetryWindow.rmempty = true;
+  oRetryWindow.default = "30000";
+  oRetryWindow.datatype = "uinteger";
+  oRetryWindow.validate = (_sectionId: string, value: unknown) =>
+    validateMilliseconds(value, 1, 300000);
+  targetOptions.push(oRetryWindow);
+
+  oWakeDelay.validate = (sectionId: string, value: unknown) => {
+    const validation = validateMilliseconds(value, 0, 300000);
+    const retryWindow = Number(oRetryWindow.formvalue(sectionId));
+    if (
+      validation === true &&
+      Number.isInteger(retryWindow) &&
+      Number(value) > retryWindow
+    ) {
+      return _("Wake delay cannot exceed the retry window.");
+    }
+    return validation;
+  };
+  oRetryInterval.validate = (sectionId: string, value: unknown) => {
+    const validation = validateMilliseconds(value, 100, 300000);
+    const retryWindow = Number(oRetryWindow.formvalue(sectionId));
+    if (
+      validation === true &&
+      Number.isInteger(retryWindow) &&
+      Number(value) > retryWindow
+    ) {
+      return _("Retry interval cannot exceed the retry window.");
+    }
+    return validation;
+  };
+  oRetryWindow.validate = (sectionId: string, value: unknown) => {
+    const validation = validateMilliseconds(value, 1, 300000);
+    if (validation !== true) return validation;
+
+    const retryWindow = Number(value);
+    if (Number(oWakeDelay.formvalue(sectionId)) > retryWindow) {
+      return _("Retry window must be at least the wake delay.");
+    }
+    if (Number(oRetryInterval.formvalue(sectionId)) > retryWindow) {
+      return _("Retry window must be at least the retry interval.");
+    }
+    return true;
+  };
 
   const oLogFlag = ss.option(
     form.Flag,
@@ -95,31 +214,37 @@ export default function (
   oLogFlag.modalonly = true;
   oLogFlag.default = "0";
   oLogFlag.rmempty = true;
+  targetOptions.push(oLogFlag);
 
   const oActions = ss.option(form.DummyValue, "actions", _("Actions"));
   oActions.modalonly = false;
   oActions.textvalue = (section_id: string) => {
     const targetName = L.uci.get("portweaver", section_id, "name") as string;
     if (!targetName) return "";
+    if (L.uci.get("portweaver", section_id, "enabled") === "0") {
+      return _("Disabled");
+    }
 
     const wakeBtn = (
       <button
         type="button"
         class="cbi-button cbi-button-action"
         onclick={() => {
+          if (hasChanged(targetOptions, section_id)) {
+            L.ui.addNotification(
+              null,
+              <p>
+                {_(
+                  "Save and reload the changed WoL configuration before waking a target.",
+                )}
+              </p>,
+              "warning",
+            );
+            return;
+          }
           rpcClient
             .wolWake(undefined, targetName)
-            .then((res: { success: boolean; sent_count: number }) => {
-              if (res.success) {
-                alert(
-                  _("WoL packets sent to %s device(s).").format(
-                    String(res.sent_count),
-                  ),
-                );
-              } else {
-                alert(_("WoL failed — check configuration."));
-              }
-            })
+            .then(showWakeResult)
             .catch((err: unknown) => {
               alert(_("WoL error: %s").format(String(err)));
             });
